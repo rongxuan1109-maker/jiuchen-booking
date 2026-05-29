@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>九辰物理治療所 · 我的預約</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#1D9E75;--green-dark:#0F6E56;--green-light:#E1F5EE;
+  --red:#E53935;--red-light:#FFEBEE;
+  --bg:#F7F8F6;--white:#FFFFFF;--border:#E4E6E2;
+  --text:#1A1C19;--text2:#5A5E57;--text3:#9A9E97;
+  --radius:12px;--shadow:0 2px 12px rgba(0,0,0,0.08);
+}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.header{background:var(--white);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;}
+.logo{width:36px;height:36px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:16px;}
+.header-text h1{font-size:16px;font-weight:700;}
+.header-text p{font-size:12px;color:var(--text3);}
+.container{max-width:600px;margin:0 auto;padding:20px 16px;}
+
+/* Tabs */
+.tabs{display:flex;background:var(--white);border-radius:var(--radius);padding:4px;gap:4px;margin-bottom:20px;box-shadow:var(--shadow);}
+.tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:500;border-radius:9px;cursor:pointer;color:var(--text3);transition:all 0.2s;}
+.tab.active{background:var(--green);color:white;}
+
+/* Cards */
+.card{background:var(--white);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);}
+.appt-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.appt-date{font-size:16px;font-weight:700;color:var(--text);}
+.appt-time{font-size:13px;color:var(--text3);margin-top:2px;}
+.badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;}
+.badge.confirmed{background:var(--green-light);color:var(--green-dark);}
+.badge.cancelled{background:#F5F5F5;color:var(--text3);}
+.badge.past{background:#EEF2FF;color:#4B5EAA;}
+.appt-info{display:flex;flex-direction:column;gap:6px;}
+.info-row{display:flex;align-items:center;gap:8px;font-size:13px;}
+.info-icon{width:20px;text-align:center;font-size:14px;flex-shrink:0;}
+.info-text{color:var(--text2);}
+.divider{height:1px;background:var(--border);margin:12px 0;}
+.cancel-btn{width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--red);background:white;color:var(--red);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.cancel-btn:hover{background:var(--red-light);}
+
+/* Empty */
+.empty{text-align:center;padding:48px 20px;color:var(--text3);}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+.empty-text{font-size:14px;}
+
+/* Loading */
+.loading{text-align:center;padding:48px;color:var(--text3);}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:flex-end;justify-content:center;}
+.modal{background:var(--white);border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:600px;}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:8px;}
+.modal-sub{font-size:13px;color:var(--text3);margin-bottom:20px;line-height:1.6;}
+.modal-appt{background:var(--bg);border-radius:10px;padding:14px;margin-bottom:20px;}
+.modal-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
+.modal-lbl{color:var(--text3);}
+.modal-val{font-weight:500;}
+.btn-row{display:flex;gap:10px;}
+.btn{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--text);font-family:inherit;}
+.btn.danger{background:var(--red);border-color:var(--red);color:white;}
+.btn:disabled{opacity:0.4;}
+
+.section-title{font-size:13px;font-weight:600;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">九</div>
+  <div class="header-text">
+    <h1>我的預約</h1>
+    <p>九辰物理治療所</p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" id="tab-upcoming" onclick="switchTab('upcoming')">即將到來</div>
+    <div class="tab" id="tab-past" onclick="switchTab('past')">過去紀錄</div>
+  </div>
+  <div id="mainContent">
+    <div class="loading"><div class="spinner"></div>載入中...</div>
+  </div>
+</div>
+
+<div id="cancelModal" class="modal-bg" style="display:none">
+  <div class="modal">
+    <p class="modal-title">確認取消預約？</p>
+    <p class="modal-sub">取消後將無法復原，如需重新預約請再次使用預約系統。</p>
+    <div class="modal-appt" id="modalApptInfo"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="closeModal()">返回</button>
+      <button class="btn danger" id="confirmCancelBtn" onclick="confirmCancel()">確認取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://vmkdawpukwpsifqguljy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZta2Rhd3B1a3dwc2lmcWd1bGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjE2MDUsImV4cCI6MjA5NTQzNzYwNX0.hq8rbjKe3NOUhV1sbViBtuQLSzQuWCnK1_4QSrCy2xM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const LIFF_ID = '2010100504-sH4QFQP5';
+const DAYS = ['日','一','二','三','四','五','六'];
+
+let lineUserId = null;
+let currentTab = 'upcoming';
+let appointments = [];
+let cancelTarget = null;
+
+async function initLiff() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      lineUserId = profile.userId;
+    } else {
+      liff.login();
+    }
+  } catch(e) {
+    console.log('LIFF init failed:', e);
+  }
+}
+
+async function loadAppointments() {
+  if (!lineUserId) {
+    document.getElementById('mainContent').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">🔒</div>
+        <p class="empty-text">請透過 LINE 開啟此頁面以查詢預約</p>
+      </div>`;
+    return;
+  }
+
+  const { data, error } = await sb.from('appointments')
+    .select('*')
+    .eq('line_user_id', lineUserId)
+    .order('appointment_date', { ascending: false })
+    .order('appointment_time', { ascending: false });
+
+  if (error || !data) {
+    document.getElementById('mainContent').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p class="empty-text">載入失敗，請稍後再試</p></div>`;
+    return;
+  }
+
+  appointments = data;
+  renderTab();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-upcoming').classList.toggle('active', tab === 'upcoming');
+  document.getElementById('tab-past').classList.toggle('active', tab === 'past');
+  renderTab();
+}
+
+function renderTab() {
+  const today = new Date().toISOString().split('T')[0];
+  const upcoming = appointments.filter(a => a.appointment_date >= today && a.status === 'confirmed');
+  const past = appointments.filter(a => a.appointment_date < today || a.status === 'cancelled');
+
+  const list = currentTab === 'upcoming' ? upcoming : past;
+  const el = document.getElementById('mainContent');
+
+  if (list.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">${currentTab === 'upcoming' ? '📅' : '📋'}</div><p class="empty-text">${currentTab === 'upcoming' ? '目前沒有即將到來的預約' : '尚無過去的預約紀錄'}</p></div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(a => renderCard(a)).join('');
+}
+
+function renderCard(a) {
+  const d = new Date(a.appointment_date);
+  const dateStr = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DAYS[d.getDay()]}）`;
+  const timeStr = a.appointment_time ? a.appointment_time.slice(0,5) : '';
+  const today = new Date().toISOString().split('T')[0];
+  const isPast = a.appointment_date < today;
+  const isCancelled = a.status === 'cancelled';
+
+  let badge = '';
+  if (isCancelled) badge = '<span class="badge cancelled">已取消</span>';
+  else if (isPast) badge = '<span class="badge past">已完成</span>';
+  else badge = '<span class="badge confirmed">已確認</span>';
+
+  const therapist = a.therapist_name || '待安排';
+  const service = a.service || '';
+
+  return `
+  <div class="card">
+    <div class="appt-header">
+      <div>
+        <div class="appt-date">${dateStr}</div>
+        <div class="appt-time">${timeStr}</div>
+      </div>
+      ${badge}
+    </div>
+    <div class="appt-info">
+      ${service ? `<div class="info-row"><span class="info-icon">💊</span><span class="info-text">${service}</span></div>` : ''}
+      <div class="info-row"><span class="info-icon">👨‍⚕️</span><span class="info-text">${therapist === '不指定' ? '治療師待安排' : therapist + ' 治療師'}</span></div>
+    </div>
+    ${!isPast && !isCancelled ? `
+    <div class="divider"></div>
+    <button class="cancel-btn" onclick="openCancelModal('${a.id}')">取消預約</button>` : ''}
+  </div>`;
+}
+
+function openCancelModal(id) {
+  cancelTarget = appointments.find(a => a.id == id);
+  if (!cancelTarget) return;
+
+  const d = new Date(cancelTarget.appointment_date);
+  const dateStr = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DAYS[d.getDay()]}）`;
+  const timeStr = cancelTarget.appointment_time ? cancelTarget.appointment_time.slice(0,5) : '';
+  const therapist = cancelTarget.therapist_name || '待安排';
+
+  document.getElementById('modalApptInfo').innerHTML = `
+    <div class="modal-row"><span class="modal-lbl">日期</span><span class="modal-val">${dateStr}</span></div>
+    <div class="modal-row"><span class="modal-lbl">時間</span><span class="modal-val">${timeStr}</span></div>
+    <div class="modal-row"><span class="modal-lbl">治療師</span><span class="modal-val">${therapist === '不指定' ? '待安排' : therapist + ' 治療師'}</span></div>
+    <div class="modal-row"><span class="modal-lbl">服務</span><span class="modal-val">${cancelTarget.service || ''}</span></div>
+  `;
+  document.getElementById('cancelModal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('cancelModal').style.display = 'none';
+  cancelTarget = null;
+}
+
+async function confirmCancel() {
+  if (!cancelTarget) return;
+  const btn = document.getElementById('confirmCancelBtn');
+  btn.disabled = true;
+  btn.textContent = '取消中...';
+
+  const { error } = await sb.from('appointments')
+    .update({ status: 'cancelled' })
+    .eq('id', cancelTarget.id);
+
+  btn.disabled = false;
+  btn.textContent = '確認取消';
+
+  if (error) {
+    alert('取消失敗，請稍後再試');
+    return;
+  }
+
+  closeModal();
+  await loadAppointments();
+  window.scrollTo(0, 0);
+}
+
+initLiff().then(() => loadAppointments());
+</script>
+</body>
+</html>

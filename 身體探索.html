@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
+<title>你的身體，記得一切 ── 九辰</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@200;300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light only;
+  --ink:#1c1611;--paper:#f3ede1;--warm:#c08a52;--accent:#7a5638;
+  --muted:#9b8a74;--glow:#e9dcc4;--orange:#d96e28;--teal:#3a6e6a;--deep:#2a1d12;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{background:#f3ede1 !important;}
+body{background:#f3ede1 !important;color:#1c1611 !important;font-family:'Noto Serif TC',serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.3;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");}
+.screen{display:none;min-height:100vh;animation:fade .7s ease forwards;}
+.screen.active{display:flex;flex-direction:column;}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* INTRO */
+#intro{align-items:center;justify-content:center;text-align:center;padding:64px 30px;
+  background:radial-gradient(ellipse at 50% 22%,#ece0c8 0%,#f3ede1 68%);}
+.eyebrow{font-family:'Cormorant Garamond',serif;font-size:12px;letter-spacing:6px;text-transform:uppercase;color:var(--muted);margin-bottom:28px;}
+.emblem{width:108px;height:108px;border-radius:50%;border:1px solid var(--warm);display:flex;align-items:center;justify-content:center;margin:0 auto 36px;animation:breathe 5s ease-in-out infinite;}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(192,138,82,.18)}50%{box-shadow:0 0 0 14px rgba(192,138,82,0)}}
+.intro-title{font-family:'Cormorant Garamond',serif;font-size:clamp(36px,9vw,54px);font-weight:300;line-height:1.18;margin-bottom:16px;color:#1c1611 !important;}
+.intro-title em{font-style:italic;color:var(--accent);}
+.intro-sub{font-size:14px;color:#9b8a74 !important;line-height:2.4;max-width:300px;margin:0 auto 44px;font-weight:300;}
+.btn{background:var(--ink);color:#f3ede1;border:none;padding:16px 42px;font-family:'Noto Serif TC',serif;
+  font-size:14px;letter-spacing:3px;cursor:pointer;position:relative;overflow:hidden;transition:all .3s;}
+.btn::before{content:'';position:absolute;inset:0;background:var(--warm);transform:translateX(-101%);transition:transform .45s cubic-bezier(.7,0,.3,1);}
+.btn:hover::before{transform:translateX(0);}
+.btn span{position:relative;z-index:1;}
+.progress{display:flex;gap:9px;justify-content:center;margin-bottom:28px;}
+.pdot{width:7px;height:7px;border-radius:50%;background:rgba(192,138,82,.25);transition:all .4s;}
+.pdot.on{background:var(--warm);transform:scale(1.35);}
+.pdot.done{background:rgba(192,138,82,.5);}
+
+/* FEEL */
+#feel{padding:44px 24px 68px;align-items:center;}
+.sec-ey{font-family:'Cormorant Garamond',serif;font-size:12px;letter-spacing:5px;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:8px;}
+.sec-ti{font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:400;text-align:center;margin-bottom:8px;color:#1c1611 !important;}
+.sec-de{font-size:13px;color:#7a6a54 !important;text-align:center;line-height:2;margin-bottom:36px;font-weight:300;max-width:300px;}
+.feel-list{display:flex;flex-direction:column;gap:12px;width:100%;max-width:380px;}
+.feel-card{border:1px solid rgba(192,138,82,.3);padding:20px 22px;cursor:pointer;
+  transition:all .35s;position:relative;overflow:hidden;background:#faf6ee;display:flex;align-items:center;gap:18px;}
+.feel-card::before{content:'';position:absolute;inset:0;background:#e9dcc4;transform:translateX(-101%);transition:transform .4s cubic-bezier(.7,0,.3,1);}
+.feel-card:hover::before,.feel-card.sel::before{transform:translateX(0);}
+.feel-card:hover,.feel-card.sel{border-color:var(--warm);transform:translateX(3px);}
+.feel-glyph{width:38px;height:38px;flex-shrink:0;position:relative;z-index:1;}
+.feel-txt{position:relative;z-index:1;}
+.feel-name{font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:500;display:block;letter-spacing:1px;margin-bottom:4px;color:#1c1611 !important;}
+.feel-desc{font-size:14px;color:#6b4a2e !important;line-height:1.8;font-weight:400;}
+
+/* BODY MAP */
+#body{padding:34px 18px 68px;align-items:center;}
+.map-wrap{position:relative;width:100%;max-width:300px;margin:0 auto;}
+#bsvg{width:100%;height:auto;overflow:visible;}
+.bp{fill:rgba(192,138,82,.07);stroke:rgba(192,138,82,.3);stroke-width:1.2;cursor:pointer;transition:all .3s;}
+.bp:hover{fill:rgba(192,138,82,.18);stroke:var(--warm);}
+.bp.sel{fill:rgba(192,138,82,.34);stroke:var(--warm);stroke-width:2;}
+.bp.conn{fill:rgba(217,110,40,.12);stroke:var(--orange);stroke-width:1.5;stroke-dasharray:5 3;animation:dash 1.8s linear infinite;}
+@keyframes dash{to{stroke-dashoffset:-16}}
+.fl{fill:none;stroke:rgba(192,138,82,0);stroke-width:2;stroke-dasharray:6 4;pointer-events:none;transition:stroke .5s,opacity .5s;opacity:0;}
+.fl.on{stroke:rgba(192,138,82,.45);opacity:1;animation:flow 2.5s linear infinite;}
+@keyframes flow{to{stroke-dashoffset:-20}}
+.zlabel{font-family:'Noto Serif TC',sans-serif;font-size:8px;fill:var(--muted);pointer-events:none;}
+.pick-hint{margin-top:14px;font-size:12px;color:#9b8a74 !important;font-style:italic;font-weight:300;text-align:center;min-height:18px;}
+.btn-reveal{max-width:300px;width:100%;margin-top:16px;background:var(--ink);color:#f3ede1;border:none;
+  padding:16px;font-family:'Noto Serif TC',serif;font-size:13px;letter-spacing:2px;cursor:pointer;transition:all .3s;display:none;}
+.btn-reveal:hover{background:var(--accent);}
+.btn-back-s{background:transparent;color:#9b8a74;border:1px solid rgba(192,138,82,.28);
+  padding:13px 28px;font-family:'Noto Serif TC',serif;font-size:12px;letter-spacing:1px;
+  cursor:pointer;transition:all .3s;margin-top:14px;max-width:300px;width:100%;}
+.btn-back-s:hover{border-color:var(--warm);color:var(--accent);}
+
+/* RESULT */
+#result{padding:52px 24px 70px;align-items:center;
+  background:radial-gradient(ellipse at 50% 0%,#e8dcc4 0%,#f3ede1 52%);}
+.r-badge{width:80px;height:80px;border-radius:50%;border:1px solid var(--warm);display:flex;align-items:center;justify-content:center;
+  margin:0 auto 22px;animation:breathe 5s ease-in-out infinite;}
+.r-badge svg{width:38px;height:38px;}
+.r-title{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,7.5vw,42px);font-weight:300;
+  text-align:center;line-height:1.2;margin-bottom:6px;color:#1c1611 !important;}
+.r-clinname{font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;
+  color:#9b8a74 !important;text-align:center;margin-bottom:30px;letter-spacing:2px;}
+.r-divider{width:54px;height:1px;background:linear-gradient(90deg,transparent,var(--warm),transparent);margin:0 auto 30px;}
+.poem-block{max-width:400px;width:100%;margin-bottom:16px;padding:20px 22px;
+  background:rgba(255,255,255,.55);border:1px solid rgba(192,138,82,.22);}
+.poem-lbl{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--warm);
+  margin-bottom:13px;display:flex;align-items:center;gap:8px;}
+.poem-lbl::after{content:'';flex:1;height:1px;background:rgba(192,138,82,.25);}
+.poem-heart .pline{font-size:15px;line-height:2.5;color:#1c1611 !important;font-weight:300;display:block;}
+.poem-heart .pline:nth-child(3){color:var(--accent) !important;font-style:italic;}
+.poem-body-txt{font-size:14px;line-height:2.3;color:#1c1611 !important;font-weight:300;}
+.poem-soul .pline{font-size:14.5px;line-height:2.4;color:var(--accent) !important;font-weight:300;display:block;}
+.poem-soul .pline:nth-child(3){font-style:italic;color:var(--warm) !important;}
+.clin-toggle{margin:4px auto 18px;background:transparent;border:1px solid rgba(192,138,82,.3);
+  color:#9b8a74;padding:11px 24px;font-family:'Noto Serif TC',serif;font-size:12px;
+  letter-spacing:1px;cursor:pointer;transition:all .3s;display:block;}
+.clin-toggle:hover{border-color:var(--warm);color:var(--accent);}
+.clinical{max-width:400px;width:100%;margin-bottom:28px;display:none;}
+.clinical.show{display:block;animation:fade .5s ease;}
+.cl-card{background:rgba(255,255,255,.5);border:1px solid rgba(192,138,82,.22);padding:18px 20px;margin-bottom:10px;}
+.cl-lbl{font-size:10px;letter-spacing:3px;color:#9b8a74;text-transform:uppercase;margin-bottom:8px;}
+.cl-name{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--orange);margin-bottom:4px;}
+.cl-text{font-size:13px;line-height:1.9;color:#1c1611;font-weight:300;}
+.cl-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+.cl-tag{padding:4px 10px;border:1px solid rgba(192,138,82,.35);font-size:11px;color:var(--accent);}
+.actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px;}
+.btn-book{background:var(--ink);color:#f3ede1;border:none;padding:18px;font-family:'Noto Serif TC',serif;font-size:14px;letter-spacing:2px;cursor:pointer;transition:all .3s;}
+.btn-book:hover{background:var(--accent);}
+.btn-restart{background:transparent;color:#9b8a74;border:1px solid rgba(192,138,82,.28);padding:14px;font-family:'Noto Serif TC',serif;font-size:12px;letter-spacing:1px;cursor:pointer;transition:all .3s;}
+.btn-restart:hover{border-color:var(--warm);color:var(--accent);}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<section class="screen active" id="intro">
+  <div class="eyebrow">九辰物理治療所</div>
+  <div class="emblem">
+    <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+      <path d="M22 6C22 6 27 15 27 22C27 29 22 38 22 38C22 38 17 29 17 22C17 15 22 6 22 6Z" stroke="#c08a52" stroke-width="1" fill="none"/>
+      <path d="M6 22C6 22 15 17 22 17C29 17 38 22 38 22C38 22 29 27 22 27C15 27 6 22 6 22Z" stroke="#c08a52" stroke-width="1" fill="none"/>
+      <circle cx="22" cy="22" r="2.5" fill="#c08a52" opacity=".5"/>
+    </svg>
+  </div>
+  <div class="eyebrow" style="margin-bottom:10px">身體探索</div>
+  <h1 class="intro-title">你的身體<br><em>記得一切</em></h1>
+  <p class="intro-sub">身體承接了你還沒說出口的事<br>它用感受，替你記得<br>讓我們一起聽聽，它想說什麼</p>
+  <button class="btn" onclick="go('feel')"><span>開始探索</span></button>
+</section>
+
+<!-- FEEL -->
+<section class="screen" id="feel">
+  <div class="progress"><div class="pdot on"></div><div class="pdot"></div></div>
+  <div class="sec-ey">第一步</div>
+  <h2 class="sec-ti">此刻的你</h2>
+  <p class="sec-de">閉上眼，做一個深呼吸<br>哪一種感受，最靠近現在的你？</p>
+  <div class="feel-list" id="feel-list"></div>
+</section>
+
+<!-- BODY MAP -->
+<section class="screen" id="body">
+  <div class="progress"><div class="pdot done"></div><div class="pdot on"></div></div>
+  <div class="sec-ey">第二步</div>
+  <h2 class="sec-ti">身體的位置</h2>
+  <p class="sec-de">這份感受，最常停留在哪裡？</p>
+  <div class="map-wrap">
+    <svg id="bsvg" viewBox="0 0 220 500" xmlns="http://www.w3.org/2000/svg">
+      <path id="fl-sbl" class="fl" d="M110,490 L110,420 L110,340 L110,250 L110,160 L110,80 L110,30"/>
+      <path id="fl-sfl" class="fl" d="M108,488 L108,420 L108,340 L108,250 L108,160 L108,80 L108,38"/>
+      <path id="fl-ll"  class="fl" d="M72,460 L64,390 L58,320 L57,250 L60,180 L66,110 L74,60"/>
+      <path id="fl-sp"  class="fl" d="M95,25 Q55,55 52,95 Q50,135 72,165 Q108,195 112,225 Q130,255 142,295 Q150,335 144,375 L128,465"/>
+      <path id="fl-dfl" class="fl" d="M110,480 L110,420 L110,355 L110,280 L110,200 L110,130 L110,70"/>
+      <path id="fl-arm" class="fl" d="M72,108 Q44,140 36,180 Q32,200 36,215"/>
+      <path id="fl-arm2" class="fl" d="M148,108 Q176,140 184,180 Q188,200 184,215"/>
+      <ellipse class="bp" cx="110" cy="36" rx="28" ry="32" data-zone="head" onclick="pick('head')"/>
+      <text class="zlabel" x="110" y="38" text-anchor="middle">頭 ／ 下顎</text>
+      <rect class="bp" x="98" y="67" width="24" height="20" rx="4" data-zone="neck" onclick="pick('neck')"/>
+      <text class="zlabel" x="110" y="80" text-anchor="middle">頸</text>
+      <ellipse class="bp" cx="64" cy="105" rx="20" ry="14" data-zone="shoulder" onclick="pick('shoulder')"/>
+      <ellipse class="bp" cx="156" cy="105" rx="20" ry="14" data-zone="shoulder" onclick="pick('shoulder')"/>
+      <text class="zlabel" x="30" y="108" text-anchor="middle">肩</text>
+      <path class="bp" d="M88,88 Q76,98 72,130 L74,164 L146,164 L148,130 Q134,98 132,88 Z" data-zone="chest" onclick="pick('chest')"/>
+      <text class="zlabel" x="110" y="132" text-anchor="middle">胸口</text>
+      <path class="bp" d="M88,88 Q80,94 77,122 L79,160 L141,160 L143,122 Q140,94 132,88 Z" data-zone="upperback" onclick="pick('upperback')" style="stroke-dasharray:5 3;fill:rgba(192,138,82,.03)"/>
+      <text class="zlabel" x="178" y="125" text-anchor="start">←上背</text>
+      <path class="bp" d="M74,164 L72,220 L148,220 L146,164 Z" data-zone="core" onclick="pick('core')"/>
+      <text class="zlabel" x="110" y="196" text-anchor="middle">腹 ／ 核心</text>
+      <path class="bp" d="M78,164 L76,218 L144,218 L142,164 Z" data-zone="lowerback" onclick="pick('lowerback')" style="stroke-dasharray:5 3;fill:rgba(192,138,82,.03)"/>
+      <text class="zlabel" x="178" y="194" text-anchor="start">←腰</text>
+      <path class="bp" d="M72,220 Q63,242 65,260 L90,264 L130,264 L155,260 Q157,242 148,220 Z" data-zone="hip" onclick="pick('hip')"/>
+      <text class="zlabel" x="110" y="247" text-anchor="middle">臀 ／ 髖</text>
+      <path class="bp" d="M76,264 Q68,300 68,338 L88,340 L94,264 Z" data-zone="thigh" onclick="pick('thigh')"/>
+      <path class="bp" d="M144,264 Q152,300 152,338 L132,340 L126,264 Z" data-zone="thigh" onclick="pick('thigh')"/>
+      <text class="zlabel" x="50" y="305" text-anchor="middle">大腿</text>
+      <ellipse class="bp" cx="78" cy="352" rx="13" ry="14" data-zone="knee" onclick="pick('knee')"/>
+      <ellipse class="bp" cx="142" cy="352" rx="13" ry="14" data-zone="knee" onclick="pick('knee')"/>
+      <text class="zlabel" x="52" y="355" text-anchor="middle">膝蓋</text>
+      <path class="bp" d="M68,366 Q64,398 66,426 L84,428 L88,366 Z" data-zone="lowerleg" onclick="pick('lowerleg')"/>
+      <path class="bp" d="M152,366 Q156,398 154,426 L136,428 L132,366 Z" data-zone="lowerleg" onclick="pick('lowerleg')"/>
+      <text class="zlabel" x="47" y="400" text-anchor="middle">小腿</text>
+      <ellipse class="bp" cx="74" cy="444" rx="14" ry="9" data-zone="foot" onclick="pick('foot')"/>
+      <ellipse class="bp" cx="146" cy="444" rx="14" ry="9" data-zone="foot" onclick="pick('foot')"/>
+      <text class="zlabel" x="46" y="447" text-anchor="middle">腳</text>
+      <path class="bp" d="M48,116 Q34,152 32,188 Q34,200 42,198 L48,178 L56,132 Z" data-zone="arm" onclick="pick('arm')"/>
+      <path class="bp" d="M172,116 Q186,152 188,188 Q186,200 178,198 L172,178 L164,132 Z" data-zone="arm" onclick="pick('arm')"/>
+      <text class="zlabel" x="18" y="158" text-anchor="middle">手臂</text>
+    </svg>
+  </div>
+  <div class="pick-hint" id="pick-hint"></div>
+  <button class="btn-reveal" id="btn-reveal" onclick="showResult()">看看身體想說什麼 →</button>
+  <button class="btn-back-s" onclick="backToFeel()">← 上一步，重選感受</button>
+</section>
+
+<!-- RESULT -->
+<section class="screen" id="result">
+  <div class="r-badge" id="r-badge"></div>
+  <h2 class="r-title" id="r-title"></h2>
+  <div class="r-clinname" id="r-clinname"></div>
+  <div class="r-divider"></div>
+  <div id="r-poem"></div>
+  <button class="clin-toggle" id="clin-toggle" onclick="toggleClin()">給治療師看的身體訊息 ＋</button>
+  <div class="clinical" id="clinical"></div>
+  <div class="actions">
+    <button class="btn-book" onclick="book()">預約初診評估</button>
+    <button class="btn-restart" onclick="restart()">重新探索</button>
+  </div>
+</section>
+
+<script>
+var GLYPHS={
+  depleted:'<svg viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="15" stroke="#c08a52" stroke-width="1" opacity=".4"/><path d="M19 8 L19 19 L13 24" stroke="#c08a52" stroke-width="1.2"/><circle cx="19" cy="19" r="2" fill="#c08a52" opacity=".5"/></svg>',
+  guarded:'<svg viewBox="0 0 38 38" fill="none"><path d="M19 6 L30 11 L30 20 Q30 30 19 33 Q8 30 8 20 L8 11 Z" stroke="#c08a52" stroke-width="1.2" fill="none"/></svg>',
+  empty:'<svg viewBox="0 0 38 38" fill="none"><circle cx="13" cy="19" r="7" stroke="#c08a52" stroke-width="1.2"/><circle cx="25" cy="19" r="7" stroke="#c08a52" stroke-width="1.2" stroke-dasharray="2 2"/></svg>',
+  drifting:'<svg viewBox="0 0 38 38" fill="none"><path d="M8 22 Q14 14 19 22 T30 22" stroke="#c08a52" stroke-width="1.2"/><path d="M8 28 Q14 20 19 28 T30 28" stroke="#c08a52" stroke-width="1" opacity=".5"/></svg>',
+  relocked:'<svg viewBox="0 0 38 38" fill="none"><rect x="11" y="17" width="16" height="13" rx="2" stroke="#c08a52" stroke-width="1.2"/><path d="M14 17 L14 12 Q14 8 19 8 Q24 8 24 12 L24 17" stroke="#c08a52" stroke-width="1.2"/></svg>'
+};
+var ZONE_NAME={head:'頭與下顎',neck:'頸',shoulder:'肩膀',chest:'胸口',upperback:'上背',
+  core:'核心',lowerback:'腰',hip:'臀與髖',thigh:'大腿',knee:'膝蓋',lowerleg:'小腿',foot:'腳踝與足',arm:'手臂'};
+var ZONES={
+  head:{conn:['neck','shoulder','upperback'],lines:['fl-sbl']},
+  neck:{conn:['head','shoulder','upperback','arm'],lines:['fl-sbl','fl-arm']},
+  shoulder:{conn:['neck','upperback','hip','arm'],lines:['fl-sp','fl-arm']},
+  chest:{conn:['neck','core','hip'],lines:['fl-sfl']},
+  upperback:{conn:['neck','shoulder','lowerback'],lines:['fl-sbl','fl-sp']},
+  core:{conn:['lowerback','hip','chest'],lines:['fl-dfl','fl-sfl']},
+  lowerback:{conn:['upperback','hip','core','knee'],lines:['fl-sbl','fl-dfl']},
+  hip:{conn:['lowerback','shoulder','knee'],lines:['fl-sp','fl-ll']},
+  thigh:{conn:['hip','knee','lowerback'],lines:['fl-sfl','fl-sbl']},
+  knee:{conn:['hip','thigh','lowerleg','lowerback'],lines:['fl-sbl','fl-ll']},
+  lowerleg:{conn:['knee','thigh','lowerback'],lines:['fl-sbl']},
+  foot:{conn:['lowerleg','knee','lowerback'],lines:['fl-sbl']},
+  arm:{conn:['neck','shoulder','upperback'],lines:['fl-arm','fl-arm2']}
+};
+var FEELS=[
+  {id:'depleted',name:'耗竭',glyph:GLYPHS.depleted,desc:'怎麼休息都補不回來，像電一直在漏'},
+  {id:'guarded', name:'戒備',glyph:GLYPHS.guarded, desc:'一直繃著、守著，放不下來'},
+  {id:'empty',   name:'空乏',glyph:GLYPHS.empty,   desc:'使不上力，跟身體好像有點距離'},
+  {id:'drifting',name:'漂移',glyph:GLYPHS.drifting,desc:'不太穩，重心抓不太住'},
+  {id:'relocked',name:'反鎖',glyph:GLYPHS.relocked,desc:'某個方向、某個動作，就是打不開'}
+];
+var CLINICAL_PATH={
+  depleted:'神經系統分類｜C纖維慢性活化＋下行抑制耗竭',
+  guarded:'神經系統分類｜交感過度活化＋Gamma敏化（SMCD）',
+  empty:'神經系統分類｜本體感覺訊號下降＋核心SMCD',
+  drifting:'神經系統分類｜前庭-本體感覺整合失調＋APA失能',
+  relocked:'結構性需鑑別｜Sarcomere減少＋MD/TED'
+};
+var selFeel=null,selZone=null;
+</script>
+<script>
+var POEM65=JSON.parse('{"depleted-head": {"title": "過載的思考者", "sub": "頭頸耗竭型", "heart": ["你總是想得比說的多，扛得比喊的重。", "腦袋停不下來，連休息都在計畫下一步。", "你習慣替所有人先想好，卻很少想自己。", "「我可以再撐一下」成了你的口頭禪。", "你需要的，其實只是被允許什麼都不想。"], "body": "你的頭部與後頸像戴著一頂太緊的帽子。緊縮性頭痛、太陽穴發脹、後腦勺沉甸甸地壓著。這份緊沿著後腦一路牽連到頸子、肩膀，整片都繃著。念頭轉個不停，到了晚上更明顯，睡再久醒來還是頭重，注意力越來越難集中。這不是你不夠專注，是大腦長期沒有真正關機。", "soul": ["允許自己，什麼都不想一會兒。", "不是每個問題，都得現在有答案。", "你的腦袋，值得一段空白與寧靜。", "把「我必須想清楚」輕輕放下。", "安靜，也是一種往前走的方式。", "你已經想得夠多、夠好了。"]}, "depleted-neck": {"title": "沉默的承擔者", "sub": "頸源耗竭型", "heart": ["你扛著的，遠比你說出口的多。", "總是說「沒事」，把累藏在笑容後面。", "你怕造成別人的麻煩，寧可自己撐著。", "別人的需要，你總擺在自己前面。", "你需要的，是被允許說一句「我累了」。"], "body": "你的頸部又緊又痠，怎麼按摩都只好那麼一下下。轉頭有點卡，肩頸交界處像壓著一塊石頭，連帶後腦和上背也跟著沉。低頭看手機、伏案工作久了，整個後頸發燙、緊到發脹。這份緊常常不是頸子本身的問題，而是它替整個身體，默默撐著太多。", "soul": ["你不需要一個人，扛起所有的重。", "說出「我撐不住了」，不是軟弱。", "把頭低下來休息一下，沒關係。", "讓信任的人，也分擔一些。", "你的堅強，早就足夠了。", "現在，換別人接住你。"]}, "depleted-shoulder": {"title": "無聲的扛事者", "sub": "肩帶耗竭型", "heart": ["你的字典裡，「我來」比「不要」常出現。", "責任一靠近，你就習慣接過來。", "你怕讓人失望，於是不斷答應。", "休息時還在想著沒做完的事。", "你需要的，是相信放下不等於失職。"], "body": "你的肩膀總是聳著、緊著，下班了、躺下了還鬆不下來。上斜方肌像兩條拉緊的繩，從頸子一路繃到肩胛，連手臂抬久了都覺得痠重。睡醒肩頸還是僵硬，按下去一壓一個痛點。這是長期扛事、長期在螢幕前的身體，替你記下的疲憊。", "soul": ["肩膀，是用來放鬆的，不是扛重的。", "把「我可以」偶爾換成「幫我一下」。", "責任可以分擔，你不必獨自承受。", "讓肩膀垂下來，深深吐一口氣。", "你已經做得很好，真的。", "現在，輪到你照顧自己。"]}, "depleted-chest": {"title": "淺呼吸的奔忙者", "sub": "胸廓耗竭型", "heart": ["你的生活太趕，連呼吸都來不及。", "情緒湧上來，你習慣先吞下去。", "你怕麻煩別人，於是把心事壓著。", "「等忙完再說」成了永遠的藉口。", "你需要的，是一次完整的、好好的吐氣。"], "body": "你的呼吸又淺又快，胸口時常悶脹，深吸一口氣反而覺得卡在中間上不來。肩頸的呼吸輔助肌過度代償，讓上半身一直緊繃，胸口像綁了一條看不見的帶子，連肩膀都跟著往前縮。壓力大的時候更明顯，話講多了就覺得喘。這是身體在提醒你：該慢下來，好好呼吸了。", "soul": ["先停下來，做一個完整的深呼吸。", "把吞下去的情緒，慢慢吐出來。", "胸口的悶，是還沒被聽見的話。", "允許自己慢，允許自己感受。", "呼吸順了，心也會跟著鬆開。", "你值得，好好地活著，而不只是撐著。"]}, "depleted-upperback": {"title": "前傾的負荷者", "sub": "上背耗竭型", "heart": ["你總是向前傾著，朝向責任與他人。", "把自己縮小，好讓事情順利進行。", "你習慣承接，很少表達自己的需要。", "久了，連挺直腰桿都覺得陌生。", "你需要的，是重新把自己撐起來。"], "body": "你的上背、兩片肩胛之間痠脹沉重，像背著一個看不見的重物。圓肩駝背讓胸椎肌群一直被拉長、硬撐著，連帶頸子前傾、肩膀內扣。久坐之後特別明顯，想挺直卻挺不了多久就又垮下來。這是長期前傾、長期承擔的姿勢，慢慢刻進了你的背。", "soul": ["把背挺起來，不只是姿勢，是態度。", "你不需要為了別人，把自己縮小。", "重量可以放下，視線可以抬高。", "給自己一個舒展開來的空間。", "你本來就值得，好好地存在。", "抬起頭，世界其實很寬。"]}, "depleted-core": {"title": "失根的支撐者", "sub": "核心耗竭型", "heart": ["你撐起了很多人，卻很少被人撐著。", "你習慣當那個穩定的、可靠的角色。", "脆弱的時候，你也假裝沒事。", "你怕一旦倒下，一切就散了。", "你需要的，是允許自己也被接住。"], "body": "你的核心使不上力，腰常常痠，肚子一帶總覺得虛軟、撐不住。深層的穩定肌群長期過勞卻無法有效啟動，讓腰椎少了支撐，連帶背部代償性地更緊。坐久、站久都覺得身體中段快要散掉，像一棵中空的樹。這是核心在輕聲求救：它撐得太久了。", "soul": ["你不必一直當那個撐住一切的人。", "先把自己穩住，才能穩住別人。", "允許自己依靠，允許自己脆弱。", "力量，從重新好好呼吸開始。", "找回中心，你就找回了自己。", "你值得，被穩穩地接住。"]}, "depleted-lowerback": {"title": "失落的前行者", "sub": "腰背耗竭型", "heart": ["你習慣把別人的事，當成自己的責任。", "說「沒事」，是你最熟悉的回應。", "累了，你也只說「還可以」。", "你把自己排在最後，久到忘了原來的位置。", "你不是不夠努力，只是太少為自己而活。"], "body": "你的腰痠脹沉重，久坐久站之後更明顯，早上起床時特別僵硬。整條後背像繃了太久的弓弦，從腰一路緊到臀部、腿後，連後頸都跟著沉。彎腰會卡、久坐後站起來要緩一下才能直起身。這不是你不夠努力，是你的身體，太久沒有真正休息過。", "soul": ["試著放下，不必要的承擔。", "不是每個課題，都該由你扛。", "別人的重量，可以還給別人。", "你值得，先把自己接住。", "鬆開，不是放棄，是走得更遠。", "把自己，放回生活的中心。"]}, "depleted-hip": {"title": "過勞的中流者", "sub": "髖部耗竭型", "heart": ["你是那個讓一切順暢運轉的人。", "上上下下的需求，都靠你來協調。", "你習慣居中，承接各方的重量。", "穩住全局，卻很少有人問你累不累。", "你需要的，是讓自己也有喘息的時候。"], "body": "你的臀部與髖周圍痠脹無力，走久了特別明顯，連站著都覺得髖在使力撐著。臀肌長期過度負荷，骨盆穩定耗掉太多能量，連帶腰和大腿也跟著代償變緊。久坐後起身會卡、爬樓梯覺得髖沉重。這是身體的中樞——那個連接上下、維持平衡的樞紐——累了。", "soul": ["你不必一直，是那個維持平衡的人。", "偶爾失衡一下，世界不會崩塌。", "把穩定，先留一點給自己。", "放慢樞紐的轉動，喘口氣。", "你也需要，被好好照顧。", "停下來，是為了走更長的路。"]}, "depleted-thigh": {"title": "拉鋸的奔走者", "sub": "大腿耗竭型", "heart": ["你一直在前進，很少問自己累不累。", "停下來，反而讓你覺得不安。", "你習慣往前衝，怕落後、怕被超越。", "一邊催促自己，一邊又踩著煞車。", "你需要的，是允許自己慢下腳步。"], "body": "你的大腿前後都緊，久走久站特別痠，有時連坐著都覺得緊繃。股四頭與膕繩肌長期共同收縮、前後拉力失衡，像同時踩著油門和煞車，連帶膝蓋和髖都跟著費力。運動後、走遠路後特別明顯，腿像灌了鉛。這是不斷往前、不斷代償的步態，留下的疲勞。", "soul": ["不是每一步，都要那麼用力。", "停下來，不代表你會被超越。", "給雙腿、也給自己一個喘息。", "放鬆，才能走得更遠更久。", "你已經走了很遠很遠了。", "慢下來，也是一種勇敢。"]}, "depleted-knee": {"title": "代償的行路者", "sub": "膝部耗竭型", "heart": ["你總是替別人多想一步、多做一點。", "不屬於你的責任，你也默默接下。", "你怕拒絕會傷了和氣，於是照單全收。", "久了，連自己的負荷都忘了喊停。", "你需要的，是把多餘的承擔放下。"], "body": "你的膝蓋痠軟、上下樓梯無力，但去檢查又說沒什麼大問題。這常常是髖和腳踝沒做好的工作，全推給了膝蓋承受，連帶大腿肌群也跟著緊繃代償。走久、站久、下坡時特別明顯，膝蓋周圍痠脹卻說不清痛點。膝周肌群持續穩定耗能，這是過勞，不是結構真的壞了。", "soul": ["你不必，替所有人承擔結果。", "把不屬於你的責任，輕輕放下。", "膝蓋會痠，是因為你扛得太多。", "學會說「不」，也是一種溫柔。", "先照顧好自己的每一步。", "你的善良，不該變成負擔。"]}, "depleted-lowerleg": {"title": "沉默的站立者", "sub": "小腿耗竭型", "heart": ["你總是站著、撐著，不輕易倒下。", "再累，你也咬牙撐完每一天。", "你習慣硬扛，連喊累都覺得多餘。", "日復一日的堅持，沒人看見。", "你需要的，是允許自己偶爾坐下來。"], "body": "你的小腿緊繃沉重，傍晚特別明顯，有時夜裡還會抽筋。小腿三頭肌長期維持姿勢的離心負荷，讓「腿很沉」成了日常，連帶腳踝和足底也跟著緊。站久、走久之後，脫了鞋還是覺得腫脹痠重。這是長時間站立、行走的雙腿，默默承受的代價。", "soul": ["你不必一直站著，撐住一切。", "坐下來休息，不是示弱。", "讓雙腿，也有放鬆的時候。", "把重心，偶爾交給別人。", "你的堅持，已經被看見了。", "歇一會兒，路還很長。"]}, "depleted-foot": {"title": "疲憊的承載者", "sub": "足部耗竭型", "heart": ["你撐起了全身的重量，從最底層開始。", "你總是默默承載，很少喊累。", "你習慣當那個踏實、可靠的根基。", "再重的擔子，你也穩穩接住。", "你需要的，是讓自己真正放鬆一次。"], "body": "你的腳底痠脹、足弓無力，站久走久特別明顯，有時早上踩地的第一步會緊。足底筋膜長期高張、內在足肌疲勞，讓支撐力下降，連帶小腿和膝蓋也跟著代償。一整天下來，雙腳像灌了鉛，回到家只想把腳抬高。這是全身最底層的根基，發出的疲態訊號。", "soul": ["你的根基，也需要被好好對待。", "偶爾脫下鞋，讓腳自由呼吸。", "承載了這麼久，真的該休息了。", "把重量，暫時放下一些。", "照顧好雙腳，你才走得遠。", "穩穩站著的你，值得被疼惜。"]}, "depleted-arm": {"title": "不停歇的勞動者", "sub": "手臂耗竭型", "heart": ["你的雙手，幾乎沒有停下來過。", "凡事親力親為，你才覺得安心。", "你怕假手他人會出錯，於是全包了。", "「我自己來比較快」成了習慣。", "你需要的，是讓雙手也有歇息的時候。"], "body": "你的手臂、前臂痠脹無力，握東西久了會痛，有時連手腕都跟著痠軟。前臂肌群長期重複使用過勞，做事做到一半就覺得手沒力、撐不住。提重物、打字、滑手機久了特別明顯，甩一甩才舒服一點。但這份累的根源，常常在頸椎和胸椎，而不只是手臂本身。", "soul": ["不是每件事，都要親手完成。", "讓雙手休息，是對自己的善待。", "放下，也是一種能力與智慧。", "偶爾把工作，交出去一些。", "你的價值，不在於做了多少。", "停下來的你，依然很好。"]}, "guarded-head": {"title": "緊繃的守夜者", "sub": "頭頸戒備型", "heart": ["你總是預想最壞的情況，提前準備。", "放鬆對你來說，反而讓你不安。", "你習慣警覺，怕一鬆懈就出差錯。", "腦袋像一直開著的雷達，掃個不停。", "你需要的，是一個「現在很安全」的訊號。"], "body": "你的太陽穴、下顎時常緊繃，可能會不自覺磨牙、咬緊，引發緊縮性頭痛，連睡覺時都咬著牙。交感神經過度活化，讓頭臉部的肌肉一直收著、放不掉，連帶後頸和肩膀也緊。壓力一來、事情一多就更明顯，醒來下巴痠、太陽穴脹。這份緊，和那份揮之不去的警覺與壓力，緊緊綁在一起。", "soul": ["告訴自己：現在，是安全的。", "不是每件事，都需要你提防。", "把警戒，暫時調低一格。", "你可以放心地，鬆開緊咬的下巴。", "世界，沒有你想的那麼危險。", "閉上眼，讓自己真正休息。"]}, "guarded-neck": {"title": "戒備的瞭望者", "sub": "頸源戒備型", "heart": ["你總是繃著，準備應對下一件事。", "你習慣隨時待命，難得真正放鬆。", "你怕措手不及，於是時刻警醒。", "連休息時，腦中都還在盤算。", "你需要的，是允許自己卸下防備。"], "body": "你的脖子又緊又僵，轉頭受限，但奇怪的是——放鬆躺著的時候其實轉得動。這是神經在保護性地限制活動，頸部肌肉繃著守著，連帶肩膀也聳起來。緊張時、專注時、開車久了特別明顯，整個後頸像鎖住一樣。不是頸子壞了，是它一直在戒備，不敢真正放鬆下來。", "soul": ["你可以放下，不必時時警戒。", "轉個頭看看，世界依然安好。", "把防備，輕輕地放下來。", "安全感，是可以重新建立的。", "你已經夠警醒了，現在能休息。", "鬆開脖子，也鬆開那根弦。"]}, "guarded-shoulder": {"title": "築牆的防衛者", "sub": "肩帶戒備型", "heart": ["面對壓力，你習慣先把自己護住。", "你在心裡築了牆，不輕易讓人靠近。", "你怕受傷，於是先一步武裝起來。", "聳起的肩，是你無聲的防禦。", "你需要的，是相信卸下防衛也安全。"], "body": "你的肩膀緊繃高聳，主動抬手或轉肩有點卡，但被動放鬆時其實活動正常。這是肩帶的保護性高張——神經繃著守著，連帶頸子和上背也跟著緊。壓力大、情緒緊繃時肩膀就不自覺往上聳，連睡覺都鬆不下來。不是結構壞了，是你的肩膀，替你築起了一道隨時戒備的防線。", "soul": ["牆，是可以慢慢拆下來的。", "不是每個人，都會傷害你。", "把肩膀放下，把心打開一點。", "保護自己，也別困住自己。", "你值得，在放鬆中感到安全。", "卸下盔甲，你依然強壯。"]}, "guarded-chest": {"title": "屏息的警戒者", "sub": "胸廓戒備型", "heart": ["你常常不自覺地，屏著一口氣。", "心裡好像一直懸著什麼，放不下。", "你習慣緊張，連平靜都讓你不踏實。", "身體繃著，像在等待某件壞事。", "你需要的，是一次徹底的、安心的放鬆。"], "body": "你的胸口悶緊、呼吸短淺，有時會莫名心悸或覺得喘不過氣，吸氣總像吸不滿。交感神經讓胸廓一直收縮著，連帶肩頸和上背也緊繃代償。焦慮、緊張、心裡懸著事情的時候特別明顯，胸口像被一隻手輕輕掐著。這份緊，常常和揮之不去的不安，連在一起。", "soul": ["慢慢地，把那口氣吐出來。", "你是安全的，可以放鬆呼吸。", "把胸口的緊，一點一點鬆開。", "焦慮會過去，平靜會回來。", "此刻，你只需要好好呼吸。", "把懸著的心，輕輕放下。"]}, "guarded-upperback": {"title": "僵直的戒護者", "sub": "上背戒備型", "heart": ["你習慣硬撐，不讓自己崩塌。", "再難，你也咬牙挺著一道防線。", "你怕一旦軟下來，就會全部垮掉。", "你把脆弱藏好，只露出堅強。", "你需要的，是相信鬆開也不會倒。"], "body": "你的上背僵硬緊繃，轉身、後仰都覺得卡，但這常常是保護性的僵硬，不是關節真的卡死。胸椎在戒備地收著，像替你撐住一道隨時會倒的牆，連帶頸子和腰也跟著代償。壓力大、撐著硬扛的時候特別明顯，整片背繃得發痠。不是背壞了，是它太久沒有被允許鬆開。", "soul": ["鬆開，不會讓你崩塌。", "你不需要一直繃著那道防線。", "把背交給支撐，把心交給安全。", "僵硬的背後，是太久的緊張。", "現在，可以輕輕地放下了。", "你的堅強，不必時時證明。"]}, "guarded-core": {"title": "緊縮的把關者", "sub": "核心戒備型", "heart": ["面對不確定，你習慣先繃緊自己。", "你總在防備，怕失控、怕出錯。", "放鬆讓你不安，緊繃才有安全感。", "你把自己縮成一團，準備承受。", "你需要的，是學會在放鬆中找到力量。"], "body": "你的腹部時常不自覺繃緊，但真要用力時又使不上勁。這是過度的淺層用力，讓深層核心無法正確啟動，肚子總是硬硬的卻不穩，連帶腰背也跟著代償變緊。緊張時、面對不確定時特別明顯，肚子先繃起來防備。緊，並不等於穩——你的核心需要的是放鬆，而不是更用力。", "soul": ["真正的穩定，來自放鬆而非緊繃。", "把肚子鬆開，把呼吸放回來。", "你不必時時，防備著什麼。", "力量，藏在鬆開之後。", "安全感，是可以重新長出來的。", "放下武裝，你會更有力量。"]}, "guarded-lowerback": {"title": "警戒的守護者", "sub": "腰背戒備型", "heart": ["你的心裡，藏著一份說不出的恐懼。", "也許曾被傷過，於是你格外小心。", "你不自覺地避開某些事、某些人。", "你習慣防著，怕痛再次找上門。", "你需要的，是重新相信自己的力量。"], "body": "你的腰部緊繃僵硬，某些動作會「不敢做」，但放鬆躺著時其實能動。這是保護性的肌肉防衛，常見於曾經受傷之後的恐懼迴避，身體替你記住了那份痛，連帶臀部和大腿後側也跟著繃緊。彎腰、搬東西、做某個曾經痛過的動作時特別明顯。不是腰壞了，是它一直在小心翼翼地，守護著你。", "soul": ["你的身體，比你以為的更強壯。", "慢慢來，重新信任每一個動作。", "恐懼會過去，自由會回來。", "你不必，一直防著那份痛。", "溫柔地，把守護放下一些。", "過去的傷，不會定義現在的你。"]}, "guarded-hip": {"title": "緊鎖的護衛者", "sub": "髖部戒備型", "heart": ["你把最深的脆弱，藏得很深很深。", "你不輕易敞開，怕被人看穿。", "你習慣自我保護，連親近都保留。", "在最私密的地方，你築起了防線。", "你需要的，是允許自己被溫柔接住。"], "body": "你的髖部深處緊繃，旋轉、開合受限，但被動放鬆時活動其實正常。這是髖深層旋轉肌的保護性高張——守得太緊，動得就少，連帶腰和臀部也跟著緊。盤腿、蹲下、髖往外打開時特別卡。不是關節壞了，是你把最深處的脆弱，藏得很緊、守得很牢。", "soul": ["把最深的防衛，輕輕放下。", "你可以安全地，敞開一點點。", "脆弱，不是需要藏起來的東西。", "讓緊鎖的，慢慢鬆開。", "你值得，被溫柔地接住。", "打開一點，光就照進來了。"]}, "guarded-thigh": {"title": "繃緊的戒行者", "sub": "大腿戒備型", "heart": ["你總像隨時準備離開、準備應對。", "安定下來，反而讓你不踏實。", "你習慣警覺，怕被困住、怕受制。", "你的腿，記著想逃的衝動。", "你需要的，是讓自己安心地停留。"], "body": "你的大腿後側特別緊，彎腰摸不到腳，但躺著被動抬腿時其實角度正常。這是保護性的高張，常和腰椎的恐懼迴避連動，腿一直繃著像隨時準備起跑，連帶臀部和小腿也跟著緊。久坐後站起來、彎腰時特別明顯。不是肌肉真的短，是它一直警戒著，沒卸下那份緊張。", "soul": ["你可以，停下逃跑的姿態。", "腿的緊，是還沒卸下的警戒。", "慢慢來，讓自己相信安全。", "你不必，隨時準備離開。", "此刻，你可以安心地站著。", "這裡，是可以停留的地方。"]}, "guarded-knee": {"title": "戒慎的步行者", "sub": "膝部戒備型", "heart": ["你做事總是小心翼翼，怕出錯。", "也許曾經跌過，於是你格外謹慎。", "你不自覺地，避開可能的風險。", "「萬一」兩個字，常在你心裡盤旋。", "你需要的，是重新信任前進的勇氣。"], "body": "你的膝蓋「不敢用力」、不敢全蹲，但檢查活動度其實還好。這是損傷後的保護性共同收縮，膝周肌肉繃著守著，連帶大腿也跟著緊繃代償。下樓梯、蹲下、做某個曾經痛過的動作時特別明顯，膝蓋先「縮」起來防備。恐懼，默默限制了你的每一步——但你的膝蓋，其實比你想的可靠。", "soul": ["你的膝蓋，比你想的更可靠。", "一步一步，重新信任它。", "跌過，不代表會一直跌。", "慢慢把「不敢」換成「可以」。", "放心地，往前走。", "勇敢，是帶著怕還願意邁步。"]}, "guarded-lowerleg": {"title": "緊繃的踏地者", "sub": "小腿戒備型", "heart": ["你總像繃緊了弦，準備隨時反應。", "安穩落地，對你來說有點奢侈。", "你習慣警醒，怕一鬆懈就出事。", "你的腿，藏著沒卸下的緊張。", "你需要的，是讓自己安心地落地。"], "body": "你的小腿緊繃，腳踝向上屈（背屈）時主動受限，但被動扳其實能到。這是小腿的保護性高張，神經繃著守著，像隨時準備彈起來，連帶腳踝和足底也跟著緊。走路、站立、平衡時特別明顯，小腿總是繃著一股勁。不是肌肉真的縮短，是它一直警醒著，沒能安心落地。", "soul": ["你可以安心地，把腳放平。", "不必隨時，準備奔跑。", "讓小腿相信，地面是穩的。", "把戒備，一點一點鬆開。", "此刻，你可以好好站著。", "踏實落地，世界會接住你。"]}, "guarded-foot": {"title": "抓地的警覺者", "sub": "足部戒備型", "heart": ["你心裡，總有一份怕跌倒的不安。", "你習慣抓緊，怕失去立足之地。", "你不容易放鬆，怕一鬆就失控。", "你把不安，藏在了最底層。", "你需要的，是相信大地會接住你。"], "body": "你的腳趾常不自覺抓地，足底繃緊，內在足肌過度活化，連站著都不放鬆。這常是不穩的代償——身體怕跌，於是用力抓著地面，連帶小腿也跟著緊。站立、走路、平衡感不好時特別明顯，腳趾像要摳進地裡。這份用力的背後，藏著一份怕失去立足之地的不安。", "soul": ["放鬆腳趾，大地會接住你。", "你不會跌倒，可以鬆開了。", "把不安，交給穩固的地面。", "信任，從腳底開始。", "你站得，比你以為的更穩。", "鬆開了，反而更踏實。"]}, "guarded-arm": {"title": "緊握的防備者", "sub": "手臂戒備型", "heart": ["你總是握得太緊，怕失去掌控。", "放手對你來說，是件困難的事。", "你習慣抓著，怕鬆開就留不住。", "你的手，藏著放不下的執著。", "你需要的，是學會輕輕地鬆開。"], "body": "你的前臂緊繃、握力過度，有時手會發麻。前臂屈肌保護性高張，加上斜角肌緊縮可能壓迫到通往手的神經，連休息時手都不自覺握成拳，連帶肩頸也跟著緊。緊張、專注、用力抓握時特別明顯，鬆開後手指還僵著。這份緊握的背後，常常是一顆放不下、抓得太緊的心。", "soul": ["鬆開手掌，你不會失去什麼。", "握得太緊，反而留不住。", "把防備，從手心放下。", "學會放手，也是一種力量。", "你可以，輕輕地接住生活。", "張開手，才能擁抱更多。"]}, "empty-head": {"title": "飄離的思緒者", "sub": "頭頸空乏型", "heart": ["你常覺得，自己有點不在場。", "想得很多，卻很少真正感受。", "你活在腦袋裡，忘了回到身體。", "和自己之間，好像隔著一層霧。", "你需要的，是重新回到此刻的自己。"], "body": "你常感到頭暈、頭重腳輕、注意力渙散，像和身體有點脫節、飄飄的。頭部與頸部的本體感覺輸入下降，讓大腦對「自己在哪裡」感到模糊，連帶頸子也使不上穩定的力。累的時候、起身太快時、需要專注時特別明顯，整個人像隔著一層霧。這是身體與大腦之間的對話，變得模糊了。", "soul": ["回到身體，回到此刻。", "感受腳踩著地的踏實。", "你不只是，一顆漂浮的腦袋。", "慢慢地，把自己接回來。", "存在，從好好感受開始。", "此刻，就是你的歸處。"]}, "empty-neck": {"title": "失準的定位者", "sub": "頸源空乏型", "heart": ["你和自己之間，有了一點距離。", "你常感覺，抓不太住自己的狀態。", "你習慣忽略身體發出的訊號。", "久了，連自己怎麼了都說不清。", "你需要的，是重新與自己連線。"], "body": "你常覺得頭部位置怪怪的、頸子使不上力，可能伴隨頭暈、昏沉。頸部深層肌肉失能，讓頭與身體的位置感知變得模糊，像一根收訊不良的天線，連帶肩膀也跟著代償。轉頭、起身、長時間維持同一姿勢時特別明顯。這是頸子和大腦之間的訊號，變得不太清晰了。", "soul": ["慢慢地，找回身體的座標。", "你和自己的距離，可以縮短。", "感受頸子，感受頭的重量。", "重新連線，重新安定。", "你會找回，屬於你的中心。", "傾聽身體，它一直在說話。"]}, "empty-shoulder": {"title": "失控的舉重者", "sub": "肩帶空乏型", "heart": ["你常覺得，使不出原本的自己。", "想做好卻力不從心，有點挫折。", "你習慣責怪自己不夠努力。", "其實是身體的訊號，斷了線。", "你需要的，是溫柔地重新認識自己。"], "body": "你的肩膀使不上力、抬手不順，肩胛骨會不自覺亂動（翼狀肩）。前鋸肌等控制肌群失能，讓肩部動作失去精準，想穩卻晃、想用力卻空，連帶頸子也跟著代償。舉手、推東西、需要肩膀穩定發力時特別明顯。這不是你不夠努力，是肩膀和大腦的連結，斷了線。", "soul": ["重新感受，肩膀的每一個動作。", "慢，是為了找回精準。", "喚醒那份沉睡的連結。", "力量會回來，控制會回來。", "你和身體，會重新合拍。", "別急，溫柔地陪自己練習。"]}, "empty-chest": {"title": "無感的呼吸者", "sub": "胸廓空乏型", "heart": ["你太久，沒有好好感受一口氣。", "情緒來了，你也常常無感。", "你習慣壓抑，連快樂都淡淡的。", "和內在的連結，悄悄變弱了。", "你需要的，是重新感受活著的感覺。"], "body": "你的呼吸淺而無力，胸口擴張感不明顯，常覺得吸不滿、像只用了一半的肺。橫隔膜的本體感覺下降，讓呼吸變得無感而表淺，連帶肩頸代償性地出力。疲累時、情緒低落時、需要深呼吸時特別明顯，吸氣到一半就停了。這是身體與內在的連結，悄悄變弱的訊號。", "soul": ["把手放在胸口，感受起伏。", "重新認識，每一次呼吸。", "你的氣息，值得被好好感受。", "慢慢地，把覺察找回來。", "呼吸在，你就在。", "感受，是活著最溫柔的證明。"]}, "empty-upperback": {"title": "失覺的挺立者", "sub": "上背空乏型", "heart": ["你常不知不覺，就垮了下來。", "你對自己的狀態，後知後覺。", "你習慣撐著，卻沒察覺已經累了。", "和身體的對話，越來越少。", "你需要的，是重新覺察自己的姿態。"], "body": "你常不自覺駝背圓肩，別人提醒了才發現，自己卻沒什麼感覺。胸椎段的本體感覺輸入不足，讓姿勢覺察下降，挺直變成一件需要刻意提醒的事，連帶頸子前傾、肩膀內扣。久坐、放鬆下來、專注做事時特別明顯，回神才發現又垮了。這是你和自己姿態之間，淡掉的覺察。", "soul": ["重新感受，背挺直的樣子。", "覺察，是改變的第一步。", "你值得，被自己好好看見。", "把姿態，一點一點找回來。", "站直了，世界也不一樣了。", "看見自己，就是溫柔的開始。"]}, "empty-core": {"title": "失根的漂浮者", "sub": "核心空乏型", "heart": ["你常覺得，少了一個中心、一個依靠。", "你飄著，找不到讓自己安定的支點。", "你習慣往外尋找，卻忽略了內在。", "和自己最深的連結，淡了。", "你需要的，是重新找回身體的根。"], "body": "你的核心使不上力、腰常覺得空虛無力，坐久站久都撐不住。深層核心的本體感覺失能，讓腰椎失去穩定的感知基礎，像一棵根扎不深的樹，連帶背部代償性地更緊。需要出力、維持姿勢、保持穩定時特別明顯，身體中段像沒有中心。這是你與身體最深處的連結，淡了。", "soul": ["重新找回，身體的中心。", "根，是可以重新長出來的。", "感受核心，感受呼吸。", "穩定，從覺察自己開始。", "你會重新，站得安穩。", "向內扎根，你就不再漂浮。"]}, "empty-lowerback": {"title": "斷線的支柱者", "sub": "腰背空乏型", "heart": ["你的某一部分，好像被自己關起來了。", "曾經的痛，讓你選擇不去感受。", "你習慣忽略，怕碰觸就會痛。", "久了，連那裡的存在都淡忘了。", "你需要的，是溫柔地重新喚醒自己。"], "body": "你的腰使不上力、節段穩定感差，常見於慢性腰痛之後。多裂肌萎縮或被抑制，讓腰椎的本體感覺下降，那一帶變得有點「無感」，像被悄悄關機，連帶周圍肌肉代償變緊。搬東西、轉身、需要腰部穩定時特別明顯，使不出該有的力。這是身體把痛過的地方，輕輕關了起來。", "soul": ["重新連線，重新感受腰的存在。", "沉睡的，可以被溫柔喚醒。", "你的身體，從沒放棄過你。", "慢慢地，把感覺找回來。", "你會重新，挺直腰桿。", "回到自己，從不嫌晚。"]}, "empty-hip": {"title": "沉睡的核心者", "sub": "髖部空乏型", "heart": ["你內在的力量，好像睡著了。", "你習慣用別的方式，硬撐過去。", "你忘了自己其實，擁有更多力量。", "和真實的自己，斷了聯繫。", "你需要的，是喚醒沉睡的那份力量。"], "body": "你的臀部使不上力，走路、爬樓都用不到屁股，反而腰和大腿更累。髖的本體感覺下降，臀肌啟動失能，像一身力氣卻找不到開關，連帶腰背代償性地痠。爬樓梯、起身、需要臀部發力時特別明顯，總是別的地方先出力。這是你內在的力量，還在沉睡的訊號。", "soul": ["喚醒，沉睡的力量。", "你的身體，藏著未用的能量。", "重新感受，臀部的存在。", "把代償還回去，把力量找回來。", "醒來吧，你會更有力。", "你比自己想的，更強大。"]}, "empty-thigh": {"title": "失力的行走者", "sub": "大腿空乏型", "heart": ["你常覺得，使不出原本的力氣。", "想往前卻空空的，有點無力。", "你習慣怪自己，卻不知是連結斷了。", "和身體的對話，需要重新建立。", "你需要的，是耐心地陪自己找回來。"], "body": "你的大腿使不上力、發軟，蹲下站起都覺得虛，常見於術後或長期不活動之後。股四頭、膕繩肌的本體感覺下降，讓大腿「想用力卻找不到力」，連帶膝蓋也跟著不穩。蹲、跳、爬坡、需要腿部力量時特別明顯，腿像不太聽使喚。這是身體與雙腿之間的對話，需要重新建立。", "soul": ["重新喚醒，雙腿的力量。", "空乏，只是暫時的。", "一步一步，把感覺練回來。", "身體會記起，怎麼用力。", "你會重新，穩穩站起。", "陪自己慢慢來，會好的。"]}, "empty-knee": {"title": "失覺的支點者", "sub": "膝部空乏型", "heart": ["你常覺得不踏實，卻說不出為什麼。", "曾經的傷，讓你對自己沒了把握。", "你習慣小心，怕再次失去平衡。", "和身體的信任，需要重新建立。", "你需要的，是重新相信自己站得穩。"], "body": "你的膝蓋有不穩感、位置感差，常見於扭傷之後。關節本體感覺受體失能，讓膝蓋「不知道自己在哪」，這份不穩來自感覺而非力量，連帶整條腿都跟著小心翼翼。走不平的路、下樓梯、單腳支撐時特別明顯，膝蓋像踩不準。這是受過傷的關節，還沒找回對自己的把握。", "soul": ["重新教膝蓋，認識自己的位置。", "穩定，從覺察開始。", "受過傷的，可以重新強壯。", "慢慢練習，慢慢信任。", "你會重新，穩穩落地。", "身體的智慧，正在回來。"]}, "empty-lowerleg": {"title": "模糊的立足者", "sub": "小腿空乏型", "heart": ["你常覺得，腳下不太踏實。", "你對自己的穩定，沒什麼把握。", "曾經反覆的挫折，磨掉了信心。", "和身體的信任，變得模糊。", "你需要的，是重新建立踏實的感覺。"], "body": "你的腳踝位置感模糊、容易再次扭傷，常見於慢性踝關節不穩。小腿與踝的本體感覺下降，讓「踩穩」變成一件不確定的事，像踩在棉花上，連帶小腿也跟著緊張代償。走不平的路、快走、轉向時特別明顯，腳踝像隨時會晃掉。這是反覆受挫的腳踝，對自己失去了把握。", "soul": ["重新感受，腳踝的每一個角度。", "穩，從清晰的感覺開始。", "反覆受挫的，可以重新可靠。", "慢慢練，慢慢穩。", "你會重新，踏實落地。", "腳下的地，一直都在。"]}, "empty-foot": {"title": "失根的踏地者", "sub": "足部空乏型", "heart": ["你和踏實的感覺，有點疏遠了。", "你常覺得，少了一份穩穩的依靠。", "你習慣往前看，忘了感受腳下。", "和最底層的自己，斷了連結。", "你需要的，是重新和大地連線。"], "body": "你的腳底感覺遲鈍、踩地不踏實，影響整體平衡。足底的本體感覺受體減敏，讓「站穩」的基礎變弱，根基模糊，全身都跟著飄，連帶小腿和膝蓋也跟著代償出力。閉眼站、走不平的地面、需要平衡時特別明顯，腳下像少了一層感覺。這是你與大地最底層的連結，疏遠了。", "soul": ["赤腳走走，喚醒腳底的感覺。", "重新和大地，建立連結。", "根清晰了，人就穩了。", "感受每一次，踩地的踏實。", "你的根基，可以重新扎實。", "回到地面，你就回到了自己。"]}, "empty-arm": {"title": "失聯的執行者", "sub": "手臂空乏型", "heart": ["你常覺得，手不太聽自己使喚。", "想做好卻不順，有點氣餒。", "你習慣責怪自己，其實是連結斷了。", "和身體的默契，需要重新培養。", "你需要的，是耐心地重新認識自己。"], "body": "你的手臂、手部位置感模糊，精細動作變差、使力不準，常見於神經壓迫之後。上肢本體感覺下降，讓手「不太聽話」，做事容易出錯或掉東西，連帶肩頸代償性地緊。寫字、扣釦子、需要精細控制時特別明顯，手像隔了一層。這是手與大腦之間的默契，需要重新培養。", "soul": ["重新連線，手與心的對話。", "慢，是為了找回精準。", "沉睡的神經，可以被喚醒。", "一點一點，把控制找回來。", "你的雙手，會重新靈活。", "溫柔陪伴自己，重新熟悉。"]}, "drifting-head": {"title": "眩暈的尋向者", "sub": "頭頸漂移型", "heart": ["你常覺得，生活轉得太快、抓不住。", "方向感模糊，不知道該往哪走。", "你努力穩住，卻越穩越疲憊。", "外在一直變動，你跟著team團轉。", "你需要的，是讓自己重新找到方向。"], "body": "你常頭暈、看東西會晃（視覺動暈），轉頭或低頭特別明顯，世界像在輕輕搖晃。前庭與頸部本體感覺的整合失調，讓大腦對「頭在哪」感到混亂，連帶頸肩緊張代償。起身、轉頭、在人多或晃動的環境裡特別明顯，得停下來才能穩。這是身體用來定位方向的幾個系統，還沒對好頻率。", "soul": ["慢慢來，世界會穩下來。", "不必急著，抓住每一個方向。", "讓身體，重新找到平衡。", "暈眩會過去，清晰會回來。", "你會重新，看清前方的路。", "停一下，方向自然浮現。"]}, "drifting-neck": {"title": "失衡的轉向者", "sub": "頸源漂移型", "heart": ["你常覺得，一轉變就讓你不安。", "面對改變，你容易失去重心。", "你小心翼翼，怕一動就出錯。", "你渴望安定，世界卻一直在轉。", "你需要的，是在變動中找回穩定。"], "body": "你轉頭或改變姿勢時容易暈，平衡感不穩。頸部本體感覺與前庭系統衝突，讓大腦在定位時產生混亂，一個轉身就有點天旋地轉，連帶肩頸繃緊代償。低頭、抬頭、快速轉向時特別明顯，動作得放慢才安心。這是頸子的訊號和平衡系統，彼此打架的結果。", "soul": ["慢慢轉，慢慢穩。", "讓自己，和變動重新和好。", "不必害怕，每一個轉身。", "身體會學會，重新協調。", "你會找回，移動的自在。", "改變之中，也有你的定錨。"]}, "drifting-shoulder": {"title": "漂移的舉臂者", "sub": "肩帶漂移型", "heart": ["你伸手去夠目標時，總覺得不踏實。", "你想抓住什麼，卻使不上穩定的力。", "你習慣避開，沒把握的事先不碰。", "失去參考點，讓你越來越保守。", "你需要的，是重新相信自己能掌握。"], "body": "你過頭的動作（拿高處、舉手）感覺不穩、不受控，肩胛節律會亂掉。肩帶在動態中失去穩定參考，讓上肢動作飄移不定，伸手像在空中找支點，連帶頸子代償性地緊。舉重物過頭、丟接、需要肩膀在空中穩定時特別明顯。這是肩膀在動態裡，失去了它的參考點。", "soul": ["慢慢練，找回動態的穩。", "穩定，是可以重新建立的。", "不必避開，只需重新學習。", "一個動作，一個動作來。", "你會重新，穩穩舉起。", "伸出手，你抓得住的。"]}, "drifting-chest": {"title": "失序的呼吸者", "sub": "胸廓漂移型", "heart": ["你常覺得，內在的節奏亂了套。", "呼吸和心情，各走各的調。", "你想穩下來，卻找不到拍子。", "身心之間，少了一點協調。", "你需要的，是重新找回自己的節奏。"], "body": "你動態活動時覺得核心不穩、使不上力，呼吸與動作沒有配合好。呼吸與姿勢穩定的耦合失調，讓身體在動作中失去穩定的基礎，像走路忘了擺手，連帶腰背代償。運動、出力、需要邊呼吸邊動作時特別明顯，使力總對不上拍子。這是你的呼吸和身體的穩定，各走各的調。", "soul": ["讓呼吸，回到動作裡。", "吸氣穩住，吐氣放鬆。", "身體會重新，找到節奏。", "慢下來，重新協調身心。", "你會重新，動得從容。", "找回拍子，一切就順了。"]}, "drifting-upperback": {"title": "搖擺的軸心者", "sub": "上背漂移型", "heart": ["你常覺得，自己沒有穩固的中心。", "面對轉變，你容易跟著搖擺。", "你想堅定，卻找不到那根軸。", "缺了中心，做什麼都不踏實。", "你需要的，是重建內在的穩定軸。"], "body": "你轉身、旋轉時軀幹會晃、不受控，上背失去作為穩定軸心的功能。胸椎在動態中無法提供中軸支撐，讓旋轉動作漂移，轉個身像沒了主心骨，連帶腰部代償性地用力。轉身拿東西、揮動、需要軀幹旋轉時特別明顯。這是身體的中軸，失去了它該有的穩定。", "soul": ["找回身體的中軸。", "穩住核心，再轉動四肢。", "軸穩了，動作就準了。", "慢慢練習，慢慢協調。", "你會重新，轉得從容。", "有了中心，搖擺也不怕。"]}, "drifting-core": {"title": "失序的掌舵者", "sub": "核心漂移型", "heart": ["你常覺得，總是慢了世界半拍。", "還沒準備好，事情就來了。", "你疲於追趕，卻總是來不及。", "你渴望掌控，卻抓不住節奏。", "你需要的，是重新拿回自己的步調。"], "body": "你做動作時核心反應慢半拍，動作飄、不受控，單腳或變向時特別明顯。預期性姿勢調整失能，核心無法在動作開始前預先穩定，像掌舵慢了一步的船，連帶四肢代償性地出力。轉身、變向、突然的動作、需要快速反應時特別明顯。這是身體的「預備」機制，慢了世界半拍。", "soul": ["慢下來，讓核心先就位。", "穩，來自正確的時序。", "身體會重新，學會預備。", "一個動作，一個動作校準。", "你會重新，穩穩掌舵。", "拿回步調，你就是船長。"]}, "drifting-lowerback": {"title": "失中的平衡者", "sub": "腰背漂移型", "heart": ["你常覺得，找不到自己的中心線。", "動起來，就容易失去重心。", "你想穩住，卻不知該依靠哪裡。", "缺了中立的支點，你很費力。", "你需要的，是重新找回核心的依靠。"], "body": "你動態活動時腰椎失去中立位控制、覺得不穩，搬東西或轉身時特別明顯。腰椎-骨盆的動態控制失調，讓核心無法穩定支撐動作，腰像沒對準的轉軸，連帶背部和髖代償。彎腰搬重物、轉身、需要腰部穩定發力時特別明顯。這是身體在動的時候，找不到自己的中心線。", "soul": ["找回腰的中立，找回中心。", "穩定，從骨盆開始。", "慢慢練，慢慢控制。", "身體會重新，學會平衡。", "你會重新，動得安穩。", "有了中心，再動都從容。"]}, "drifting-hip": {"title": "傾斜的單立者", "sub": "髖部漂移型", "heart": ["你獨自面對時，總覺得站不太穩。", "少了支撐，你容易往一邊傾。", "你習慣依賴，怕一個人撐不住。", "你渴望穩定，卻使不出那份力。", "你需要的，是相信自己能獨立站穩。"], "body": "你單腳站不穩、骨盆會往一側下塌，走路可能左右晃。臀中肌的穩定時序出問題，讓單腳負重失去支撐，獨自站立像少了一根支柱，連帶腰和膝代償。單腳站、走路、上下樓梯時特別明顯，重心總往一邊偏。這是髖在你獨自支撐時，使不出那份穩定的力。", "soul": ["慢慢練，找回單腳的穩。", "穩定，藏在臀部的力量裡。", "一邊一邊，重新平衡。", "身體會學會，穩穩站立。", "你會重新，獨立而穩定。", "一個人，也能站得很穩。"]}, "drifting-thigh": {"title": "不穩的落地者", "sub": "大腿漂移型", "heart": ["你每一次落地，都有點不安。", "面對衝擊，你穩不住自己。", "你習慣放慢、避開有風險的事。", "失去穩定，讓你越來越退縮。", "你需要的，是重新相信自己接得住。"], "body": "你跳躍落地、變向時大腿穩不住、會晃，運動時特別明顯。大腿在動態負重中失去穩定貢獻，讓落地和變向變得不受控，像踩不穩的彈簧，連帶膝蓋跟著晃。跑、跳、急停、變換方向時特別明顯，落地總有點不踏實。這是雙腿在面對衝擊時，穩不住自己。", "soul": ["慢慢練，找回落地的穩。", "力量，要在動態中重新學。", "一次一次，重新協調。", "身體會記起，怎麼穩住。", "你會重新，落地生根。", "穩穩接住自己，你做得到。"]}, "drifting-knee": {"title": "內扣的迷向者", "sub": "膝部漂移型", "heart": ["你常覺得，方向總是偏掉了。", "你想走直，卻不自覺地歪斜。", "你替別人承接了太多的偏移。", "失去方向，讓你越來越累。", "你需要的，是重新對齊自己的路。"], "body": "你單腳蹲、落地時膝蓋會往內倒（動態膝外翻），不穩又怕痛。這是髖與踝的整合失能，讓膝蓋在動態中失去方向控制，膝蓋替上下的失準扛下了壓力，連帶大腿代償。單腳蹲、跳躍落地、跑步時特別明顯，膝蓋總是歪向內側。這不是膝蓋的錯——是它替上下沒接好的力，承受了偏移。", "soul": ["膝蓋的偏，來自上下沒接好。", "穩住髖，穩住踝，膝就正了。", "慢慢練，重新對齊整條腿。", "這不是膝蓋的錯。", "你會重新，走得端正。", "對齊了自己，路就直了。"]}, "drifting-lowerleg": {"title": "搖晃的平衡者", "sub": "小腿漂移型", "heart": ["你常覺得，站著站著就晃了。", "要很用力，才能維持平衡。", "你習慣緊張，怕一鬆就跌。", "維持穩定，耗掉你太多力氣。", "你需要的，是讓平衡變得自然輕鬆。"], "body": "你站立平衡時搖晃明顯，閉眼更不穩，單腳站撐不久。踝關節的動態穩定失能，本體感覺與前庭整合不良，讓平衡變得吃力，站著像在微微搖擺，連帶小腿緊張代償。閉眼、單腳站、站在不平的地面時特別明顯，得很用力才穩得住。這是腳踝在維持平衡時，耗掉了太多力氣。", "soul": ["慢慢練，搖晃會減少。", "平衡，是可以練成的。", "睜眼閉眼，一步一步。", "身體會學會，輕鬆站立。", "你會重新，站得安定。", "平衡，會變成你的本能。"]}, "drifting-foot": {"title": "失基的佇立者", "sub": "足部漂移型", "heart": ["你太依賴外在，來確認自己的位置。", "少了參照，你就容易慌。", "你習慣往外看，忘了向內感受。", "失去根基，讓你心裡發虛。", "你需要的，是重新建立內在的穩定。"], "body": "你閉眼站立明顯變不穩，腳底給不了穩定的平衡基礎。足部的本體感覺與平衡功能失調，讓「站穩」變得依賴眼睛，閉上眼就像失去了地面，連帶全身代償性地緊。閉眼、走不平的路、光線昏暗時特別明顯，少了視覺就慌。這是你的根基，太依賴外在來確認自己的位置。", "soul": ["重新感受，腳底與大地。", "閉上眼，也能站得穩。", "根基，是可以重建的。", "慢慢練，慢慢扎根。", "你會重新，穩穩立足。", "向內的穩，才最可靠。"]}, "drifting-arm": {"title": "失衡的伸展者", "sub": "手臂漂移型", "heart": ["你面對挑戰時，少了一份從容。", "你想伸展自己，卻找不到平衡。", "你習慣繃緊，反而失去了協調。", "少了餘裕，讓你動作僵硬。", "你需要的，是重新找回舒展的自在。"], "body": "你平衡時手臂無法有效協助配重，整體平衡策略變差。上肢在動態平衡中的角色失能，讓身體少了一個重要的平衡幫手，像走鋼索少了那根平衡桿，連帶軀幹代償性地僵硬。單腳站、走窄路、需要伸展手臂維持平衡時特別明顯。這是雙手在你需要平衡時，沒能幫上忙。", "soul": ["讓雙手，回到平衡裡。", "張開手臂，找回配重。", "身體會重新，整合協調。", "慢慢練，慢慢穩。", "你會重新，平衡自如。", "舒展開來，你會更穩。"]}, "relocked-head": {"title": "緊閉的開合者", "sub": "頭頸反鎖型", "heart": ["你習慣咬牙撐著，把情緒鎖在裡面。", "很多話到嘴邊，又被你吞了回去。", "你日復一日，重複著同樣的緊繃。", "那些沒說出口的，都壓在咬合間。", "你需要的，是允許自己鬆口、表達。"], "body": "你的下顎開合受限、咀嚼緊繃，或顳顎關節卡卡作響、開口會痛。顳顎關節囊或枕寰關節真正活動受限，連帶後頸和顳肌也跟著緊，這是日積月累咬緊牙關留下的結構性緊縮。吃硬的東西、打哈欠、張大嘴時特別明顯，下巴像被卡住。這不是繃著而已，是關節真的到了邊界，需要實際的鬆動。", "soul": ["這道鎖，是你自己扣上的。", "所以，你也握著那把鑰匙。", "慢慢來，一點一點鬆開。", "把吞下的話，輕輕說出來。", "僵硬的，可以重新柔軟。", "打開，從願意開始。"]}, "relocked-neck": {"title": "卡住的回望者", "sub": "頸源反鎖型", "heart": ["你習慣固守，不輕易改變方向。", "某些事，你卡在那裡很久了。", "你重複著同樣的姿態與選擇。", "日子過得規律，卻也僵在那裡。", "你需要的，是允許自己轉個方向看看。"], "body": "你的脖子某個方向真的轉不到底，連放鬆躺著也轉不過去。下頸椎或C1-C2關節真正活動受限，連帶肩膀也跟著代償，這是長年固定姿勢砌起來的結構性限制。倒車回頭、轉向某一側、抬頭時特別明顯，到了一個角度就像撞牆。這不是神經繃著，是關節真的卡住了，需要關節鬆動。", "soul": ["卡住，是長年累積的結果。", "所以也需要時間，慢慢打開。", "一點一點，把活動找回來。", "僵硬，不是永久的狀態。", "你會重新，自在回望。", "轉個方向，會有新的風景。"]}, "relocked-shoulder": {"title": "凍結的展翅者", "sub": "肩帶反鎖型", "heart": ["你把自己，框在熟悉的範圍裡。", "想展開卻有顧慮，於是收著。", "你習慣壓抑想飛的衝動。", "久了，連伸展都變得陌生。", "你需要的，是允許自己重新張開。"], "body": "你的肩膀某些角度真的抬不起來、轉不動（如冰凍肩、真正的內旋受限），連被動都到不了。肩關節囊真正受限，連帶頸肩代償性地緊，這是慢慢凍結形成的。穿衣服、扣後面的釦子、舉手過頭、手往背後伸時特別明顯，到一個點就上不去。這需要時間與徒手治療，慢慢把凍結的關節融開。", "soul": ["凍結，是可以融化的。", "一天一點，慢慢展開。", "不急，給肩膀時間。", "僵硬的，會重新自由。", "你會重新，展翅高飛。", "張開雙臂，擁抱可能。"]}, "relocked-chest": {"title": "緊束的呼吸者", "sub": "胸廓反鎖型", "heart": ["你把心，包得緊緊的、不輕易打開。", "很多感受，你習慣收在胸口裡。", "你日復一日，維持著一樣的防備。", "那些壓著的情緒，讓你喘不開。", "你需要的，是允許自己敞開心胸。"], "body": "你深吸氣時胸廓擴不開、肋骨僵硬，呼吸幅度受限。肋椎、肋橫突關節真正僵硬，連帶胸椎和肩帶也跟著緊，這是長年姿勢與緊縮形成的結構限制。深呼吸、轉身、擴胸時特別明顯，胸口像被一條束帶綁著、打不開。這不是緊張而已，是肋骨真的卡住了，需要鬆動肋骨與胸椎。", "soul": ["解開束縛，讓呼吸自由。", "一點一點，把胸打開。", "僵硬的肋骨，會重新柔軟。", "給自己時間，慢慢鬆開。", "你會重新，深深呼吸。", "敞開了，心也輕了。"]}, "relocked-upperback": {"title": "僵封的轉身者", "sub": "上背反鎖型", "heart": ["你習慣維持原狀，不輕易回頭。", "很多改變的念頭，被你擱著。", "你重複著一樣的軌道與姿態。", "想轉身，卻發現自己僵在那裡。", "你需要的，是允許自己鬆動、改變。"], "body": "你的上背（胸椎）真的僵硬，轉身、後仰都卡，連放鬆時也動不開。胸椎關節真正受限，連帶頸子、肩膀、腰都跟著代償出力。轉身、後仰、深呼吸、把手舉高時特別明顯，整片背像鎖死了一樣。這是頸痛、肩痛、腰痛最常見、卻最少被注意的隱藏根源——鬆開它，全身都會跟著輕。", "soul": ["這道鎖，鎖住的不只是背。", "打開胸椎，全身都自由了。", "一點一點，把僵硬鬆開。", "它影響很大，也值得優先。", "你會重新，轉動自如。", "願意改變，就是鬆動的開始。"]}, "relocked-core": {"title": "緊縛的伸展者", "sub": "核心反鎖型", "heart": ["你把自己，裹在習慣的框架裡。", "想舒展，卻被無形的緊縛拉住。", "你日復一日，重複同樣的模式。", "那些累積的，把你綁得越來越緊。", "你需要的，是允許自己一層層鬆開。"], "body": "你的軀幹延展受限、轉身不暢，腹部一帶緊繃、伸展不開。腹部筋膜真正短縮或胸腰筋膜沾黏，限制了軀幹的延展，連帶腰背也跟著緊，這是長年累積一層層裹上的。後仰、側彎、伸懶腰、扭轉身體時特別明顯，到一個點就被拉住。這需要筋膜鬆動，讓沾黏的層次重新滑動開來。", "soul": ["緊縛，是可以鬆開的。", "一層一層，慢慢解開。", "給自己時間，重新流動。", "僵硬的，會重新柔軟。", "你會重新，舒展自如。", "鬆開了，才能伸展開來。"]}, "relocked-lowerback": {"title": "卡死的支柱者", "sub": "腰背反鎖型", "heart": ["你習慣硬撐，把問題擱在原地。", "想改變，卻不知從哪裡開始。", "你扛著的，常常不是自己的課題。", "日子卡在那裡，動彈不得。", "你需要的，是找對方向，重新鬆動。"], "body": "你的腰某些方向真的活動受限，彎腰或後仰到一個點就卡住。腰椎小面關節受限或胸腰筋膜短縮——但要先排除胸椎與髖的代償，腰常是替它們扛下了限制，連帶臀部也跟著緊。彎腰、後仰、轉身、久坐後起身時特別明顯。真正的根源可能在上面的胸椎、下面的髖，腰只是那個卡住的終點。", "soul": ["腰的卡，常常不是腰的錯。", "打開胸椎，打開髖。", "一點一點，還腰自由。", "找對根源，事半功倍。", "你會重新，挺直支柱。", "放對位置，重擔就輕了。"]}, "relocked-hip": {"title": "緊鎖的開展者", "sub": "髖部反鎖型", "heart": ["你把最深的自己，鎖得很緊。", "想敞開卻有顧慮，於是緊閉著。", "你習慣固守，不輕易讓人進來。", "久了，連自己都打不開那道門。", "你需要的，是允許自己慢慢開展。"], "body": "你的髖關節真的卡（如夾擠、關節退化），盤腿、深蹲明顯受限，被動也到不了。髖關節囊真正受限，連帶腰和大腿代償性地緊，這是結構層面的限制。盤腿坐、深蹲、跨大步、髖往外打開時特別明顯，到一個角度就被擋住。打開髖，下半身都會跟著輕盈——這需要局部評估與耐心的鬆動。", "soul": ["髖的鎖，需要耐心打開。", "一點一點，找回開展。", "給關節時間，慢慢鬆動。", "僵硬的，會重新靈活。", "你會重新，自在開合。", "敞開了，路就寬了。"]}, "relocked-thigh": {"title": "緊縮的邁步者", "sub": "大腿反鎖型", "heart": ["你習慣維持同一種步調過日子。", "想跨大步，卻被無形地拉住。", "你日復一日，重複同樣的節奏。", "那些固守，讓你越走越緊。", "你需要的，是允許自己換個步伐。"], "body": "你的大腿後側（或前側）真的緊，彎腰摸不到地，被動抬腿角度也受限。股四頭或膕繩肌真正短縮，連帶骨盆和膝蓋也跟著被拉緊，這是長年姿勢定型的結果。彎腰、抬腿、伸展、久坐後站起來時特別明顯，肌肉像被縮短了一截。這需要持續的延展，把定了型的肌肉慢慢重新拉長。", "soul": ["縮短，是慢慢形成的。", "所以也要慢慢，重新拉長。", "給肌肉時間，重新延展。", "僵硬的，會重新柔軟。", "你會重新，大步向前。", "換個步伐，路會更開闊。"]}, "relocked-knee": {"title": "卡鎖的屈伸者", "sub": "膝部反鎖型", "heart": ["你習慣停在原地，不輕易屈伸。", "想進想退，都覺得卡卡的。", "你重複著一樣的限制與顧慮。", "日子像卡住的關節，動不太了。", "你需要的，是允許自己重新活動。"], "body": "你的膝蓋彎曲或伸直真的受限，蹲不下去或伸不直，被動也到不了。膝關節囊真正受限（術後、關節退化），連帶大腿和小腿也跟著緊，這是結構性的限制。蹲下、上下樓梯、跪坐、把腿打直時特別明顯，到一個角度就卡住。這需要關節鬆動與循序漸進的活動度訓練，把卡住的關節慢慢打開。", "soul": ["卡住，是可以慢慢打開的。", "一度一度，把活動找回。", "給膝蓋時間，慢慢鬆動。", "僵硬的，會重新靈活。", "你會重新，屈伸自如。", "能屈能伸，路就活了。"]}, "relocked-lowerleg": {"title": "緊繃的蹬地者", "sub": "小腿反鎖型", "heart": ["你習慣繃緊，把自己撐在固定姿態。", "想放鬆，卻早已定型在那裡。", "你日復一日，重複同樣的緊繃。", "那些累積的，讓你蹬不開、放不下。", "你需要的，是允許自己慢慢鬆開。"], "body": "你的小腿真的緊，全蹲時腳跟離地、踝關節向上屈受限，被動扳也到不了。腓腸肌或比目魚肌真正短縮，連帶腳踝和足底也跟著緊，這是長年習慣定型的。全蹲、下樓梯、走下坡、腳尖朝上時特別明顯，腳跟總是落不下去。這需要持續的伸展與鬆動，把繃緊定型的小腿慢慢延展開。", "soul": ["縮短，是慢慢來的。", "延展，也要慢慢練。", "給小腿時間，重新拉長。", "僵硬的，會重新柔軟。", "你會重新，輕盈踏地。", "鬆開了，步伐就輕了。"]}, "relocked-foot": {"title": "緊縮的落地者", "sub": "足部反鎖型", "heart": ["你習慣繃著，連休息都放不太鬆。", "一夜過去，緊繃在清晨集中爆發。", "你日復一日，重複同樣的負荷。", "那些累積的，從最底層提醒著你。", "你需要的，是允許自己真正鬆開。"], "body": "你早上起床第一步腳底特別痛、特別緊（典型足底筋膜炎），或踝關節僵硬卡卡。足底筋膜真正短縮或踝關節活動受限，一夜的縮短在清晨集中爆發，連帶小腿也跟著緊。早晨下床、久坐後起身、走第一步時特別明顯，踩下去像踩在刀上。這需要伸展、鬆動與循序的負荷，慢慢把繃緊的足底鬆開。", "soul": ["繃緊，是慢慢累積的。", "鬆開，也要一步一步。", "給足底時間，重新柔軟。", "晨起的痛，會慢慢消退。", "你會重新，輕鬆落地。", "鬆開了，每一步都輕。"]}, "relocked-arm": {"title": "卡鎖的施作者", "sub": "手臂反鎖型", "heart": ["你習慣重複，用同一種方式做事。", "想換個方法，卻早已成了慣性。", "你日復一日，重複同樣的動作。", "那些累積的，讓某處卡住了。", "你需要的，是允許自己調整、改變。"], "body": "你的前臂、手腕或手肘某處真的緊、真的痛（如媽媽手、網球肘的組織成分），特定動作就會被誘發。前臂肌群真正短縮或肘關節受限，連帶手腕和手指也跟著卡，這是重複使用定型的。扭毛巾、開瓶蓋、抱小孩、用力抓握時特別明顯，某個角度一用力就痛。這需要鬆動與調整使用方式，把卡住的組織慢慢鬆開。", "soul": ["卡住，是用出來的。", "鬆開，也要調整使用。", "給雙手時間，重新柔軟。", "僵硬的，會重新靈活。", "你會重新，輕鬆施作。", "換個方式，反而更省力。"]}}');
+var TYPE65=JSON.parse('{"depleted-head": {"num": "01", "name": "頭頸耗竭型", "line": "SBL淺背線(枕骨段)＋臂線", "muscles": "枕骨下肌群、頭夾肌、顳肌、咬肌、帽狀腱膜", "specific": "枕骨下肌群慢性張力＋C纖維傳遞悶痛。下行抑制不足致頭重、緊縮性頭痛。常伴睡眠品質下降。", "sfma": "CR頸椎旋轉→主動/被動頸椎屈曲→C1-C2旋轉測試", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-neck": {"num": "02", "name": "頸源耗竭型", "line": "SBL上段＋臂線", "muscles": "枕骨下肌群、頭/頸夾肌、上斜方肌、提肩胛肌、斜角肌(臂叢通道)", "specific": "頸部豎脊肌慢性低度收縮，Gamma敏化致頸部「怎麼鬆都緊」。胸椎活動度評估為要。", "sfma": "CR→仰臥主動頸椎旋轉80°→被動頸椎旋轉→C1-C2測試→UEP", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-shoulder": {"num": "03", "name": "肩帶耗竭型", "line": "螺旋線＋臂線(DBAL/SBAL)", "muscles": "菱形肌、棘下肌、小圓肌、前鋸肌、斜方肌、三角肌", "specific": "上斜方肌持續低度活化，肩帶疲勞。常見於長期螢幕工作者。先排除胸椎活動度不足。", "sfma": "UEP1(MRE)/UEP2(LRF)→腰椎鎖定IR伸展旋轉→確認胸椎→肩90/90", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-chest": {"num": "04", "name": "胸廓耗竭型", "line": "SFL淺前線", "muscles": "胸大/小肌、肋間肌、胸骨筋膜、胸鎖乳突肌、橫隔膜", "specific": "呼吸輔助肌過勞(斜角肌、胸小肌代償)，橫隔膜效能下降致淺快呼吸。教呼吸再訓練。", "sfma": "MSE→Prone Press Up→腰椎鎖定→呼吸模式評估", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-upperback": {"num": "05", "name": "上背耗竭型", "line": "SBL上段＋螺旋線", "muscles": "胸椎豎脊肌、菱形肌、斜方肌中下段、後鋸肌", "specific": "胸椎豎脊肌慢性離心負荷，菱形肌疲勞。圓肩姿勢下持續被拉長收縮。", "sfma": "MSE→腰椎鎖定伸展旋轉(IR)→被動腰椎鎖定→確認胸椎活動度", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-core": {"num": "06", "name": "核心耗竭型", "line": "DFL深前線＋SFL", "muscles": "橫腹肌、多裂肌、橫隔膜、腰肌、骨盆底肌、腹直肌", "specific": "深層核心(TrA/多裂肌)持續低度代償，無法有效啟動。腰肌過勞。呼吸與核心連結評估。", "sfma": "SLS→四足對角線→俯臥主動髖伸→呼吸模式評估", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-lowerback": {"num": "07", "name": "腰背耗竭型", "line": "SBL＋DFL(交會:胸腰筋膜)", "muscles": "豎脊肌、多裂肌、胸腰筋膜、腰肌、腰方肌", "specific": "豎脊肌慢性過載，胸腰筋膜張力過高。多為胸椎/髖代償終點。下行抑制耗竭致久坐後更痠。", "sfma": "MSF/MSE→胸椎優先(腰椎鎖定)→髖(FABER/Thomas)→最後腰椎", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-hip": {"num": "08", "name": "髖部耗竭型", "line": "螺旋線＋側線LL", "muscles": "臀大/中/小肌、TFL、髂脛束、梨狀肌、深層六肌、腰方肌", "specific": "臀肌(尤其臀中肌)慢性離心負荷，深層旋轉肌疲勞。骨盆穩定耗能過大。", "sfma": "MSE下體flowchart→FABER→Stabilized FABER→Modified Thomas", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-thigh": {"num": "09", "name": "大腿耗竭型", "line": "SFL(前)＋SBL(後)", "muscles": "股四頭肌、股直肌、膕繩肌、內收肌群", "specific": "股四頭/膕繩肌慢性共同收縮，前後鏈張力失衡致疲勞。常見於代償性步態。", "sfma": "ODS→膝到胸抱大腿→FABER→主動/被動SLR", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-knee": {"num": "10", "name": "膝部耗竭型", "line": "SBL下段＋側線LL(交會點)", "muscles": "股四頭肌、VMO、膕繩肌遠端、膕肌、髂脛束、腓腸肌近端", "specific": "膝周肌群持續穩定耗能，髖/踝代償致膝過勞。VMO疲勞。非結構損傷。", "sfma": "ODS→半跪姿DF→膝到胸→FABER→髖內旋評估", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-lowerleg": {"num": "11", "name": "小腿耗竭型", "line": "SBL下段", "muscles": "腓腸肌、比目魚肌、脛骨後肌、腓骨長/短肌、膕肌", "specific": "小腿三頭肌慢性離心負荷(姿勢維持)，GTO抑制致「腿沉」。腳踝背屈評估。", "sfma": "ODS→半跪姿DF→腳跟/腳尖走路→被動DF(膝伸/屈)", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-foot": {"num": "12", "name": "足部耗竭型", "line": "SBL起點(足底筋膜弓弦)", "muscles": "足底筋膜、屈趾短肌、足底方肌、拇展肌、跟腱、脛後/腓骨肌腱", "specific": "足底筋膜慢性張力，內在足肌疲勞致足弓支撐力下降。SBL弓弦張力過高。", "sfma": "ODS→半跪姿DF→被動DF→被動蹠屈→踝內外翻", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "depleted-arm": {"num": "13", "name": "手臂耗竭型", "line": "四條臂線(DBAL/SBAL/DFAL/SFAL)", "muscles": "菱形肌、棘下肌、肱三頭/二頭肌、胸小肌、前臂屈/伸肌群", "specific": "前臂肌群慢性過度使用(重複動作)，但根源常在頸椎/胸椎。需鑑別局部vs近端。", "sfma": "UEP1/2→腰椎鎖定→確認胸椎→肩90/90→前臂神經動力學測試", "tx": "恢復神經系統關機能力，減少慢性張力，非強化訓練", "path": "神經系統分類"}, "guarded-head": {"num": "14", "name": "頭頸戒備型", "line": "SBL淺背線(枕骨段)＋臂線", "muscles": "枕骨下肌群、頭夾肌、顳肌、咬肌、帽狀腱膜", "specific": "交感過度活化致顳肌/咬肌持續緊繃，磨牙、緊縮性頭痛。常伴情緒壓力。", "sfma": "CR頸椎旋轉→主動/被動頸椎屈曲→C1-C2旋轉測試", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-neck": {"num": "15", "name": "頸源戒備型", "line": "SBL上段＋臂線", "muscles": "枕骨下肌群、頭/頸夾肌、上斜方肌、提肩胛肌、斜角肌(臂叢通道)", "specific": "SNS致頸部Gamma敏化，主動旋轉受限被動FN=頸椎旋轉SMCD。先確認胸椎。", "sfma": "CR→仰臥主動頸椎旋轉80°→被動頸椎旋轉→C1-C2測試→UEP", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-shoulder": {"num": "16", "name": "肩帶戒備型", "line": "螺旋線＋臂線(DBAL/SBAL)", "muscles": "菱形肌、棘下肌、小圓肌、前鋸肌、斜方肌、三角肌", "specific": "肩帶保護性高張，棘下肌/菱形肌SMCD。主動受限被動FN。胸椎優先於肩。", "sfma": "UEP1(MRE)/UEP2(LRF)→腰椎鎖定IR伸展旋轉→確認胸椎→肩90/90", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-chest": {"num": "17", "name": "胸廓戒備型", "line": "SFL淺前線", "muscles": "胸大/小肌、肋間肌、胸骨筋膜、胸鎖乳突肌、橫隔膜", "specific": "呼吸淺、胸悶，交感致胸廓緊縮。橫隔膜活動受限。常伴焦慮。教橫隔膜呼吸。", "sfma": "MSE→Prone Press Up→腰椎鎖定→呼吸模式評估", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-upperback": {"num": "18", "name": "上背戒備型", "line": "SBL上段＋螺旋線", "muscles": "胸椎豎脊肌、菱形肌、斜方肌中下段、後鋸肌", "specific": "胸椎段保護性僵硬(SMCD)，非真正關節受限。被動腰椎鎖定FN=胸椎旋轉SMCD。", "sfma": "MSE→腰椎鎖定伸展旋轉(IR)→被動腰椎鎖定→確認胸椎活動度", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-core": {"num": "19", "name": "核心戒備型", "line": "DFL深前線＋SFL", "muscles": "橫腹肌、多裂肌、橫隔膜、腰肌、骨盆底肌、腹直肌", "specific": "腹部保護性繃緊(bracing)，無法正確啟動深層核心。過度淺層用力。", "sfma": "SLS→四足對角線→俯臥主動髖伸→呼吸模式評估", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-lowerback": {"num": "20", "name": "腰背戒備型", "line": "SBL＋DFL(交會:胸腰筋膜)", "muscles": "豎脊肌、多裂肌、胸腰筋膜、腰肌、腰方肌", "specific": "腰部保護性肌肉防衛(guarding)，常見於恐懼迴避。被動FN主動受限=腰椎SMCD。", "sfma": "MSF/MSE→胸椎優先(腰椎鎖定)→髖(FABER/Thomas)→最後腰椎", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-hip": {"num": "21", "name": "髖部戒備型", "line": "螺旋線＋側線LL", "muscles": "臀大/中/小肌、TFL、髂脛束、梨狀肌、深層六肌、腰方肌", "specific": "髖深層旋轉肌保護性高張，髖旋轉主動受限被動FN=髖SMCD。", "sfma": "MSE下體flowchart→FABER→Stabilized FABER→Modified Thomas", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-thigh": {"num": "22", "name": "大腿戒備型", "line": "SFL(前)＋SBL(後)", "muscles": "股四頭肌、股直肌、膕繩肌、內收肌群", "specific": "膕繩肌保護性高張(常見於腰椎恐懼迴避)，主動SLR受限被動FN。", "sfma": "ODS→膝到胸抱大腿→FABER→主動/被動SLR", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-knee": {"num": "23", "name": "膝部戒備型", "line": "SBL下段＋側線LL(交會點)", "muscles": "股四頭肌、VMO、膕繩肌遠端、膕肌、髂脛束、腓腸肌近端", "specific": "膝周保護性共同收縮，膝關節「不敢彎」。常見於損傷後恐懼。", "sfma": "ODS→半跪姿DF→膝到胸→FABER→髖內旋評估", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-lowerleg": {"num": "24", "name": "小腿戒備型", "line": "SBL下段", "muscles": "腓腸肌、比目魚肌、脛骨後肌、腓骨長/短肌、膕肌", "specific": "小腿保護性高張，腳踝背屈主動受限被動FN=背屈SMCD。", "sfma": "ODS→半跪姿DF→腳跟/腳尖走路→被動DF(膝伸/屈)", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-foot": {"num": "25", "name": "足部戒備型", "line": "SBL起點(足底筋膜弓弦)", "muscles": "足底筋膜、屈趾短肌、足底方肌、拇展肌、跟腱、脛後/腓骨肌腱", "specific": "足部保護性抓地(toe gripping)，內在足肌過度活化。常見於不穩代償。", "sfma": "ODS→半跪姿DF→被動DF→被動蹠屈→踝內外翻", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "guarded-arm": {"num": "26", "name": "手臂戒備型", "line": "四條臂線(DBAL/SBAL/DFAL/SFAL)", "muscles": "菱形肌、棘下肌、肱三頭/二頭肌、胸小肌、前臂屈/伸肌群", "specific": "前臂屈肌保護性高張(握持過度)，斜角肌緊縮可壓迫臂叢致手麻。", "sfma": "UEP1/2→腰椎鎖定→確認胸椎→肩90/90→前臂神經動力學測試", "tx": "神經再教育、動作控制重建，先確認近端(胸椎/核心)", "path": "神經系統分類"}, "empty-head": {"num": "27", "name": "頭頸空乏型", "line": "SBL淺背線(枕骨段)＋臂線", "muscles": "枕骨下肌群、頭夾肌、顳肌、咬肌、帽狀腱膜", "specific": "頭部本體感覺輸入下降，常伴頭暈、注意力渙散。前庭-頸本體感覺整合評估。", "sfma": "CR頸椎旋轉→主動/被動頸椎屈曲→C1-C2旋轉測試", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-neck": {"num": "28", "name": "頸源空乏型", "line": "SBL上段＋臂線", "muscles": "枕骨下肌群、頭/頸夾肌、上斜方肌、提肩胛肌、斜角肌(臂叢通道)", "specific": "頸部深層屈肌(Longus Colli)失能，頸本體感覺下降致頭部位置感模糊。", "sfma": "CR→仰臥主動頸椎旋轉80°→被動頸椎旋轉→C1-C2測試→UEP", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-shoulder": {"num": "29", "name": "肩帶空乏型", "line": "螺旋線＋臂線(DBAL/SBAL)", "muscles": "菱形肌、棘下肌、小圓肌、前鋸肌、斜方肌、三角肌", "specific": "肩胛動作控制失能(scapular dyskinesis)，肩部「使不上力」。前鋸肌啟動評估。", "sfma": "UEP1(MRE)/UEP2(LRF)→腰椎鎖定IR伸展旋轉→確認胸椎→肩90/90", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-chest": {"num": "30", "name": "胸廓空乏型", "line": "SFL淺前線", "muscles": "胸大/小肌、肋間肌、胸骨筋膜、胸鎖乳突肌、橫隔膜", "specific": "橫隔膜本體感覺下降，呼吸淺且無力。胸廓擴張感知模糊。", "sfma": "MSE→Prone Press Up→腰椎鎖定→呼吸模式評估", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-upperback": {"num": "31", "name": "上背空乏型", "line": "SBL上段＋螺旋線", "muscles": "胸椎豎脊肌、菱形肌、斜方肌中下段、後鋸肌", "specific": "胸椎段本體感覺輸入不足，姿勢覺察下降致駝背而不自知。", "sfma": "MSE→腰椎鎖定伸展旋轉(IR)→被動腰椎鎖定→確認胸椎活動度", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-core": {"num": "32", "name": "核心空乏型", "line": "DFL深前線＋SFL", "muscles": "橫腹肌、多裂肌、橫隔膜、腰肌、骨盆底肌、腹直肌", "specific": "深層核心(TrA/多裂肌)本體感覺失能，腰椎節段穩定感知模糊。核心SMCD典型。", "sfma": "SLS→四足對角線→俯臥主動髖伸→呼吸模式評估", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-lowerback": {"num": "33", "name": "腰背空乏型", "line": "SBL＋DFL(交會:胸腰筋膜)", "muscles": "豎脊肌、多裂肌、胸腰筋膜、腰肌、腰方肌", "specific": "腰椎多裂肌萎縮/抑制(常見於慢性腰痛後)，節段穩定本體感覺下降。", "sfma": "MSF/MSE→胸椎優先(腰椎鎖定)→髖(FABER/Thomas)→最後腰椎", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-hip": {"num": "34", "name": "髖部空乏型", "line": "螺旋線＋側線LL", "muscles": "臀大/中/小肌、TFL、髂脛束、梨狀肌、深層六肌、腰方肌", "specific": "臀肌啟動失能(gluteal amnesia)，髖本體感覺下降致「用不到屁股」。", "sfma": "MSE下體flowchart→FABER→Stabilized FABER→Modified Thomas", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-thigh": {"num": "35", "name": "大腿空乏型", "line": "SFL(前)＋SBL(後)", "muscles": "股四頭肌、股直肌、膕繩肌、內收肌群", "specific": "股四頭/膕繩肌本體感覺下降，大腿「使不上力」。常見於術後或長期不活動。", "sfma": "ODS→膝到胸抱大腿→FABER→主動/被動SLR", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-knee": {"num": "36", "name": "膝部空乏型", "line": "SBL下段＋側線LL(交會點)", "muscles": "股四頭肌、VMO、膕繩肌遠端、膕肌、髂脛束、腓腸肌近端", "specific": "膝本體感覺受體失能(常見於扭傷後)，關節位置覺下降致不穩感。本體感覺重建關鍵。", "sfma": "ODS→半跪姿DF→膝到胸→FABER→髖內旋評估", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-lowerleg": {"num": "37", "name": "小腿空乏型", "line": "SBL下段", "muscles": "腓腸肌、比目魚肌、脛骨後肌、腓骨長/短肌、膕肌", "specific": "小腿本體感覺下降，踝關節位置覺模糊。常見於慢性踝不穩(CAI)。", "sfma": "ODS→半跪姿DF→腳跟/腳尖走路→被動DF(膝伸/屈)", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-foot": {"num": "38", "name": "足部空乏型", "line": "SBL起點(足底筋膜弓弦)", "muscles": "足底筋膜、屈趾短肌、足底方肌、拇展肌、跟腱、脛後/腓骨肌腱", "specific": "足底本體感覺輸入下降(感覺受體減敏)，影響全身平衡基礎。足底感覺再訓練。", "sfma": "ODS→半跪姿DF→被動DF→被動蹠屈→踝內外翻", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "empty-arm": {"num": "39", "name": "手臂空乏型", "line": "四條臂線(DBAL/SBAL/DFAL/SFAL)", "muscles": "菱形肌、棘下肌、肱三頭/二頭肌、胸小肌、前臂屈/伸肌群", "specific": "上肢本體感覺下降，手部位置覺與精細控制模糊。常見於神經壓迫後。", "sfma": "UEP1/2→腰椎鎖定→確認胸椎→肩90/90→前臂神經動力學測試", "tx": "本體感覺重建、深層系統再啟動，非力量訓練", "path": "神經系統分類"}, "drifting-head": {"num": "40", "name": "頭頸漂移型", "line": "SBL淺背線(枕骨段)＋臂線", "muscles": "枕骨下肌群、頭夾肌、顳肌、咬肌、帽狀腱膜", "specific": "前庭-頸本體感覺整合失調，頭暈、視覺動暈。CTSIB動態頭部測試關鍵。", "sfma": "CR頸椎旋轉→主動/被動頸椎屈曲→C1-C2旋轉測試", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-neck": {"num": "41", "name": "頸源漂移型", "line": "SBL上段＋臂線", "muscles": "枕骨下肌群、頭/頸夾肌、上斜方肌、提肩胛肌、斜角肌(臂叢通道)", "specific": "頸性眩暈可能(頸本體感覺與前庭衝突)，頭頸位置改變誘發不穩。", "sfma": "CR→仰臥主動頸椎旋轉80°→被動頸椎旋轉→C1-C2測試→UEP", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-shoulder": {"num": "42", "name": "肩帶漂移型", "line": "螺旋線＋臂線(DBAL/SBAL)", "muscles": "菱形肌、棘下肌、小圓肌、前鋸肌、斜方肌、三角肌", "specific": "肩帶在動態中失去穩定參考，過頂動作不穩。肩胛節律評估。", "sfma": "UEP1(MRE)/UEP2(LRF)→腰椎鎖定IR伸展旋轉→確認胸椎→肩90/90", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-chest": {"num": "43", "name": "胸廓漂移型", "line": "SFL淺前線", "muscles": "胸大/小肌、肋間肌、胸骨筋膜、胸鎖乳突肌、橫隔膜", "specific": "呼吸與姿勢穩定的耦合失調，動態中胸廓無法提供穩定基礎。", "sfma": "MSE→Prone Press Up→腰椎鎖定→呼吸模式評估", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-upperback": {"num": "44", "name": "上背漂移型", "line": "SBL上段＋螺旋線", "muscles": "胸椎豎脊肌、菱形肌、斜方肌中下段、後鋸肌", "specific": "胸椎作為動態穩定軸心失能，旋轉動作中軀幹漂移。", "sfma": "MSE→腰椎鎖定伸展旋轉(IR)→被動腰椎鎖定→確認胸椎活動度", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-core": {"num": "45", "name": "核心漂移型", "line": "DFL深前線＋SFL", "muscles": "橫腹肌、多裂肌、橫隔膜、腰肌、骨盆底肌、腹直肌", "specific": "APA預期性調整失能，核心無法在動作前預先穩定。四足對角線DN典型。", "sfma": "SLS→四足對角線→俯臥主動髖伸→呼吸模式評估", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-lowerback": {"num": "46", "name": "腰背漂移型", "line": "SBL＋DFL(交會:胸腰筋膜)", "muscles": "豎脊肌、多裂肌、胸腰筋膜、腰肌、腰方肌", "specific": "腰椎-骨盆動態控制失調，動作中腰椎失去中立位控制。", "sfma": "MSF/MSE→胸椎優先(腰椎鎖定)→髖(FABER/Thomas)→最後腰椎", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-hip": {"num": "47", "name": "髖部漂移型", "line": "螺旋線＋側線LL", "muscles": "臀大/中/小肌、TFL、髂脛束、梨狀肌、深層六肌、腰方肌", "specific": "單腳負重時髖穩定失能(Trendelenburg)，臀中肌APA時序問題。", "sfma": "MSE下體flowchart→FABER→Stabilized FABER→Modified Thomas", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-thigh": {"num": "48", "name": "大腿漂移型", "line": "SFL(前)＋SBL(後)", "muscles": "股四頭肌、股直肌、膕繩肌、內收肌群", "specific": "大腿在動態負重中失去穩定貢獻，落地/變向不穩。", "sfma": "ODS→膝到胸抱大腿→FABER→主動/被動SLR", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-knee": {"num": "49", "name": "膝部漂移型", "line": "SBL下段＋側線LL(交會點)", "muscles": "股四頭肌、VMO、膕繩肌遠端、膕肌、髂脛束、腓腸肌近端", "specific": "膝動態穩定失能(膝內扣/dynamic valgus)，單腳蹲不穩。髖+踝整合評估。", "sfma": "ODS→半跪姿DF→膝到胸→FABER→髖內旋評估", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-lowerleg": {"num": "50", "name": "小腿漂移型", "line": "SBL下段", "muscles": "腓腸肌、比目魚肌、脛骨後肌、腓骨長/短肌、膕肌", "specific": "踝動態穩定失能，平衡時過度搖晃。本體感覺+前庭整合。", "sfma": "ODS→半跪姿DF→腳跟/腳尖走路→被動DF(膝伸/屈)", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-foot": {"num": "51", "name": "足部漂移型", "line": "SBL起點(足底筋膜弓弦)", "muscles": "足底筋膜、屈趾短肌、足底方肌、拇展肌、跟腱、脛後/腓骨肌腱", "specific": "足部作為平衡基礎失能，閉眼站立明顯惡化(本體感覺依賴)。", "sfma": "ODS→半跪姿DF→被動DF→被動蹠屈→踝內外翻", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "drifting-arm": {"num": "52", "name": "手臂漂移型", "line": "四條臂線(DBAL/SBAL/DFAL/SFAL)", "muscles": "菱形肌、棘下肌、肱三頭/二頭肌、胸小肌、前臂屈/伸肌群", "specific": "上肢在動態平衡中的配重角色失能，影響整體平衡策略。", "sfma": "UEP1/2→腰椎鎖定→確認胸椎→肩90/90→前臂神經動力學測試", "tx": "感覺整合訓練、APA重建，閉眼vs睜眼鑑別", "path": "神經系統分類"}, "relocked-head": {"num": "53", "name": "頭頸反鎖型", "line": "SBL淺背線(枕骨段)＋臂線", "muscles": "枕骨下肌群、頭夾肌、顳肌、咬肌、帽狀腱膜", "specific": "顳顎關節囊/枕寰關節真正活動受限(JMD)。被動即受限。需關節鬆動。", "sfma": "CR頸椎旋轉→主動/被動頸椎屈曲→C1-C2旋轉測試", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-neck": {"num": "54", "name": "頸源反鎖型", "line": "SBL上段＋臂線", "muscles": "枕骨下肌群、頭/頸夾肌、上斜方肌、提肩胛肌、斜角肌(臂叢通道)", "specific": "下頸椎或C1-C2關節真正活動受限(JMD/TED)。被動旋轉受限=結構性。", "sfma": "CR→仰臥主動頸椎旋轉80°→被動頸椎旋轉→C1-C2測試→UEP", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-shoulder": {"num": "55", "name": "肩帶反鎖型", "line": "螺旋線＋臂線(DBAL/SBAL)", "muscles": "菱形肌、棘下肌、小圓肌、前鋸肌、斜方肌、三角肌", "specific": "肩關節囊真正受限(粘連性關節囊炎/真正IR受限)。被動IR<60°=JMD/TED。", "sfma": "UEP1(MRE)/UEP2(LRF)→腰椎鎖定IR伸展旋轉→確認胸椎→肩90/90", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-chest": {"num": "56", "name": "胸廓反鎖型", "line": "SFL淺前線", "muscles": "胸大/小肌、肋間肌、胸骨筋膜、胸鎖乳突肌、橫隔膜", "specific": "肋椎/肋橫突關節僵硬，胸廓擴張真正受限。呼吸幅度下降。", "sfma": "MSE→Prone Press Up→腰椎鎖定→呼吸模式評估", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-upperback": {"num": "57", "name": "上背反鎖型", "line": "SBL上段＋螺旋線", "muscles": "胸椎豎脊肌、菱形肌、斜方肌中下段、後鋸肌", "specific": "胸椎關節真正僵硬(JMD)，被動腰椎鎖定DN=胸椎JMD/TED。最常見隱藏根源。", "sfma": "MSE→腰椎鎖定伸展旋轉(IR)→被動腰椎鎖定→確認胸椎活動度", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-core": {"num": "58", "name": "核心反鎖型", "line": "DFL深前線＋SFL", "muscles": "橫腹肌、多裂肌、橫隔膜、腰肌、骨盆底肌、腹直肌", "specific": "腹部筋膜真正短縮(少見)或胸腰筋膜沾黏，限制軀幹延展。", "sfma": "SLS→四足對角線→俯臥主動髖伸→呼吸模式評估", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-lowerback": {"num": "59", "name": "腰背反鎖型", "line": "SBL＋DFL(交會:胸腰筋膜)", "muscles": "豎脊肌、多裂肌、胸腰筋膜、腰肌、腰方肌", "specific": "腰椎小面關節真正受限或胸腰筋膜短縮。但先排除胸椎/髖代償。", "sfma": "MSF/MSE→胸椎優先(腰椎鎖定)→髖(FABER/Thomas)→最後腰椎", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-hip": {"num": "60", "name": "髖部反鎖型", "line": "螺旋線＋側線LL", "muscles": "臀大/中/小肌、TFL、髂脛束、梨狀肌、深層六肌、腰方肌", "specific": "髖關節囊真正受限(FAI/關節炎)，FABER DN=Hip/SI JMD/TED。需局部評估。", "sfma": "MSE下體flowchart→FABER→Stabilized FABER→Modified Thomas", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-thigh": {"num": "61", "name": "大腿反鎖型", "line": "SFL(前)＋SBL(後)", "muscles": "股四頭肌、股直肌、膕繩肌、內收肌群", "specific": "股四頭/膕繩肌真正短縮(Sarcomere減少)。被動SLR<80°=後鏈TED。", "sfma": "ODS→膝到胸抱大腿→FABER→主動/被動SLR", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-knee": {"num": "62", "name": "膝部反鎖型", "line": "SBL下段＋側線LL(交會點)", "muscles": "股四頭肌、VMO、膕繩肌遠端、膕肌、髂脛束、腓腸肌近端", "specific": "膝關節囊真正受限(術後/關節炎)，屈伸活動度真正下降。膝到胸DN。", "sfma": "ODS→半跪姿DF→膝到胸→FABER→髖內旋評估", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-lowerleg": {"num": "63", "name": "小腿反鎖型", "line": "SBL下段", "muscles": "腓腸肌、比目魚肌、脛骨後肌、腓骨長/短肌、膕肌", "specific": "腓腸肌/比目魚肌真正短縮。被動DF膝伸DN=腓腸肌TED；膝屈DN=比目魚肌/踝JMD。", "sfma": "ODS→半跪姿DF→腳跟/腳尖走路→被動DF(膝伸/屈)", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-foot": {"num": "64", "name": "足部反鎖型", "line": "SBL起點(足底筋膜弓弦)", "muscles": "足底筋膜、屈趾短肌、足底方肌、拇展肌、跟腱、脛後/腓骨肌腱", "specific": "足底筋膜真正短縮(慢性足底筋膜炎)或踝關節JMD。晨起第一步痛典型。", "sfma": "ODS→半跪姿DF→被動DF→被動蹠屈→踝內外翻", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}, "relocked-arm": {"num": "65", "name": "手臂反鎖型", "line": "四條臂線(DBAL/SBAL/DFAL/SFAL)", "muscles": "菱形肌、棘下肌、肱三頭/二頭肌、胸小肌、前臂屈/伸肌群", "specific": "前臂屈/伸肌真正短縮或肘關節受限。媽媽手/網球肘的組織短縮成分。", "sfma": "UEP1/2→腰椎鎖定→確認胸椎→肩90/90→前臂神經動力學測試", "tx": "徒手鬆動、關節活動度恢復、結構性延展", "path": "結構性 / 需鑑別急慢性"}}');
+</script>
+
+<script>
+// build feel cards
+(function(){
+  var fl=document.getElementById('feel-list');
+  if(!fl)return;
+  FEELS.forEach(function(f){
+    var c=document.createElement('div');
+    c.className='feel-card';
+    c.innerHTML='<div class="feel-glyph">'+f.glyph+'</div><div class="feel-txt"><span class="feel-name">'+f.name+'</span><span class="feel-desc">'+f.desc+'</span></div>';
+    c.onclick=function(){
+      document.querySelectorAll('.feel-card').forEach(function(x){x.classList.remove('sel');});
+      c.classList.add('sel');
+      selFeel=f.id;
+      setTimeout(function(){go('body');},420);
+    };
+    fl.appendChild(c);
+  });
+  // init: show intro
+  document.querySelectorAll('.screen').forEach(function(sc){sc.style.display='none';});
+  document.getElementById('intro').style.display='flex';
+})();
+
+function pick(zone){
+  selZone=zone;
+  document.querySelectorAll('.bp').forEach(function(e){e.classList.remove('sel','conn');});
+  document.querySelectorAll('.fl').forEach(function(e){e.classList.remove('on');});
+  document.querySelectorAll('[data-zone="'+zone+'"]').forEach(function(e){e.classList.add('sel');});
+  var d=ZONES[zone];
+  if(d){
+    d.conn.forEach(function(cz){
+      document.querySelectorAll('[data-zone="'+cz+'"]').forEach(function(e){e.classList.add('conn');});
+    });
+    d.lines.forEach(function(lid){var el=document.getElementById(lid);if(el)el.classList.add('on');});
+  }
+  document.getElementById('pick-hint').textContent='身體的訊息會沿著相連的部位一起流動';
+  document.getElementById('btn-reveal').style.display='block';
+}
+
+function showResult(){
+  if(!selFeel||!selZone)return;
+  var pk=selFeel+'-'+selZone;
+  var pm=POEM65[pk];
+  var t65=TYPE65[pk];
+  if(!pm||!t65){return;}
+  var fi=null;
+  for(var i=0;i<FEELS.length;i++){if(FEELS[i].id===selFeel){fi=FEELS[i];break;}}
+  // badge + title
+  document.getElementById('r-badge').innerHTML=fi.glyph;
+  document.getElementById('r-title').textContent=pm.title;
+  document.getElementById('r-clinname').textContent='── '+pm.sub+' ──';
+  // poem
+  var heartHtml='';
+  for(var h=0;h<pm.heart.length;h++) heartHtml+='<span class="pline">'+esc(pm.heart[h])+'</span>';
+  var soulHtml='';
+  for(var sl=0;sl<pm.soul.length;sl++) soulHtml+='<span class="pline">'+esc(pm.soul[sl])+'</span>';
+  document.getElementById('r-poem').innerHTML=
+    '<div class="poem-block"><div class="poem-lbl">心　你的大腦正在告訴你</div><div class="poem-heart">'+heartHtml+'</div></div>'+
+    '<div class="poem-block"><div class="poem-lbl">身　身體可能出現的反應</div><div class="poem-body-txt">'+esc(pm.body)+'</div></div>'+
+    '<div class="poem-block"><div class="poem-lbl">靈</div><div class="poem-soul">'+soulHtml+'</div></div>';
+  // clinical
+  document.getElementById('clinical').innerHTML=
+    '<div class="cl-card"><div class="cl-lbl">類型編號 ／ 名稱</div><div class="cl-name">'+esc(t65.num)+'　'+esc(t65.name)+'</div><div class="cl-text">'+esc(ZONE_NAME[selZone])+' × '+esc(fi.name)+'</div></div>'+
+    '<div class="cl-card"><div class="cl-lbl">神經層次</div><div class="cl-text" style="color:var(--orange)">'+esc(CLINICAL_PATH[selFeel])+'</div></div>'+
+    '<div class="cl-card"><div class="cl-lbl">主導筋膜線</div><div class="cl-text">'+esc(t65.line)+'</div><div class="cl-text" style="margin-top:5px;color:#9b8a74">'+esc(t65.muscles)+'</div></div>'+
+    '<div class="cl-card"><div class="cl-lbl">神經機制表現</div><div class="cl-text">'+esc(t65.specific)+'</div></div>'+
+    '<div class="cl-card"><div class="cl-lbl">SFMA 評估順序</div><div class="cl-text">'+esc(t65.sfma)+'</div></div>'+
+    '<div class="cl-card"><div class="cl-lbl">治療方向</div><div class="cl-text" style="color:var(--teal)">'+esc(t65.tx)+'</div><div class="cl-tags"><span class="cl-tag">'+esc(t65.path)+'</span></div></div>';
+  document.getElementById('clinical').classList.remove('show');
+  document.getElementById('clin-toggle').textContent='給治療師看的身體訊息 ＋';
+  go('result');
+}
+
+function esc(s){
+  if(!s)return'';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function toggleClin(){
+  var cl=document.getElementById('clinical');
+  var btn=document.getElementById('clin-toggle');
+  if(cl.classList.contains('show')){cl.classList.remove('show');btn.textContent='給治療師看的身體訊息 ＋';}
+  else{cl.classList.add('show');btn.textContent='收起 ─';}
+}
+function go(id){
+  document.querySelectorAll('.screen').forEach(function(sc){sc.classList.remove('active');sc.style.display='none';});
+  var t=document.getElementById(id);
+  t.style.display='flex';
+  setTimeout(function(){t.classList.add('active');},10);
+  window.scrollTo(0,0);
+}
+function backToFeel(){
+  selZone=null;
+  document.querySelectorAll('.bp').forEach(function(e){e.classList.remove('sel','conn');});
+  document.querySelectorAll('.fl').forEach(function(e){e.classList.remove('on');});
+  document.getElementById('pick-hint').textContent='';
+  document.getElementById('btn-reveal').style.display='none';
+  go('feel');
+}
+function restart(){
+  selFeel=null;selZone=null;
+  document.querySelectorAll('.feel-card').forEach(function(c){c.classList.remove('sel');});
+  document.querySelectorAll('.bp').forEach(function(e){e.classList.remove('sel','conn');});
+  document.querySelectorAll('.fl').forEach(function(e){e.classList.remove('on');});
+  document.getElementById('pick-hint').textContent='';
+  document.getElementById('btn-reveal').style.display='none';
+  go('feel');
+}
+function book(){window.open('https://rongxuan1109-maker.github.io/jiuchen-booking/','_blank');}
+</script>
+</body>
+</html>

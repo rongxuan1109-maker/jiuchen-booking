@@ -508,13 +508,28 @@ async function loadTherapists() {
 }
 
 async function loadBookedSlots(dateStr, therapistId) {
-  let query = sb.from('appointments')
-    .select('appointment_time, therapist_id')
+  const base = sb.from('appointments')
+    .select('appointment_time, therapist_id, type')
     .eq('appointment_date', dateStr)
     .eq('status', 'confirmed');
-  if (therapistId) query = query.eq('therapist_id', therapistId);
-  const { data } = await query;
-  state.bookedSlots = data || [];
+
+  if (!therapistId) {
+    // 不指定：抓所有已確認時段
+    const { data } = await base;
+    state.bookedSlots = data || [];
+  } else {
+    // 指定治療師：抓該治療師時段 + 全體治療師活動（therapist_id=null, type=event）
+    const [{ data: own }, { data: events }] = await Promise.all([
+      base.eq('therapist_id', therapistId),
+      sb.from('appointments')
+        .select('appointment_time, therapist_id, type')
+        .eq('appointment_date', dateStr)
+        .eq('status', 'confirmed')
+        .eq('type', 'event')
+        .is('therapist_id', null)
+    ]);
+    state.bookedSlots = [...(own || []), ...(events || [])];
+  }
 }
 
 function fmtDate(d) {

@@ -3,216 +3,461 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
 <title>九辰物理治療所 · 治療師後台</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@200;300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
-*{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --green:#1D9E75;--green-dark:#0F6E56;--green-light:#E1F5EE;
-  --bg:#F4F6F3;--white:#FFFFFF;--border:#E4E6E2;
-  --text:#1A1C19;--text2:#5A5E57;--text3:#9A9E97;
-  --radius:12px;--shadow:0 2px 12px rgba(0,0,0,0.07);
-  --new-color:#BA7517;--new-bg:#FAEEDA;
-  --return-color:#0F6E56;--return-bg:#E1F5EE;
-  --cell-h:52px;
+  color-scheme:light only;
+  /* 暖色系重新對應 — JS inline styles 繼續使用舊變數名稱，只改值 */
+  --green:#c08a52;
+  --green-dark:#7a5638;
+  --green-light:#e9dcc4;
+  --bg:#f3ede1;
+  --white:#faf6ee;
+  --border:rgba(192,138,82,.28);
+  --text:#1c1611;
+  --text2:#7a5638;
+  --text3:#9b8a74;
+  --new-color:#d96e28;
+  --new-bg:rgba(217,110,40,.13);
+  --return-color:#7a5638;
+  --return-bg:#e9dcc4;
+  --radius:4px;
+  --shadow:0 2px 14px rgba(192,138,82,.1);
+  /* 額外暖色變數 */
+  --ink:#1c1611;
+  --paper:#f3ede1;
+  --warm:#c08a52;
+  --accent:#7a5638;
+  --muted:#9b8a74;
+  --glow:#e9dcc4;
+  --surface:#faf6ee;
+  --deep:#2a1d12;
 }
-body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;user-select:none;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:#f3ede1 !important;}
+body{
+  font-family:'Noto Serif TC',serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;user-select:none;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  pointer-events:none;z-index:9999;opacity:.2;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
+}
 
-.header{background:var(--white);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
-.header-left{display:flex;align-items:center;gap:10px;}
-.logo{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;}
-.header-title{font-size:15px;font-weight:600;}
-.header-sub{font-size:11px;color:var(--text3);}
-.view-toggle{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-.view-btn{padding:6px 14px;font-size:12px;cursor:pointer;background:var(--white);color:var(--text3);border:none;font-family:inherit;}
-.view-btn.active{background:var(--green);color:white;font-weight:500;}
+/* ── LOGIN SCREEN ── */
+#loginScreen{
+  position:fixed;inset:0;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  z-index:500;flex-direction:column;gap:0;
+}
+.login-box{
+  width:100%;max-width:340px;
+  padding:40px 32px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  text-align:center;
+}
+.login-emblem{
+  width:64px;height:64px;border-radius:50%;border:1px solid var(--warm);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;
+  animation:breathe 5s ease-in-out infinite;
+}
+.login-emblem svg{width:30px;height:30px;}
+@keyframes breathe{
+  0%,100%{box-shadow:0 0 0 0 rgba(192,138,82,.2)}
+  50%{box-shadow:0 0 0 10px rgba(192,138,82,0)}
+}
+.login-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:20px;font-weight:400;
+  color:var(--ink);letter-spacing:1px;margin-bottom:4px;
+}
+.login-sub{font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:28px;}
+.login-input{
+  width:100%;border:none;
+  border-bottom:1px solid var(--border);
+  padding:10px 2px;font-size:15px;
+  font-family:'Noto Serif TC',serif;
+  background:transparent;color:var(--ink);
+  outline:none;text-align:center;
+  letter-spacing:4px;margin-bottom:24px;
+  transition:border-color .2s;
+}
+.login-input:focus{border-bottom-color:var(--warm);}
+.login-btn{
+  width:100%;background:var(--ink);color:#f3ede1;
+  border:none;padding:14px;
+  font-family:'Noto Serif TC',serif;
+  font-size:13px;letter-spacing:2px;cursor:pointer;
+  position:relative;overflow:hidden;transition:all .3s;
+}
+.login-btn::before{
+  content:'';position:absolute;inset:0;
+  background:var(--accent);
+  transform:translateX(-101%);
+  transition:transform .4s cubic-bezier(.7,0,.3,1);
+}
+.login-btn:hover::before{transform:translateX(0);}
+.login-btn span{position:relative;z-index:1;}
+.login-err{font-size:12px;color:var(--new-color);margin-top:10px;min-height:18px;}
 
-.th-tabs{background:var(--white);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:8px;overflow-x:auto;}
-.th-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--border);font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit;background:var(--white);color:var(--text2);}
-.th-tab.active{font-weight:500;}
+/* ── HEADER ── */
+.header{
+  background:var(--deep);
+  border-bottom:1px solid rgba(192,138,82,.2);
+  padding:10px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+}
+.header-left{display:flex;align-items:center;gap:12px;}
+.logo{
+  width:32px;height:32px;border-radius:50%;
+  border:1px solid var(--warm);
+  display:flex;align-items:center;justify-content:center;
+  animation:breathe 5s ease-in-out infinite;
+}
+.logo svg{width:18px;height:18px;}
+.header-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:15px;font-weight:400;color:#f3ede1;letter-spacing:1px;
+}
+.header-sub{font-size:10px;color:var(--muted);letter-spacing:1.5px;}
+.view-toggle{display:flex;border:1px solid rgba(192,138,82,.3);overflow:hidden;}
+.view-btn{
+  padding:5px 12px;font-size:12px;cursor:pointer;
+  background:transparent;color:var(--muted);border:none;
+  font-family:'Noto Serif TC',serif;
+  transition:all .2s;letter-spacing:.5px;
+}
+.view-btn.active{background:var(--warm);color:#f3ede1;}
 
-.date-bar{padding:10px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+/* ── THERAPIST TABS ── */
+.th-tabs{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:9px 16px;display:flex;gap:7px;overflow-x:auto;
+}
+.th-tab{
+  padding:5px 13px;
+  border:1px solid var(--border);
+  font-size:12px;cursor:pointer;white-space:nowrap;
+  font-family:'Noto Serif TC',serif;background:var(--surface);color:var(--text2);
+  transition:all .2s;font-weight:300;
+}
+.th-tab.active{font-weight:400;}
+
+/* ── DATE BAR ── */
+.date-bar{
+  padding:9px 16px;display:flex;
+  align-items:center;gap:7px;flex-wrap:wrap;
+  background:var(--surface);border-bottom:1px solid var(--border);
+}
 .date-bar-left{display:flex;align-items:center;gap:6px;flex:1;min-width:0;}
 .date-bar-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
-.nav-btn{width:30px;height:30px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--white);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text2);}
-.nav-btn:hover{background:var(--bg);}
-.date-label{font-size:14px;font-weight:600;flex:1;}
-.today-btn{font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:20px;cursor:pointer;background:var(--white);color:var(--text2);font-family:inherit;}
-.refresh-btn{font-size:11px;padding:4px 10px;border:1px solid var(--green);border-radius:20px;cursor:pointer;background:var(--green-light);color:var(--green-dark);font-family:inherit;}
+.nav-btn{
+  width:28px;height:28px;
+  border:1px solid var(--border);cursor:pointer;
+  background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:var(--muted);transition:all .2s;
+}
+.nav-btn:hover{border-color:var(--warm);color:var(--warm);}
+.date-label{
+  font-family:'Cormorant Garamond',serif;
+  font-size:15px;font-weight:400;flex:1;
+  color:var(--ink);letter-spacing:.5px;
+}
+.today-btn{
+  font-size:11px;padding:4px 10px;
+  border:1px solid var(--border);cursor:pointer;
+  background:var(--surface);color:var(--muted);
+  font-family:'Noto Serif TC',serif;transition:all .2s;
+  font-weight:300;
+}
+.today-btn:hover{border-color:var(--warm);color:var(--warm);}
+.refresh-btn{
+  font-size:11px;padding:4px 10px;
+  border:1px solid var(--border);cursor:pointer;
+  background:var(--glow);color:var(--accent);
+  font-family:'Noto Serif TC',serif;transition:all .2s;
+}
+.refresh-btn:hover{border-color:var(--warm);}
 
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 12px;}
-.stat{background:var(--white);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);}
-.stat-n{font-size:22px;font-weight:700;}
-.stat-l{font-size:11px;color:var(--text3);margin-top:2px;}
+/* ── STATS ── */
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:8px;padding:10px 16px 10px;
+}
+.stat{
+  background:var(--surface);
+  border:1px solid var(--border);
+  padding:10px 12px;
+}
+.stat-n{
+  font-family:'Cormorant Garamond',serif;
+  font-size:24px;font-weight:400;
+}
+.stat-l{font-size:11px;color:var(--muted);margin-top:2px;font-weight:300;}
 
-/* Day list */
+/* ── DAY LIST ── */
 .appt-list{padding:0 16px;display:flex;flex-direction:column;gap:8px;padding-bottom:80px;}
-.appt-card{background:var(--white);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);border-left:4px solid transparent;cursor:pointer;}
+.appt-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:3px solid transparent;
+  padding:13px;cursor:pointer;
+  transition:border-color .2s;
+}
 .appt-card.new{border-left-color:var(--new-color);}
 .appt-card.return{border-left-color:var(--green);}
-.appt-card.cancelled{opacity:0.5;}
+.appt-card.cancelled{opacity:.4;}
 .appt-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
-.appt-time{font-size:15px;font-weight:700;}
-.appt-name{font-size:15px;font-weight:600;flex:1;}
-.badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;}
+.appt-time{
+  font-family:'Cormorant Garamond',serif;
+  font-size:16px;font-weight:400;color:var(--ink);
+}
+.appt-name{font-size:14px;font-weight:400;flex:1;}
+.badge{font-size:10px;padding:2px 8px;font-weight:400;letter-spacing:.5px;}
 .badge.new{background:var(--new-bg);color:var(--new-color);}
 .badge.return{background:var(--return-bg);color:var(--return-color);}
-.badge.cancelled{background:var(--bg);color:var(--text3);}
-.appt-detail{font-size:12px;color:var(--text3);display:flex;gap:12px;}
+.badge.cancelled{background:rgba(155,138,116,.12);color:var(--muted);}
+.appt-detail{font-size:12px;color:var(--muted);display:flex;gap:12px;font-weight:300;}
 .appt-actions{display:flex;gap:6px;margin-top:10px;}
-.act-btn{flex:1;padding:7px;border-radius:8px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text2);font-family:inherit;font-weight:500;}
-.act-btn:hover{background:var(--border);}
-.act-btn.danger{color:#E53935;border-color:#FFCDD2;background:#FFF5F5;}
-.act-btn.success{color:var(--green-dark);border-color:var(--green-light);background:var(--green-light);}
-.empty{text-align:center;padding:40px 20px;color:var(--text3);}
-.empty-icon{font-size:40px;margin-bottom:12px;}
+.act-btn{
+  flex:1;padding:7px;font-size:12px;cursor:pointer;
+  border:1px solid var(--border);background:var(--bg);
+  color:var(--text2);font-family:'Noto Serif TC',serif;
+  transition:all .2s;font-weight:300;
+}
+.act-btn:hover{border-color:var(--warm);}
+.act-btn.danger{color:var(--new-color);border-color:rgba(217,110,40,.3);background:rgba(217,110,40,.05);}
+.act-btn.success{color:var(--accent);border-color:var(--border);background:var(--glow);}
+.empty{text-align:center;padding:44px 20px;color:var(--muted);}
+.empty-icon{font-size:38px;margin-bottom:12px;opacity:.5;}
 
-/* DRAG WEEK VIEW */
+/* ── WEEK VIEW ── */
 .week-outer{padding:0 16px 80px;overflow-x:auto;}
-.week-container{display:grid;grid-template-columns:52px repeat(7,1fr);min-width:620px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-
+.week-container{
+  display:grid;
+  grid-template-columns:46px repeat(7,1fr);
+  min-width:620px;
+  background:var(--surface);
+  border:1px solid var(--border);overflow:hidden;
+}
 .week-hdr-corner{background:var(--bg);border-bottom:1px solid var(--border);}
-.week-hdr{background:var(--bg);padding:8px 4px;text-align:center;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);border-left:1px solid var(--border);}
-.week-hdr.today-hdr{color:var(--green);font-weight:700;}
-.week-hdr .day-num{font-size:15px;font-weight:700;display:block;}
-
-.time-col{font-size:10px;color:var(--text3);text-align:right;padding-right:6px;height:var(--cell-h);display:flex;align-items:flex-start;padding-top:4px;border-bottom:1px solid var(--border);}
-
+.week-hdr{
+  background:var(--bg);padding:7px 4px;
+  text-align:center;font-size:11px;color:var(--muted);
+  border-bottom:1px solid var(--border);border-left:1px solid var(--border);
+  font-weight:300;
+}
+.week-hdr.today-hdr{color:var(--warm);font-weight:500;}
+.week-hdr .day-num{
+  font-family:'Cormorant Garamond',serif;
+  font-size:16px;font-weight:400;display:block;
+}
+.time-col{
+  font-size:10px;color:var(--muted);text-align:right;
+  padding-right:5px;height:52px;
+  display:flex;align-items:flex-start;padding-top:4px;
+  border-bottom:1px solid var(--border);font-weight:300;
+}
 .week-cell{
-  height:var(--cell-h);
+  height:52px;
   border-bottom:1px solid var(--border);
   border-left:1px solid var(--border);
-  position:relative;
-  transition:background 0.1s;
+  position:relative;transition:background .1s;
 }
-.week-cell.today-col{background:#F0FBF622;}
-.week-cell.drag-over{background:#E1F5EE !important;}
+.week-cell.today-col{background:rgba(192,138,82,.04);}
+.week-cell.drag-over{background:var(--glow) !important;}
 
-/* Appointment block */
+/* ── APPOINTMENT BLOCK ── */
 .appt-block{
-  position:absolute;
-  left:2px;right:2px;top:2px;bottom:2px;
-  border-radius:6px;
-  padding:3px 5px;
-  font-size:10px;
-  cursor:grab;
+  position:absolute;left:2px;right:2px;top:2px;bottom:2px;
+  padding:3px 5px;font-size:10px;cursor:grab;
   display:flex;flex-direction:column;justify-content:center;
-  transition:opacity 0.15s, box-shadow 0.15s;
-  z-index:2;
+  transition:opacity .15s,box-shadow .15s;z-index:2;
   touch-action:none;
 }
-.appt-block:hover{box-shadow:0 2px 8px rgba(0,0,0,0.2);z-index:3;}
-.appt-block.dragging{opacity:0.4;cursor:grabbing;}
-.appt-block.new-type{background:var(--new-bg);color:var(--new-color);border:1px solid #F5C67A;}
-.appt-block.return-type{background:var(--return-bg);color:var(--return-color);border:1px solid #A5D6C4;}
-.appt-block b{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.appt-block span{font-size:9px;opacity:0.8;}
+.appt-block:hover{box-shadow:0 2px 8px rgba(28,22,17,.2);z-index:3;}
+.appt-block.dragging{opacity:.4;cursor:grabbing;}
+.appt-block b{font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.appt-block span{font-size:9px;opacity:.8;}
 
-/* Ghost during drag */
+/* ── DRAG GHOST ── */
 .drag-ghost{
-  position:fixed;
-  pointer-events:none;
-  z-index:999;
-  border-radius:6px;
-  padding:4px 6px;
-  font-size:10px;
-  font-weight:700;
-  box-shadow:0 4px 16px rgba(0,0,0,0.25);
-  min-width:80px;
-  opacity:0.9;
+  position:fixed;pointer-events:none;z-index:999;
+  padding:4px 8px;font-size:11px;font-weight:600;
+  font-family:'Noto Serif TC',serif;
+  box-shadow:0 4px 16px rgba(28,22,17,.25);
+  min-width:80px;opacity:.92;
 }
 
-/* Toast */
+/* ── TOAST ── */
 .toast{
   position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-  background:#1A1C19;color:white;padding:10px 20px;border-radius:20px;
-  font-size:13px;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none;
+  background:var(--deep);color:#f3ede1;
+  padding:10px 22px;
+  font-size:12px;z-index:200;opacity:0;
+  transition:opacity .3s;pointer-events:none;
+  letter-spacing:1px;font-family:'Noto Serif TC',serif;
 }
 .toast.show{opacity:1;}
 
-/* Modal */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-end;justify-content:center;z-index:100;}
-.modal{background:var(--white);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;}
-.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
-.modal-title{font-size:16px;font-weight:700;margin-bottom:16px;}
-.modal-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
-.modal-lbl{color:var(--text3);}
-.modal-val{font-weight:500;text-align:right;}
-.modal-btns{display:flex;gap:8px;margin-top:16px;}
-.mBtn{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;}
-.mBtn.primary{background:var(--green);border-color:var(--green);color:white;}
-.mBtn.danger{color:#E53935;border-color:#FFCDD2;background:#FFF5F5;}
+/* ── MODAL ── */
+.modal-bg{
+  position:fixed;inset:0;
+  background:rgba(28,22,17,.5);
+  display:flex;align-items:flex-end;justify-content:center;z-index:100;
+}
+.modal{
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  padding:20px;width:100%;max-width:480px;
+  max-height:85vh;overflow-y:auto;
+}
+.modal-handle{
+  width:36px;height:3px;
+  background:var(--border);margin:0 auto 16px;
+}
+.modal-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:17px;font-weight:400;margin-bottom:16px;
+  color:var(--ink);letter-spacing:.5px;
+}
+.modal-row{
+  display:flex;justify-content:space-between;
+  padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;
+}
+.modal-lbl{color:var(--muted);font-weight:300;letter-spacing:.3px;}
+.modal-val{font-weight:400;text-align:right;color:var(--ink);}
+.modal-btns{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
+.mBtn{
+  flex:1;padding:11px;font-size:12px;font-weight:400;cursor:pointer;
+  border:1px solid var(--border);background:var(--bg);color:var(--text2);
+  font-family:'Noto Serif TC',serif;transition:all .2s;
+  letter-spacing:.5px;
+}
+.mBtn:hover{border-color:var(--warm);}
+.mBtn.primary{background:var(--ink);border-color:var(--ink);color:#f3ede1;}
+.mBtn.primary:hover{background:var(--accent);}
+.mBtn.danger{color:var(--new-color);border-color:rgba(217,110,40,.3);background:rgba(217,110,40,.05);}
+.mBtn.success{color:var(--accent);border-color:var(--glow);background:var(--glow);}
 
-.loading{text-align:center;padding:40px;color:var(--text3);}
-.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;}
+/* ── LOADING ── */
+.loading{text-align:center;padding:44px;color:var(--muted);}
+.spinner{
+  width:28px;height:28px;
+  border:2px solid var(--border);border-top-color:var(--warm);
+  border-radius:50%;animation:spin .9s linear infinite;
+  margin:0 auto 12px;
+}
 @keyframes spin{to{transform:rotate(360deg);}}
+.loading p{font-size:12px;font-weight:300;letter-spacing:1px;}
 
-/* ── MOBILE RESPONSIVE ── */
-@media (max-width: 640px) {
-  /* Header */
-  .header{padding:10px 12px;}
+/* ── FORM ELEMENTS IN MODALS ── */
+.field-lbl{
+  font-size:11px;color:var(--muted);display:block;
+  margin-bottom:5px;letter-spacing:.5px;font-weight:300;
+}
+.field-input{
+  width:100%;border:none;border-bottom:1px solid var(--border);
+  padding:8px 2px;font-size:14px;
+  font-family:'Noto Serif TC',serif;color:var(--ink);
+  background:transparent;outline:none;transition:border-color .2s;
+  font-weight:300;
+}
+.field-input:focus{border-bottom-color:var(--warm);}
+.field-select{
+  width:100%;border:none;border-bottom:1px solid var(--border);
+  padding:8px 18px 8px 2px;font-size:14px;
+  font-family:'Noto Serif TC',serif;color:var(--ink);
+  background:transparent;outline:none;appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239b8a74' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 2px center;
+  transition:border-color .2s;font-weight:300;
+}
+.field-select:focus{border-bottom-color:var(--warm);}
+
+/* ── MOBILE ── */
+@media (max-width:640px){
+  .header{padding:8px 12px;}
   .header-title{font-size:13px;}
   .header-sub{font-size:10px;}
-
-  /* Page buttons */
-  #btnCalPage, #btnPatientsPage{font-size:11px;padding:5px 10px;}
-
-  /* View toggle */
-  .view-btn{padding:5px 10px;font-size:11px;}
-
-  /* Therapist tabs - horizontal scroll */
-  .th-tabs{padding:8px 12px;gap:6px;}
-  .th-tab{font-size:11px;padding:5px 10px;}
-
-  /* Date bar - two rows on mobile */
-  .date-bar{padding:8px 12px;gap:6px;}
+  #btnCalPage,#btnPatientsPage{font-size:10px;padding:5px 9px;}
+  .view-btn{padding:4px 9px;font-size:11px;}
+  .th-tabs{padding:7px 12px;gap:5px;}
+  .th-tab{font-size:10px;padding:4px 9px;}
+  .date-bar{padding:7px 12px;gap:5px;}
   .date-label{font-size:13px;}
-  .today-btn, .refresh-btn{font-size:10px;padding:3px 8px;}
-
-  /* Stats */
-  .stats{padding:0 12px 10px;gap:6px;}
-  .stat-n{font-size:18px;}
+  .today-btn,.refresh-btn{font-size:10px;padding:3px 7px;}
+  .stats{padding:0 12px 8px;gap:5px;}
+  .stat-n{font-size:20px;}
   .stat-l{font-size:10px;}
-
-  /* Day layout: stack vertically on mobile */
-  #day-layout{
-    grid-template-columns: 1fr !important;
-    padding: 0 12px 80px !important;
-    gap: 12px !important;
-  }
-
-  /* Hide sidebar by default on mobile */
+  #day-layout{grid-template-columns:1fr !important;padding:0 12px 80px !important;gap:10px !important;}
   #day-sidebar{display:none;}
-
-  /* Week view */
   .week-outer{padding:0 0 80px;}
   .week-container{min-width:500px;}
-
-  /* Modal full screen on mobile */
-  .modal{border-radius:16px 16px 0 0;padding:16px;}
-  .modal-title{font-size:14px;}
-  .modal-btns{flex-wrap:wrap;}
-  .mBtn{font-size:12px;padding:10px 8px;}
-
-  /* New appt button */
-  .date-bar button[onclick="openNewAppt()"]{font-size:11px;padding:5px 10px;}
+  .modal{padding:14px;}
+  .modal-title{font-size:15px;}
+  .mBtn{font-size:11px;padding:9px 6px;}
 }
 </style>
 </head>
 <body>
 
+<!-- ── 登入畫面 ── -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-emblem">
+      <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 6C22 6 27 15 27 22C27 29 22 38 22 38C22 38 17 29 17 22C17 15 22 6 22 6Z" stroke="#c08a52" stroke-width="1" fill="none"/>
+        <path d="M6 22C6 22 15 17 22 17C29 17 38 22 38 22C38 22 29 27 22 27C15 27 6 22 6 22Z" stroke="#c08a52" stroke-width="1" fill="none"/>
+        <circle cx="22" cy="22" r="2" fill="#c08a52" opacity=".6"/>
+      </svg>
+    </div>
+    <p class="login-title">治療師後台</p>
+    <p class="login-sub">九辰物理治療所</p>
+    <input class="login-input" id="loginPwd" type="password" placeholder="請輸入密碼"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()"><span>進入後台</span></button>
+    <p class="login-err" id="loginErr"></p>
+  </div>
+</div>
+
+<!-- ── 後台主體 ── -->
+<div id="appBody" style="display:none">
+
 <div class="header">
   <div class="header-left">
-    <div class="logo">九</div>
+    <div class="logo">
+      <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 6C22 6 27 15 27 22C27 29 22 38 22 38C22 38 17 29 17 22C17 15 22 6 22 6Z" stroke="#c08a52" stroke-width="1" fill="none"/>
+        <path d="M6 22C6 22 15 17 22 17C29 17 38 22 38 22C38 22 29 27 22 27C15 27 6 22 6 22Z" stroke="#c08a52" stroke-width="1" fill="none"/>
+        <circle cx="22" cy="22" r="2" fill="#c08a52" opacity=".6"/>
+      </svg>
+    </div>
     <div>
       <div class="header-title">治療師後台</div>
       <div class="header-sub">九辰物理治療所</div>
     </div>
   </div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <button onclick="setPage('calendar')" id="btnCalPage" style="padding:6px 12px;border-radius:8px;border:none;background:var(--green);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">📅 日曆</button>
-    <button onclick="setPage('patients')" id="btnPatientsPage" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--white);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">👥 病人</button>
+  <div style="display:flex;gap:7px;align-items:center">
+    <button onclick="setPage('calendar')" id="btnCalPage"
+      style="padding:5px 11px;border:1px solid rgba(192,138,82,.5);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px">
+      📅 日曆
+    </button>
+    <button onclick="setPage('patients')" id="btnPatientsPage"
+      style="padding:5px 11px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px">
+      👥 病人
+    </button>
     <div class="view-toggle" id="viewToggle">
       <button class="view-btn active" id="btnDay" onclick="setView('day')">日</button>
       <button class="view-btn" id="btnWeek" onclick="setView('week')">週</button>
@@ -228,42 +473,66 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text
   <button class="nav-btn" onclick="navigate(1)">›</button>
   <button class="today-btn" onclick="goToday()">今天</button>
   <button class="refresh-btn" onclick="loadData()">重新整理</button>
-  <button onclick="openNewAppt()" style="padding:6px 14px;border-radius:20px;border:none;background:var(--green);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">＋ 新增預約</button>
+  <button onclick="openNewAppt()"
+    style="padding:5px 13px;border:1px solid var(--warm);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px">
+    ＋ 新增預約
+  </button>
 </div>
 <div class="stats" id="statsRow"></div>
 <div id="mainContent"></div>
 <div id="modalArea"></div>
 <div class="toast" id="toast"></div>
 
+</div><!-- #appBody -->
+
 <script>
+/* ── 密碼驗證 ── */
+const ADMIN_PASSWORD = 'jiuchen2024';
+
+function doLogin(){
+  const pwd = document.getElementById('loginPwd').value;
+  if(pwd === ADMIN_PASSWORD){
+    sessionStorage.setItem('admin_auth','1');
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appBody').style.display='block';
+    document.getElementById('mainContent').innerHTML='<div class="loading"><div class="spinner"></div><p>載入中</p></div>';
+    loadData();
+  } else {
+    document.getElementById('loginErr').textContent='密碼錯誤，請再試一次';
+    document.getElementById('loginPwd').value='';
+    document.getElementById('loginPwd').focus();
+  }
+}
+
+// 已登入就直接進入
+if(sessionStorage.getItem('admin_auth')==='1'){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appBody').style.display='block';
+}
+
+/* ── Supabase ── */
 const SUPABASE_URL = 'https://vmkdawpukwpsifqguljy.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZta2Rhd3B1a3dwc2lmcWd1bGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjE2MDUsImV4cCI6MjA5NTQzNzYwNX0.hq8rbjKe3NOUhV1sbViBtuQLSzQuWCnK1_4QSrCy2xM';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const DAYS = ['日','一','二','三','四','五','六'];
 const TIMES = ['09:00','09:30','10:00','10:30','11:00','11:30','13:30','14:00','14:30','15:00','15:30','16:00'];
-const TH_COLORS = ['#1D9E75','#185FA5','#534AB7','#BA7517'];
-const TH_BGS = ['#E1F5EE','#E6F1FB','#EEEDFE','#FAEEDA'];
 
-function thColor(t){ return t.color||'#1D9E75'; }
+function thColor(t){ return t.color||'#c08a52'; }
 function thBg(t){
-  // Convert hex to light bg version
-  const c=t.color||'#1D9E75';
+  const c=t.color||'#c08a52';
   const r=parseInt(c.slice(1,3),16),g=parseInt(c.slice(3,5),16),b=parseInt(c.slice(5,7),16);
   return `rgba(${r},${g},${b},0.12)`;
 }
 function thText(t){
-  const c=t.color||'#1D9E75';
+  const c=t.color||'#c08a52';
   const r=parseInt(c.slice(1,3),16),g=parseInt(c.slice(3,5),16),b=parseInt(c.slice(5,7),16);
-  // Darken for text
   return `rgb(${Math.round(r*0.6)},${Math.round(g*0.6)},${Math.round(b*0.6)})`;
 }
 
 let therapists=[], appointments=[];
 let curThId=0, curView='day', curDate=new Date();
-
-// Drag state
-let dragApptId=null, dragGhost=null, lastDropCell=null;
+let dragApptId=null, dragGhost=null;
 
 function fmtDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function getWeekStart(d){const s=new Date(d);s.setDate(d.getDate()-d.getDay());return s;}
@@ -282,14 +551,15 @@ let partFilter = '';
 
 function setPage(page){
   curPage = page;
-  document.getElementById('btnCalPage').style.cssText='padding:6px 12px;border-radius:8px;border:none;background:'+(page==='calendar'?'var(--green)':'var(--white)')+';color:'+(page==='calendar'?'white':'var(--text2)')+';font-size:12px;font-weight:600;cursor:pointer;font-family:inherit';
-  document.getElementById('btnPatientsPage').style.cssText='padding:6px 12px;border-radius:8px;border:'+(page==='patients'?'none':'1px solid var(--border)')+';background:'+(page==='patients'?'var(--green)':'var(--white)')+';color:'+(page==='patients'?'white':'var(--text2)')+';font-size:12px;font-weight:500;cursor:pointer;font-family:inherit';
-  document.getElementById('viewToggle').style.display=page==='calendar'?'flex':'none';
-  document.getElementById('thTabs').style.display=page==='calendar'?'flex':'none';
+  const calActive = page==='calendar';
+  document.getElementById('btnCalPage').style.cssText=`padding:5px 11px;border:1px solid ${calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${calActive?'var(--warm)':'transparent'};color:${calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px`;
+  document.getElementById('btnPatientsPage').style.cssText=`padding:5px 11px;border:1px solid ${!calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${!calActive?'var(--warm)':'transparent'};color:${!calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px`;
+  document.getElementById('viewToggle').style.display=calActive?'flex':'none';
+  document.getElementById('thTabs').style.display=calActive?'flex':'none';
   const dateBar=document.querySelector('.date-bar');
-  if(dateBar)dateBar.style.display=page==='calendar'?'flex':'none';
+  if(dateBar)dateBar.style.display=calActive?'flex':'none';
   const statsRow=document.getElementById('statsRow');
-  if(statsRow)statsRow.style.display=page==='calendar'?'grid':'none';
+  if(statsRow)statsRow.style.display=calActive?'grid':'none';
   if(page==='patients') renderPatients();
   else loadData();
 }
@@ -299,7 +569,6 @@ function debouncedSearch(val){
   patientFilter=val;
   clearTimeout(_searchTimer);
   _searchTimer=setTimeout(()=>{
-    // 只更新清單，不重建整個頁面
     const filtered=patients.filter(p=>{
       const nm=!patientFilter||p.name.includes(patientFilter)||(p.phone&&p.phone.includes(patientFilter));
       const pm=!partFilter||(p.body_parts&&p.body_parts.includes(partFilter));
@@ -308,18 +577,21 @@ function debouncedSearch(val){
     const listEl=document.getElementById('pt-list');
     if(!listEl)return;
     document.getElementById('pt-count').textContent=`共 ${filtered.length} 位病人`;
-    listEl.innerHTML=filtered.length?filtered.map(p=>`
-      <div onclick="openPatientDetail(${p.id})" style="background:var(--white);border-radius:var(--radius);padding:14px;margin-bottom:8px;box-shadow:var(--shadow);cursor:pointer;display:flex;align-items:center;gap:12px">
-        <div style="width:40px;height:40px;border-radius:50%;background:var(--green-light);color:var(--green-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0">${p.name[0]}</div>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:600;margin-bottom:4px">${p.name}</div>
-          <div style="font-size:12px;color:var(--text3)">${p.phone||'無電話'}${p.first_visit?' · 初診：'+p.first_visit:''}</div>
-          ${p.body_parts&&p.body_parts.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${p.body_parts.map(bp=>`<span style="background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:2px 8px;font-size:10px">${bp}</span>`).join('')}</div>`:''}
-        </div>
-        <span style="color:var(--text3);font-size:18px">›</span>
-      </div>`).join('')
-    :`<div style="text-align:center;padding:40px;color:var(--text3)">找不到符合的病人</div>`;
+    listEl.innerHTML=filtered.length?filtered.map(p=>ptCard(p)).join('')
+    :`<div style="text-align:center;padding:40px;color:var(--muted)">找不到符合的病人</div>`;
   }, 400);
+}
+
+function ptCard(p){
+  return `<div onclick="openPatientDetail(${p.id})" style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px">
+    <div style="width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--glow);color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:17px;flex-shrink:0">${p.name[0]}</div>
+    <div style="flex:1">
+      <div style="font-size:14px;font-weight:400;margin-bottom:3px;color:var(--ink)">${p.name}</div>
+      <div style="font-size:12px;color:var(--muted);font-weight:300">${p.phone||'無電話'}${p.first_visit?' · 初診：'+p.first_visit:''}</div>
+      ${p.body_parts&&p.body_parts.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">${p.body_parts.map(bp=>`<span style="background:var(--glow);color:var(--accent);padding:2px 8px;font-size:10px;border:1px solid var(--border)">${bp}</span>`).join('')}</div>`:''}
+    </div>
+    <span style="color:var(--muted);font-size:16px">›</span>
+  </div>`;
 }
 
 async function loadPatients(){
@@ -329,47 +601,38 @@ async function loadPatients(){
 
 function renderPatients(){
   const el=document.getElementById('mainContent');
-  el.innerHTML='<div class="loading"><div class="spinner"></div>載入中...</div>';
+  el.innerHTML='<div class="loading"><div class="spinner"></div><p>載入中</p></div>';
   loadPatients().then(()=>{
     const filtered=patients.filter(p=>{
-      const nameMatch=!patientFilter||p.name.includes(patientFilter)||( p.phone&&p.phone.includes(patientFilter));
+      const nameMatch=!patientFilter||p.name.includes(patientFilter)||(p.phone&&p.phone.includes(patientFilter));
       const partMatch=!partFilter||(p.body_parts&&p.body_parts.includes(partFilter));
       return nameMatch&&partMatch;
     });
-
     el.innerHTML=`<div style="padding:0 16px 80px">
-      <!-- Search + filter -->
-      <div style="background:var(--white);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)">
+      <div style="background:var(--surface);border:1px solid var(--border);padding:14px;margin-bottom:12px">
         <div style="display:flex;gap:8px;margin-bottom:10px">
-          <input id="ptSearch" placeholder="搜尋姓名或電話..." value="${patientFilter}" oninput="debouncedSearch(this.value)" style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;outline:none">
-          <button onclick="openNewPatient()" style="padding:8px 14px;background:var(--green);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">＋ 新增</button>
+          <input id="ptSearch" placeholder="搜尋姓名或電話…" value="${patientFilter}" oninput="debouncedSearch(this.value)"
+            style="flex:1;border:none;border-bottom:1px solid var(--border);padding:8px 2px;font-size:13px;font-family:'Noto Serif TC',serif;outline:none;background:transparent;font-weight:300">
+          <button onclick="openNewPatient()" style="padding:7px 13px;background:var(--warm);color:#f3ede1;border:none;font-size:12px;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px">＋ 新增</button>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <div onclick="partFilter='';renderPatients()" style="padding:4px 10px;border-radius:20px;font-size:11px;cursor:pointer;background:${!partFilter?'var(--green)':'var(--bg)'};color:${!partFilter?'white':'var(--text2)'}">全部</div>
-          ${BODY_PARTS.map(p=>`<div onclick="partFilter='${p}';renderPatients()" style="padding:4px 10px;border-radius:20px;font-size:11px;cursor:pointer;background:${partFilter===p?'var(--green)':'var(--bg)'};color:${partFilter===p?'white':'var(--text2)'}">${p}</div>`).join('')}
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <div onclick="partFilter='';renderPatients()" style="padding:3px 10px;font-size:11px;cursor:pointer;border:1px solid ${!partFilter?'var(--warm)':'var(--border)'};background:${!partFilter?'var(--glow)':'transparent'};color:${!partFilter?'var(--accent)':'var(--muted)'}">全部</div>
+          ${BODY_PARTS.map(p=>`<div onclick="partFilter='${p}';renderPatients()" style="padding:3px 10px;font-size:11px;cursor:pointer;border:1px solid ${partFilter===p?'var(--warm)':'var(--border)'};background:${partFilter===p?'var(--glow)':'transparent'};color:${partFilter===p?'var(--accent)':'var(--muted)'}">${p}</div>`).join('')}
         </div>
       </div>
-
-      <!-- Patient count -->
-      <div id="pt-count" style="font-size:12px;color:var(--text3);margin-bottom:10px">共 ${filtered.length} 位病人</div>
-
-      <!-- Patient cards -->
+      <div id="pt-count" style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:300;letter-spacing:.5px">共 ${filtered.length} 位病人</div>
       <div id="pt-list">
-      ${filtered.length?filtered.map(p=>`
-        <div onclick="openPatientDetail(${p.id})" style="background:var(--white);border-radius:var(--radius);padding:14px;margin-bottom:8px;box-shadow:var(--shadow);cursor:pointer;display:flex;align-items:center;gap:12px">
-          <div style="width:40px;height:40px;border-radius:50%;background:var(--green-light);color:var(--green-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0">${p.name[0]}</div>
-          <div style="flex:1">
-            <div style="font-size:15px;font-weight:600;margin-bottom:4px">${p.name}</div>
-            <div style="font-size:12px;color:var(--text3)">${p.phone||'無電話'}${p.first_visit?' · 初診：'+p.first_visit:''}</div>
-            ${p.body_parts&&p.body_parts.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${p.body_parts.map(bp=>`<span style="background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:2px 8px;font-size:10px">${bp}</span>`).join('')}</div>`:''}
-          </div>
-          <span style="color:var(--text3);font-size:18px">›</span>
-        </div>`).join('')
-      :`<div style="text-align:center;padding:40px;color:var(--text3)">找不到符合的病人</div>`}
+      ${filtered.length?filtered.map(p=>ptCard(p)).join('')
+      :`<div style="text-align:center;padding:40px;color:var(--muted)">尚無病人資料</div>`}
       </div>
     </div>`;
   });
 }
+
+function partTagStyle(sel){
+  return `padding:5px 10px;font-size:11px;cursor:pointer;border:1px solid ${sel?'var(--warm)':'var(--border)'};background:${sel?'var(--glow)':'transparent'};color:${sel?'var(--accent)':'var(--muted)'}`;
+}
+function fieldBox(){ return `width:100%;border:none;border-bottom:1px solid var(--border);padding:8px 2px;font-size:13px;font-family:'Noto Serif TC',serif;background:transparent;outline:none;font-weight:300`; }
 
 function openNewPatient(){
   document.getElementById('modalArea').innerHTML=`
@@ -377,29 +640,29 @@ function openNewPatient(){
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
       <p class="modal-title">新增病人資料</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
         <div>
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">姓名 *</label>
-          <input id="np-name" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit" placeholder="">
+          <label class="field-lbl">姓名 *</label>
+          <input id="np-name" style="${fieldBox()}" placeholder="">
         </div>
         <div>
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">電話</label>
-          <input id="np-phone" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit" placeholder="">
+          <label class="field-lbl">電話</label>
+          <input id="np-phone" style="${fieldBox()}" placeholder="">
         </div>
       </div>
-      <div style="margin-bottom:10px">
-        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:6px">治療部位（可多選）</label>
-        <div style="display:flex;gap:6px;flex-wrap:wrap" id="np-parts">
-          ${BODY_PARTS.map(p=>`<div onclick="npTogglePart('${p}')" id="np-part-${p}" style="padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg)">${p}</div>`).join('')}
+      <div style="margin-bottom:12px">
+        <label class="field-lbl">治療部位（可多選）</label>
+        <div style="display:flex;gap:5px;flex-wrap:wrap" id="np-parts">
+          ${BODY_PARTS.map(p=>`<div onclick="npTogglePart('${p}')" id="np-part-${p}" style="${partTagStyle(false)}">${p}</div>`).join('')}
         </div>
       </div>
-      <div style="margin-bottom:10px">
-        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">初診日期</label>
-        <input id="np-first" type="date" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit">
+      <div style="margin-bottom:12px">
+        <label class="field-lbl">初診日期</label>
+        <input id="np-first" type="date" style="${fieldBox()}">
       </div>
-      <div style="margin-bottom:10px">
-        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">備註</label>
-        <textarea id="np-note" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;resize:vertical;min-height:60px" placeholder="過敏、慢性病、特殊注意事項..."></textarea>
+      <div style="margin-bottom:12px">
+        <label class="field-lbl">備註</label>
+        <textarea id="np-note" style="width:100%;border:1px solid var(--border);padding:8px 10px;font-size:13px;font-family:'Noto Serif TC',serif;resize:vertical;min-height:60px;background:rgba(243,237,225,.5);outline:none;font-weight:300" placeholder="過敏、慢性病、特殊注意事項…"></textarea>
       </div>
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">取消</button>
@@ -414,22 +677,19 @@ function npTogglePart(p){
   if(!window._npParts)window._npParts=[];
   const idx=window._npParts.indexOf(p);
   if(idx>=0)window._npParts.splice(idx,1);else window._npParts.push(p);
-  const el=document.getElementById('np-part-'+p);
-  const sel=window._npParts.includes(p);
-  el.style.cssText=`padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${sel?'var(--green)':'var(--border)'};background:${sel?'var(--green-light)':'var(--bg)'};color:${sel?'var(--green-dark)':'var(--text)'}`;
+  document.getElementById('np-part-'+p).style.cssText=partTagStyle(window._npParts.includes(p));
 }
 
 async function submitNewPatient(){
   const name=document.getElementById('np-name').value.trim();
   if(!name){showToast('請填寫姓名');return;}
   const{error}=await sb.from('patients').insert([{
-    name,
-    phone:document.getElementById('np-phone').value.trim()||null,
+    name,phone:document.getElementById('np-phone').value.trim()||null,
     body_parts:window._npParts||[],
     first_visit:document.getElementById('np-first').value||null,
     note:document.getElementById('np-note').value.trim()||null
   }]);
-  if(!error){closeModal();showToast('✅ 病人資料已儲存');renderPatients();}
+  if(!error){closeModal();showToast('病人資料已儲存');renderPatients();}
   else showToast('儲存失敗：'+error.message);
 }
 
@@ -442,41 +702,27 @@ function openPatientDetail(id){
     <div class="modal" onclick="event.stopPropagation()" style="max-height:85vh;overflow-y:auto">
       <div class="modal-handle"></div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-        <div style="width:48px;height:48px;border-radius:50%;background:var(--green-light);color:var(--green-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px">${p.name[0]}</div>
-        <div><p style="font-size:17px;font-weight:700">${p.name}</p><p style="font-size:12px;color:var(--text3)">${p.phone||'無電話'}</p></div>
+        <div style="width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--glow);color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:20px">${p.name[0]}</div>
+        <div><p style="font-size:16px;font-family:'Cormorant Garamond',serif;font-weight:400">${p.name}</p><p style="font-size:11px;color:var(--muted);font-weight:300">${p.phone||'無電話'}</p></div>
       </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div>
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">姓名</label>
-          <input id="ep-name" value="${p.name}" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit">
-        </div>
-        <div>
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">電話</label>
-          <input id="ep-phone" value="${p.phone||''}" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit">
-        </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div><label class="field-lbl">姓名</label><input id="ep-name" value="${p.name}" style="${fieldBox()}"></div>
+        <div><label class="field-lbl">電話</label><input id="ep-phone" value="${p.phone||''}" style="${fieldBox()}"></div>
       </div>
-
-      <div style="margin-bottom:10px">
-        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:6px">治療部位（可多選）</label>
-        <div style="display:flex;gap:6px;flex-wrap:wrap" id="ep-parts">
-          ${BODY_PARTS.map(bp=>{
-            const sel=window._editParts.includes(bp);
-            return `<div onclick="epTogglePart('${bp}')" id="ep-p-${bp}" style="padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${sel?'var(--green)':'var(--border)'};background:${sel?'var(--green-light)':'var(--bg)'};color:${sel?'var(--green-dark)':'var(--text)'}">${bp}</div>`;
-          }).join('')}
+      <div style="margin-bottom:12px">
+        <label class="field-lbl">治療部位（可多選）</label>
+        <div style="display:flex;gap:5px;flex-wrap:wrap" id="ep-parts">
+          ${BODY_PARTS.map(bp=>`<div onclick="epTogglePart('${bp}')" id="ep-p-${bp}" style="${partTagStyle(window._editParts.includes(bp))}">${bp}</div>`).join('')}
         </div>
       </div>
-
-      <div style="margin-bottom:10px">
-        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">初診日期</label>
-        <input id="ep-first" type="date" value="${p.first_visit||''}" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit">
+      <div style="margin-bottom:12px">
+        <label class="field-lbl">初診日期</label>
+        <input id="ep-first" type="date" value="${p.first_visit||''}" style="${fieldBox()}">
       </div>
-
-      <div style="margin-bottom:10px">
-        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">備註</label>
-        <textarea id="ep-note" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;resize:vertical;min-height:60px">${p.note||''}</textarea>
+      <div style="margin-bottom:12px">
+        <label class="field-lbl">備註</label>
+        <textarea id="ep-note" style="width:100%;border:1px solid var(--border);padding:8px 10px;font-size:13px;font-family:'Noto Serif TC',serif;resize:vertical;min-height:60px;background:rgba(243,237,225,.5);outline:none;font-weight:300">${p.note||''}</textarea>
       </div>
-
       <div class="modal-btns">
         <button class="mBtn danger" onclick="deletePatient(${p.id})">刪除</button>
         <button class="mBtn" onclick="closeModal()">取消</button>
@@ -491,24 +737,19 @@ function epTogglePart(bp){
   const idx=window._editParts.indexOf(bp);
   if(idx>=0)window._editParts.splice(idx,1);else window._editParts.push(bp);
   const el=document.getElementById('ep-p-'+bp);
-  if(!el)return;
-  const sel=window._editParts.includes(bp);
-  el.style.cssText=`padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid ${sel?'var(--green)':'var(--border)'};background:${sel?'var(--green-light)':'var(--bg)'};color:${sel?'var(--green-dark)':'var(--text)'}`;
+  if(el)el.style.cssText=partTagStyle(window._editParts.includes(bp));
 }
 
 async function savePatient(id){
   const name=document.getElementById('ep-name').value.trim();
-  const phone=document.getElementById('ep-phone').value.trim();
-  const first=document.getElementById('ep-first').value;
-  const note=document.getElementById('ep-note').value.trim();
   if(!name){showToast('姓名不能空白');return;}
   const{error}=await sb.from('patients').update({
-    name, phone:phone||null,
+    name,phone:document.getElementById('ep-phone').value.trim()||null,
     body_parts:window._editParts||[],
-    first_visit:first||null,
-    note:note||null
+    first_visit:document.getElementById('ep-first').value||null,
+    note:document.getElementById('ep-note').value.trim()||null
   }).eq('id',id);
-  if(!error){closeModal();showToast('✅ 病人資料已更新');renderPatients();}
+  if(!error){closeModal();showToast('病人資料已更新');renderPatients();}
   else showToast('儲存失敗：'+error.message);
 }
 
@@ -519,16 +760,15 @@ async function deletePatient(id){
 }
 
 async function loadData(){
+  if(sessionStorage.getItem('admin_auth')!=='1')return;
   const{data:ths}=await sb.from('therapists').select('*').order('id');
   if(ths)therapists=ths;
   let startDate,endDate;
   if(curView==='day'){startDate=endDate=fmtDate(curDate);}
   else if(curView==='week'){
-    const ws=getWeekStart(curDate);
-    const we=new Date(ws);we.setDate(ws.getDate()+6);
+    const ws=getWeekStart(curDate);const we=new Date(ws);we.setDate(ws.getDate()+6);
     startDate=fmtDate(ws);endDate=fmtDate(we);
   } else {
-    // month: load entire month + buffer
     const first=new Date(curDate.getFullYear(),curDate.getMonth(),1);
     const last=new Date(curDate.getFullYear(),curDate.getMonth()+1,0);
     startDate=fmtDate(first);endDate=fmtDate(last);
@@ -564,17 +804,17 @@ function render(){
 
 function renderThTabs(){
   document.getElementById('thTabs').innerHTML=`
-    <button class="th-tab ${curThId===0?'active':''}" style="${curThId===0?'border-color:var(--green);background:var(--green-light);color:var(--green-dark)':''}" onclick="selectTh(0)">全部</button>
+    <button class="th-tab ${curThId===0?'active':''}" style="${curThId===0?'border-color:var(--warm);background:var(--glow);color:var(--accent)':''}" onclick="selectTh(0)">全部</button>
     ${therapists.map(t=>`<button class="th-tab ${curThId===t.id?'active':''}" style="${curThId===t.id?`border-color:${thColor(t)};background:${thBg(t)};color:${thText(t)}`:''}" onclick="selectTh(${t.id})">${t.name}</button>`).join('')}`;
 }
 function selectTh(id){curThId=id;render();}
 
 function renderDateLabel(){
   let txt='';
-  if(curView==='day'){const d=curDate;txt=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DAYS[d.getDay()]}）`;}
+  if(curView==='day'){const d=curDate;txt=`${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日（${DAYS[d.getDay()]}）`;}
   else if(curView==='week'){const ws=getWeekStart(curDate);const we=new Date(ws);we.setDate(ws.getDate()+6);txt=`${ws.getMonth()+1}/${ws.getDate()} – ${we.getMonth()+1}/${we.getDate()}`;}
-  else{txt=`${curDate.getFullYear()}年${curDate.getMonth()+1}月`;}
-  document.getElementById('dateLabel').innerHTML=`<span>${txt}</span><span style="font-size:10px;color:var(--text3)">▼</span>`;
+  else{txt=`${curDate.getFullYear()} 年 ${curDate.getMonth()+1} 月`;}
+  document.getElementById('dateLabel').innerHTML=`<span>${txt}</span><span style="font-size:10px;color:var(--muted)">▼</span>`;
 }
 
 function getFiltered(dateStr){
@@ -591,48 +831,35 @@ function renderStats(){
   document.getElementById('statsRow').innerHTML=`
     <div class="stat"><div class="stat-n">${f.length}</div><div class="stat-l">${curView==='day'?'今日':'本週'}預約</div></div>
     <div class="stat"><div class="stat-n" style="color:var(--new-color)">${f.filter(a=>a.type==='new').length}</div><div class="stat-l">初診</div></div>
-    <div class="stat"><div class="stat-n" style="color:var(--green)">${f.filter(a=>a.type==='return').length}</div><div class="stat-l">回診</div></div>`;
+    <div class="stat"><div class="stat-n" style="color:var(--return-color)">${f.filter(a=>a.type==='return').length}</div><div class="stat-l">回診</div></div>`;
 }
 
-// Color logic:
-// - Assigned therapist + new = therapist color + 初 badge
-// - Assigned therapist + return = therapist color
-// - Unassigned + new = orange (new-color)
-// - Unassigned + return = green (return-color)
 function thCode(a){
-  if(!a.therapist_id) return '未指定';
+  if(!a.therapist_id) return '未';
   const t=therapists.find(x=>x.id===a.therapist_id);
-  if(!t) return '未指定';
+  if(!t) return '未';
   return t.code || t.name.slice(-1);
 }
-
 function apptBg(a){
   if(a.therapist_id){const t=therapists.find(x=>x.id===a.therapist_id);if(t)return thBg(t);}
-  return '#FFF9E0'; // 不指定初診 -> 黃色
+  return 'rgba(192,138,82,.1)';
 }
 function apptColor(a){
   if(a.therapist_id){const t=therapists.find(x=>x.id===a.therapist_id);if(t)return thText(t);}
-  return '#B8860B';
+  return '#7a5638';
 }
 function apptBorder(a){
   if(a.therapist_id){const t=therapists.find(x=>x.id===a.therapist_id);if(t)return thColor(t);}
-  return '#D4A800';
+  return '#c08a52';
 }
-function apptLabel(a){
-  if(a.type==='new') return '初';
-  return '';
-}
-
+function apptLabel(a){ return a.type==='new'?'初':''; }
 function getThName(id){if(!id)return'不指定';const t=therapists.find(x=>x.id===id);return t?t.name+' 治療師':'不指定';}
-function getThColorById(id){const t=therapists.find(x=>x.id===id);return t?thColor(t):'#888';}
-function getThBgById(id){const t=therapists.find(x=>x.id===id);return t?thBg(t):'#eee';}
 
 function renderDay(){
   const ds=fmtDate(curDate);
   const dayAppts=getFiltered(ds).filter(a=>a.status!=='cancelled').sort((a,b)=>a.appointment_time.localeCompare(b.appointment_time));
   const el=document.getElementById('mainContent');
 
-  // Build time axis + appointment blocks (left) + list (right)
   let timeRows='';
   TIMES.forEach(t=>{
     const slotsAtTime=dayAppts.filter(a=>a.appointment_time.slice(0,5)===t);
@@ -642,20 +869,20 @@ function renderDay(){
       slotsHtml=`<div style="width:100%;height:100%;cursor:pointer;" onclick="openNewApptAt('${ds}','${t}')"></div>`;
     } else {
       slotsAtTime.forEach((slot,si)=>{
-        slotsHtml+=`<div draggable="true" data-id="${slot.id}" 
+        slotsHtml+=`<div draggable="true" data-id="${slot.id}"
           ondragstart="onDragStart(event,${slot.id})" ondragend="onDragEnd(event)"
-          onclick="openModal(${slot.id})" 
-          style="position:absolute;left:${si*w}%;width:${w}%;top:2px;bottom:2px;background:${apptBg(slot)};color:${apptColor(slot)};border-radius:6px;padding:4px 8px;cursor:grab;border-left:3px solid ${apptBorder(slot)};overflow:hidden">
-          <div style="font-size:12px;font-weight:600">${thCode(slot)?thCode(slot)+"-":""} ${slot.patient_name} ${apptLabel(slot)?`<span style="font-size:9px;font-weight:700;background:rgba(0,0,0,0.12);border-radius:4px;padding:1px 4px;margin-left:3px">${apptLabel(slot)}</span>`:''}</div>
-          <div style="font-size:11px;opacity:0.8">${slot.service||''} ${slot.symptoms?'・'+slot.symptoms:''}</div>
+          onclick="openModal(${slot.id})"
+          style="position:absolute;left:${si*w}%;width:${w}%;top:2px;bottom:2px;background:${apptBg(slot)};color:${apptColor(slot)};padding:3px 7px;cursor:grab;border-left:2px solid ${apptBorder(slot)};overflow:hidden">
+          <div style="font-size:11px;font-weight:500">${thCode(slot)?thCode(slot)+'—':''} ${slot.patient_name} ${apptLabel(slot)?`<span style="font-size:9px;font-weight:600;background:rgba(28,22,17,.1);padding:1px 4px;margin-left:2px">${apptLabel(slot)}</span>`:''}</div>
+          <div style="font-size:10px;opacity:.75;font-weight:300">${slot.service||''}</div>
         </div>`;
       });
     }
     timeRows+=`<div style="display:flex;border-bottom:1px solid var(--border);min-height:52px;">
-      <div style="width:52px;flex-shrink:0;font-size:10px;color:var(--text3);text-align:right;padding:4px 6px 0 0;border-right:1px solid var(--border)">${t}</div>
-      <div style="flex:1;position:relative;padding:2px;" 
+      <div style="width:46px;flex-shrink:0;font-size:10px;color:var(--muted);text-align:right;padding:4px 5px 0 0;border-right:1px solid var(--border);font-weight:300">${t}</div>
+      <div style="flex:1;position:relative;padding:2px;"
         onclick="if(!event.target.closest('[data-id]'))openNewApptAt('${ds}','${t}')"
-        ondragover="event.preventDefault();this.style.background='var(--green-light)'"
+        ondragover="event.preventDefault();this.style.background='var(--glow)'"
         ondragleave="this.style.background=''"
         ondrop="this.style.background='';onCellDrop(event,'${ds}','${t}')">
         ${slotsHtml}
@@ -663,33 +890,28 @@ function renderDay(){
     </div>`;
   });
 
-  // Right panel: appointment list
   const listHtml=dayAppts.length?dayAppts.map(a=>`
-    <div onclick="openModal(${a.id})" style="border-left:3px solid ${apptBorder(a)};background:var(--white);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;box-shadow:var(--shadow);border-top:1px solid ${apptBg(a)};border-right:1px solid ${apptBg(a)};border-bottom:1px solid ${apptBg(a)}">
+    <div onclick="openModal(${a.id})" style="border-left:2px solid ${apptBorder(a)};background:var(--surface);border:1px solid var(--border);border-left:2px solid ${apptBorder(a)};padding:10px 12px;margin-bottom:7px;cursor:pointer">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-        <span style="font-size:14px;font-weight:700">${a.appointment_time.slice(0,5)}</span>
-        <span style="font-size:14px;font-weight:600;flex:1">${thCode(a)?thCode(a)+"-":""} ${a.patient_name}</span>
+        <span style="font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:400">${a.appointment_time.slice(0,5)}</span>
+        <span style="font-size:13px;font-weight:400;flex:1">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}</span>
         <span class="badge ${a.type}">${a.type==='new'?'初診':'回診'}</span>
       </div>
-      <div style="font-size:12px;color:var(--text3)">📞 ${a.patient_phone}${a.symptoms?' · '+a.symptoms:''}</div>
+      <div style="font-size:11px;color:var(--muted);font-weight:300">📞 ${a.patient_phone}${a.symptoms?' · '+a.symptoms:''}</div>
     </div>`).join('')
-  :`<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">今日無預約</div>`;
+  :`<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px;font-weight:300">今日無預約</div>`;
 
-  el.innerHTML=`<div id="day-layout" style="display:grid;grid-template-columns:1fr 280px;gap:16px;padding:0 16px 80px;align-items:start">
-    <!-- 時間軸 -->
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-      <div style="padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;background:var(--bg);display:flex;align-items:center;justify-content:space-between">
-        <span>時間軸</span>
-        <button onclick="toggleDaySidebar()" id="sidebarToggle" style="border:none;background:var(--green-light);color:var(--green-dark);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit">
-          隱藏清單 ›
-        </button>
+  el.innerHTML=`<div id="day-layout" style="display:grid;grid-template-columns:1fr 270px;gap:14px;padding:0 16px 80px;align-items:start">
+    <div style="background:var(--surface);border:1px solid var(--border);overflow:hidden">
+      <div style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;background:var(--bg);display:flex;align-items:center;justify-content:space-between">
+        <span style="font-weight:400;letter-spacing:.5px">時間軸</span>
+        <button onclick="toggleDaySidebar()" id="sidebarToggle" style="border:none;background:var(--glow);color:var(--accent);padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif">隱藏清單 ›</button>
       </div>
       ${timeRows}
     </div>
-    <!-- 預約清單 -->
     <div id="day-sidebar" style="display:${window.innerWidth<=640?'none':'block'}">
-      <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px;padding:10px 12px;background:var(--white);border-radius:var(--radius);border:1px solid var(--border)">
-        今日預約 <span style="color:var(--green);font-size:15px;font-weight:700">${dayAppts.length}</span> 筆
+      <div style="font-size:12px;color:var(--muted);margin-bottom:9px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);font-weight:300;letter-spacing:.5px">
+        今日預約 <span style="color:var(--warm);font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400">${dayAppts.length}</span> 筆
       </div>
       ${listHtml}
     </div>
@@ -703,7 +925,7 @@ function toggleDaySidebar(){
   const isMobile=window.innerWidth<=640;
   if(sidebar.style.display==='none'||sidebar.style.display===''){
     sidebar.style.display='block';
-    if(!isMobile) layout.style.gridTemplateColumns='1fr 280px';
+    if(!isMobile) layout.style.gridTemplateColumns='1fr 270px';
     btn.textContent='隱藏清單 ›';
   } else {
     sidebar.style.display='none';
@@ -712,18 +934,16 @@ function toggleDaySidebar(){
   }
 }
 
-
 function renderMonth(){
-  const year=curDate.getFullYear(), month=curDate.getMonth();
+  const year=curDate.getFullYear(),month=curDate.getMonth();
   const first=new Date(year,month,1).getDay();
   const daysInMonth=new Date(year,month+1,0).getDate();
   const todayStr=fmtDate(new Date());
-  let html=`<div style="padding:0 16px 80px"><div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+  let html=`<div style="padding:0 16px 80px"><div style="background:var(--surface);border:1px solid var(--border);overflow:hidden">
     <div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border)">
-      ${DAYS.map(d=>`<div style="text-align:center;padding:8px 4px;font-size:11px;color:var(--text3);background:var(--bg)">${d}</div>`).join('')}
+      ${DAYS.map(d=>`<div style="text-align:center;padding:7px 4px;font-size:11px;color:var(--muted);background:var(--bg);font-weight:300">${d}</div>`).join('')}
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr)">`;
-  
   let cells=first+daysInMonth;
   let total=Math.ceil(cells/7)*7;
   for(let i=0;i<total;i++){
@@ -734,13 +954,13 @@ function renderMonth(){
     const isToday=ds===todayStr;
     const isSun=d&&d.getDay()===0;
     const dayAppts=valid?appointments.filter(a=>a.appointment_date===ds&&a.status!=='cancelled'&&(curThId===0||a.therapist_id===curThId)):[];
-    html+=`<div style="min-height:90px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:4px;${isToday?'background:#F0FBF6':''}${isSun?'background:#FFF8F8':''}">`;
+    html+=`<div style="min-height:88px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:4px;${isToday?'background:rgba(192,138,82,.06)':''}${isSun?'background:rgba(217,110,40,.03)':''}">`;
     if(valid){
-      html+=`<div style="font-size:12px;font-weight:${isToday?'700':'400'};color:${isToday?'var(--green)':isSun?'#E53935':'var(--text)'};margin-bottom:3px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:${isToday?'var(--green)':'transparent'};color:${isToday?'white':isSun?'#E53935':'var(--text)'}">${dayNum}</div>`;
+      html+=`<div style="font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:${isToday?'500':'400'};margin-bottom:3px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:${isToday?'var(--warm)':'transparent'};color:${isToday?'#f3ede1':isSun?'var(--new-color)':'var(--text)'}">${dayNum}</div>`;
       dayAppts.slice(0,3).forEach(a=>{
-        html+=`<div onclick="openModal(${a.id})" style="background:${apptBg(a)};color:${apptColor(a)};border-radius:4px;padding:2px 5px;font-size:10px;margin-bottom:2px;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${thCode(a)?thCode(a)+"-":""} ${a.patient_name}${a.type==='new'?' 初':''} ${a.appointment_time.slice(0,5)}</div>`;
+        html+=`<div onclick="openModal(${a.id})" style="background:${apptBg(a)};color:${apptColor(a)};padding:2px 4px;font-size:10px;margin-bottom:2px;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:300">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${a.type==='new'?' 初':''} ${a.appointment_time.slice(0,5)}</div>`;
       });
-      if(dayAppts.length>3)html+=`<div style="font-size:10px;color:var(--text3);padding:1px 4px">還有 ${dayAppts.length-3} 個</div>`;
+      if(dayAppts.length>3)html+=`<div style="font-size:10px;color:var(--muted);padding:1px 3px;font-weight:300">+${dayAppts.length-3}</div>`;
     }
     html+=`</div>`;
   }
@@ -765,30 +985,22 @@ function renderWeek(){
       const d=new Date(ws);d.setDate(ws.getDate()+i);
       const ds=fmtDate(d);
       const isToday=ds===todayStr;
-
-      // Get ALL appointments for this cell (multiple therapists)
       const slots=appointments.filter(a=>
-        a.appointment_date===ds&&
-        a.appointment_time.slice(0,5)===t&&
-        a.status!=='cancelled'&&
-        (curThId===0||a.therapist_id===curThId)
+        a.appointment_date===ds&&a.appointment_time.slice(0,5)===t&&
+        a.status!=='cancelled'&&(curThId===0||a.therapist_id===curThId)
       );
-
-      html+=`<div class="week-cell ${isToday?'today-col':''}" data-date="${ds}" data-time="${t}" 
+      html+=`<div class="week-cell ${isToday?'today-col':''}" data-date="${ds}" data-time="${t}"
         ondragover="onCellDragOver(event)" ondragleave="onCellDragLeave(event)" ondrop="onCellDrop(event,'${ds}','${t}')"
         onclick="onCellClick(event,'${ds}','${t}')">`;
-
       if(slots.length>0){
         const w=Math.floor(100/slots.length);
         slots.forEach((slot,si)=>{
-          const thStyle=`background:${apptBg(slot)};color:${apptColor(slot)};border:1px solid ${apptBorder(slot)}`;
-          html+=`<div class="appt-block" style="${thStyle};position:absolute;left:${si*w+1}%;width:${w-1}%;top:2px;bottom:2px;right:auto;" 
-            draggable="true"
-            data-id="${slot.id}"
+          html+=`<div class="appt-block" style="background:${apptBg(slot)};color:${apptColor(slot)};border-left:2px solid ${apptBorder(slot)};position:absolute;left:${si*w+1}%;width:${w-1}%;top:2px;bottom:2px;right:auto;"
+            draggable="true" data-id="${slot.id}"
             ondragstart="onDragStart(event,${slot.id})"
             ondragend="onDragEnd(event)"
             onclick="openModal(${slot.id})">
-            <b>${thCode(slot)?thCode(slot)+"-":""} ${slot.patient_name}${slot.type==='new'?' 初':''}</b>
+            <b>${thCode(slot)?thCode(slot)+'—':''} ${slot.patient_name}${slot.type==='new'?' 初':''}</b>
             <span>${slot.appointment_time.slice(0,5)}</span>
           </div>`;
         });
@@ -800,17 +1012,12 @@ function renderWeek(){
   document.getElementById('mainContent').innerHTML=html;
 }
 
-// ── DRAG & DROP ──
+/* ── DRAG & DROP ── */
 function onDragStart(e, id){
   dragApptId=id;
   e.dataTransfer.effectAllowed='move';
   e.dataTransfer.setData('text/plain',id);
-  setTimeout(()=>{
-    const el=e.target;
-    if(el)el.classList.add('dragging');
-  },0);
-
-  // Create ghost
+  setTimeout(()=>{const el=e.target;if(el)el.classList.add('dragging');},0);
   const a=appointments.find(x=>x.id===id);
   if(a){
     dragGhost=document.createElement('div');
@@ -820,17 +1027,9 @@ function onDragStart(e, id){
     document.body.appendChild(dragGhost);
     e.dataTransfer.setDragImage(dragGhost,-999,-999);
   }
-
   document.addEventListener('dragover',updateGhostPos);
 }
-
-function updateGhostPos(e){
-  if(dragGhost){
-    dragGhost.style.left=(e.clientX+12)+'px';
-    dragGhost.style.top=(e.clientY-20)+'px';
-  }
-}
-
+function updateGhostPos(e){if(dragGhost){dragGhost.style.left=(e.clientX+12)+'px';dragGhost.style.top=(e.clientY-20)+'px';}}
 function onDragEnd(e){
   document.querySelectorAll('.appt-block').forEach(el=>el.classList.remove('dragging'));
   document.querySelectorAll('.week-cell').forEach(el=>el.classList.remove('drag-over'));
@@ -838,50 +1037,24 @@ function onDragEnd(e){
   document.removeEventListener('dragover',updateGhostPos);
   dragApptId=null;
 }
-
-function onCellDragOver(e){
-  e.preventDefault();
-  e.dataTransfer.dropEffect='move';
-  e.currentTarget.classList.add('drag-over');
-}
+function onCellDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';e.currentTarget.classList.add('drag-over');}
 function onCellDragLeave(e){e.currentTarget.classList.remove('drag-over');}
-
 async function onCellDrop(e, newDate, newTime){
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
+  e.preventDefault();e.currentTarget.classList.remove('drag-over');
   if(!dragApptId)return;
-
   const a=appointments.find(x=>x.id===dragApptId);
   if(!a)return;
-  if(a.appointment_date===newDate&&a.appointment_time.slice(0,5)===newTime){return;}
-
-  // Check if slot taken
-  const taken=appointments.find(x=>
-    x.id!==dragApptId&&
-    x.appointment_date===newDate&&
-    x.appointment_time.slice(0,5)===newTime&&
-    x.status!=='cancelled'&&
-    (x.therapist_id===a.therapist_id||(!x.therapist_id&&!a.therapist_id))
-  );
-  if(taken){showToast('⚠️ 此時段已有預約');return;}
-
-  const{error}=await sb.from('appointments').update({
-    appointment_date:newDate,
-    appointment_time:newTime+':00'
-  }).eq('id',dragApptId);
-
-  if(!error){
-    showToast(`✅ 已移至 ${newDate.slice(5)} ${newTime}`);
-    await loadData();
-  }else{
-    showToast('❌ 修改失敗');
-  }
+  if(a.appointment_date===newDate&&a.appointment_time.slice(0,5)===newTime)return;
+  const taken=appointments.find(x=>x.id!==dragApptId&&x.appointment_date===newDate&&x.appointment_time.slice(0,5)===newTime&&x.status!=='cancelled'&&(x.therapist_id===a.therapist_id||(!x.therapist_id&&!a.therapist_id)));
+  if(taken){showToast('此時段已有預約');return;}
+  const{error}=await sb.from('appointments').update({appointment_date:newDate,appointment_time:newTime+':00'}).eq('id',dragApptId);
+  if(!error){showToast(`已移至 ${newDate.slice(5)} ${newTime}`);await loadData();}
+  else showToast('修改失敗');
 }
 
-// Modal
+/* ── MODALS ── */
 function openDatePicker(){
-  const y=curDate.getFullYear();
-  const m=curDate.getMonth();
+  const y=curDate.getFullYear(),m=curDate.getMonth();
   const years=Array.from({length:10},(_,i)=>y-3+i);
   const months=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   document.getElementById('modalArea').innerHTML=`
@@ -889,29 +1062,22 @@ function openDatePicker(){
     <div class="modal" onclick="event.stopPropagation()" style="max-height:70vh">
       <div class="modal-handle"></div>
       <p class="modal-title">選擇年月</p>
-      <p style="font-size:12px;color:var(--text3);margin-bottom:12px">年份</p>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">
-        ${years.map(yr=>`<div onclick="dpSelectYear(${yr})" style="text-align:center;padding:8px 4px;border-radius:8px;cursor:pointer;font-size:13px;background:${yr===y?'var(--green)':'var(--bg)'};color:${yr===y?'white':'var(--text)'};font-weight:${yr===y?'600':'400'}">${yr}</div>`).join('')}
+      <p style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:300;letter-spacing:.5px">年份</p>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:16px">
+        ${years.map(yr=>`<div onclick="dpSelectYear(${yr})" style="text-align:center;padding:7px 4px;cursor:pointer;font-family:'Cormorant Garamond',serif;font-size:14px;background:${yr===y?'var(--warm)':'transparent'};color:${yr===y?'#f3ede1':'var(--text)'};border:1px solid ${yr===y?'var(--warm)':'var(--border)'}">${yr}</div>`).join('')}
       </div>
-      <p style="font-size:12px;color:var(--text3);margin-bottom:12px">月份</p>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-        ${months.map((mn,i)=>`<div onclick="dpSelectMonth(${i})" style="text-align:center;padding:10px 4px;border-radius:8px;cursor:pointer;font-size:13px;background:${i===m?'var(--green)':'var(--bg)'};color:${i===m?'white':'var(--text)'};font-weight:${i===m?'600':'400'}">${mn}</div>`).join('')}
+      <p style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:300;letter-spacing:.5px">月份</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
+        ${months.map((mn,i)=>`<div onclick="dpSelectMonth(${i})" style="text-align:center;padding:9px 4px;cursor:pointer;font-size:13px;background:${i===m?'var(--warm)':'transparent'};color:${i===m?'#f3ede1':'var(--text)'};border:1px solid ${i===m?'var(--warm)':'var(--border)'}">${mn}</div>`).join('')}
       </div>
-      <div class="modal-btns" style="margin-top:16px">
+      <div class="modal-btns" style="margin-top:14px">
         <button class="mBtn" onclick="closeModal()">關閉</button>
       </div>
     </div>
   </div>`;
 }
-
-function dpSelectYear(y){
-  curDate=new Date(y,curDate.getMonth(),1);
-  closeModal();loadData();
-}
-function dpSelectMonth(m){
-  curDate=new Date(curDate.getFullYear(),m,1);
-  closeModal();loadData();
-}
+function dpSelectYear(y){curDate=new Date(y,curDate.getMonth(),1);closeModal();loadData();}
+function dpSelectMonth(m){curDate=new Date(curDate.getFullYear(),m,1);closeModal();loadData();}
 
 function openModal(id){
   const a=appointments.find(x=>x.id===id);
@@ -925,13 +1091,13 @@ function openModal(id){
       <div class="modal-row"><span class="modal-lbl">電話</span><span class="modal-val">${a.patient_phone}</span></div>
       <div class="modal-row"><span class="modal-lbl">日期時間</span><span class="modal-val">${a.appointment_date} ${a.appointment_time.slice(0,5)}</span></div>
       <div class="modal-row"><span class="modal-lbl">治療師</span><span class="modal-val">${getThName(a.therapist_id)}</span></div>
-      <div class="modal-row"><span class="modal-lbl">服務</span><span class="modal-val">${a.service||'-'}</span></div>
+      <div class="modal-row"><span class="modal-lbl">服務</span><span class="modal-val">${a.service||'—'}</span></div>
       <div class="modal-row"><span class="modal-lbl">類型</span><span class="modal-val"><span class="badge ${a.type}">${a.type==='new'?'初診':'回診'}</span></span></div>
       ${a.symptoms?`<div class="modal-row"><span class="modal-lbl">症狀</span><span class="modal-val">${a.symptoms}</span></div>`:''}
       ${a.note?`<div class="modal-row"><span class="modal-lbl">備註</span><span class="modal-val">${a.note}</span></div>`:''}
-      <div class="modal-btns" style="flex-wrap:wrap">
+      <div class="modal-btns">
         ${a.status!=='cancelled'?`
-          <button class="mBtn success" onclick="toggleType(${a.id});closeModal()" style="color:var(--green-dark);border-color:var(--green-light);background:var(--green-light)">${a.type==='new'?'改為回診':'改為初診'}</button>
+          <button class="mBtn success" onclick="toggleType(${a.id});closeModal()">${a.type==='new'?'改為回診':'改為初診'}</button>
           <button class="mBtn" onclick="closeModal();openReschedule(${a.id})">修改時間</button>
           <button class="mBtn danger" onclick="cancelAppt(${a.id});closeModal()">取消預約</button>`
         :`<button class="mBtn primary" onclick="restoreAppt(${a.id});closeModal()">恢復預約</button>`}
@@ -952,7 +1118,6 @@ function openReschedule(id){
   reschedCalMonth=new Date(reschedDate);
   renderReschedule();
 }
-
 function renderReschedule(){
   const m=reschedCalMonth;
   const year=m.getFullYear(),month=m.getMonth();
@@ -962,19 +1127,19 @@ function renderReschedule(){
   const fD=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const calHtml=`<div style="margin:10px 0">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <button class="nav-btn" onclick="rsPrevMonth()">&#8249;</button>
-      <span style="font-size:13px;font-weight:600">${year}年${month+1}月</span>
-      <button class="nav-btn" onclick="rsNextMonth()">&#8250;</button>
+      <button class="nav-btn" onclick="rsPrevMonth()">‹</button>
+      <span style="font-family:'Cormorant Garamond',serif;font-size:14px">${year}年${month+1}月</span>
+      <button class="nav-btn" onclick="rsNextMonth()">›</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">
-      ${DAYS.map(d=>`<div style="text-align:center;font-size:10px;color:var(--text3)">${d}</div>`).join('')}
+      ${DAYS.map(d=>`<div style="text-align:center;font-size:10px;color:var(--muted);font-weight:300">${d}</div>`).join('')}
       ${Array(first).fill('<div></div>').join('')}
       ${Array.from({length:daysInMonth},(_,i)=>{
         const d=new Date(year,month,i+1);
         const bad=d<today||d.getDay()===0;
         const sel=reschedDate&&fD(reschedDate)===fD(d);
         const isT=d.toDateString()===today.toDateString();
-        return `<div style="text-align:center;padding:6px 2px;font-size:12px;border-radius:6px;cursor:${bad?'default':'pointer'};background:${sel?'var(--green)':'transparent'};color:${sel?'white':bad?'var(--text3)':isT?'var(--green)':'var(--text)'};font-weight:${sel||isT?600:400}" onclick="${bad?'':'rsSelectDate('+year+','+month+','+(i+1)+')'}">${i+1}</div>`;
+        return `<div style="text-align:center;padding:6px 2px;font-family:'Cormorant Garamond',serif;font-size:13px;cursor:${bad?'default':'pointer'};background:${sel?'var(--warm)':'transparent'};color:${sel?'#f3ede1':bad?'rgba(155,138,116,.4)':isT?'var(--warm)':'var(--text)'};border:1px solid ${sel?'var(--warm)':'transparent'}" onclick="${bad?'':'rsSelectDate('+year+','+month+','+(i+1)+')'}">${i+1}</div>`;
       }).join('')}
     </div>
   </div>`;
@@ -985,7 +1150,7 @@ function renderReschedule(){
       <p class="modal-title">修改預約時間</p>
       ${calHtml}
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0">
-        ${TIMES.map(t=>`<div style="border:1px solid ${reschedTime===t?'var(--green)':'var(--border)'};border-radius:8px;padding:7px 4px;text-align:center;font-size:12px;cursor:pointer;background:${reschedTime===t?'var(--green)':'transparent'};color:${reschedTime===t?'white':'var(--text)'}" onclick="rsSelectTime('${t}')">${t}</div>`).join('')}
+        ${TIMES.map(t=>`<div style="border:1px solid ${reschedTime===t?'var(--warm)':'var(--border)'};padding:7px 4px;text-align:center;font-size:12px;cursor:pointer;background:${reschedTime===t?'var(--warm)':'transparent'};color:${reschedTime===t?'#f3ede1':'var(--text)'};font-weight:300" onclick="rsSelectTime('${t}')">${t}</div>`).join('')}
       </div>
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">取消</button>
@@ -1011,83 +1176,63 @@ function naTogglePart(p){
   const idx=window._naParts.indexOf(p);
   if(idx>=0)window._naParts.splice(idx,1);else window._naParts.push(p);
   const el=document.getElementById('na-p-'+p);
-  if(!el)return;
-  const sel=window._naParts.includes(p);
-  el.style.cssText=`padding:5px 10px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid ${sel?'var(--green)':'var(--border)'};background:${sel?'var(--green-light)':'var(--bg)'};color:${sel?'var(--green-dark)':'var(--text)'}`;
+  if(el)el.style.cssText=partTagStyle(window._naParts.includes(p));
 }
-
 function onCellClick(e, date, time){
-  // Only trigger if clicking empty space (not an appointment block)
-  if(e.target.closest('.appt-block')) return;
+  if(e.target.closest('.appt-block'))return;
   openNewApptAt(date, time);
 }
+function openNewAppt(){openNewApptAt(fmtDate(curDate),TIMES[0]);}
 
 function openNewApptAt(date, time){
-  window._naType='return';
-  window._naParts=[];
-  // Pre-select therapist if one is selected in tabs
-  const preThId = curThId !== 0 ? curThId : '';
+  window._naType='return';window._naParts=[];
+  const preThId=curThId!==0?curThId:'';
   document.getElementById('modalArea').innerHTML=`
   <div class="modal-bg" onclick="closeModal()">
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
-      <p class="modal-title">＋ 新增預約</p>
-      <p style="font-size:13px;color:var(--text3);margin-bottom:12px">📅 ${date} ${time}</p>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div>
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">姓名 *</label>
-          <input id="na-name" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit" placeholder="">
-        </div>
-        <div>
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">電話 *</label>
-          <input id="na-phone" type="tel" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit" placeholder="">
-        </div>
+      <p class="modal-title">新增預約</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:300">📅 ${date} ${time}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px">
+        <div><label class="field-lbl">姓名 *</label><input id="na-name" style="${fieldBox()}" placeholder=""></div>
+        <div><label class="field-lbl">電話 *</label><input id="na-phone" type="tel" style="${fieldBox()}" placeholder=""></div>
       </div>
-
-      <div style="margin-bottom:10px">
-        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">類型 *</label>
+      <div style="margin-bottom:13px">
+        <label class="field-lbl">類型 *</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div id="na-new" onclick="naSelectType('new')" style="border:1.5px solid var(--border);border-radius:8px;padding:8px;text-align:center;cursor:pointer;font-size:13px">初診</div>
-          <div id="na-return" onclick="naSelectType('return')" style="border:1.5px solid var(--green);border-radius:8px;padding:8px;text-align:center;cursor:pointer;background:var(--green-light);color:var(--green-dark);font-size:13px;font-weight:500">複診</div>
+          <div id="na-new" onclick="naSelectType('new')" style="border:1px solid var(--border);padding:8px;text-align:center;cursor:pointer;font-size:13px;font-weight:300">初診</div>
+          <div id="na-return" onclick="naSelectType('return')" style="border:1px solid var(--warm);padding:8px;text-align:center;cursor:pointer;background:var(--glow);color:var(--accent);font-size:13px;font-weight:400">複診</div>
         </div>
       </div>
-
-      <div style="margin-bottom:10px">
-        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">治療師 *</label>
-        <select id="na-th" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;appearance:none">
+      <div style="margin-bottom:13px">
+        <label class="field-lbl">治療師 *</label>
+        <select id="na-th" style="${fieldBox().replace('border-bottom:1px','border-bottom:1px').replace('font-size:14px','font-size:13px')}appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239b8a74' stroke-width='1.2' fill='none'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 2px center;padding-right:18px">
           <option value="">不指定</option>
           ${therapists.map(t=>`<option value="${t.id}" ${t.id==preThId?'selected':''}>${t.name} 治療師</option>`).join('')}
         </select>
       </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px">
+        <div><label class="field-lbl">日期 *</label><input id="na-date" type="date" value="${date}" style="${fieldBox()}"></div>
         <div>
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">日期 *</label>
-          <input id="na-date" type="date" value="${date}" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit">
-        </div>
-        <div>
-          <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">時段 *</label>
-          <select id="na-time" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;appearance:none">
+          <label class="field-lbl">時段 *</label>
+          <select id="na-time" style="${fieldBox()}appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239b8a74' stroke-width='1.2' fill='none'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 2px center;padding-right:18px">
             ${TIMES.map(t=>`<option value="${t}" ${t===time?'selected':''}>${t}</option>`).join('')}
           </select>
         </div>
       </div>
-
       <div style="margin-bottom:10px">
-        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">治療部位（初診適用）</label>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="na-parts-wrap">
-          ${['頸部','肩部','腰部','膝蓋','上肢','下肢','其他'].map(p=>`<div onclick="naTogglePart('${p}')" id="na-p-${p}" style="padding:5px 10px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:var(--bg)">${p}</div>`).join('')}
+        <label class="field-lbl">治療部位（初診適用）</label>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px" id="na-parts-wrap">
+          ${['頸部','肩部','腰部','膝蓋','上肢','下肢','其他'].map(p=>`<div onclick="naTogglePart('${p}')" id="na-p-${p}" style="${partTagStyle(false)}">${p}</div>`).join('')}
         </div>
-        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">服務項目（複診適用）</label>
-        <select id="na-service" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;appearance:none;margin-bottom:8px">
+        <label class="field-lbl">服務項目（複診適用）</label>
+        <select id="na-service" style="${fieldBox()}appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239b8a74' stroke-width='1.2' fill='none'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 2px center;padding-right:18px;margin-bottom:9px">
           <option value="複診一個部位">複診一個部位（30 分鐘）</option>
           <option value="複診兩個部位／親友一起約">複診兩個部位／親友一起約（60 分鐘）</option>
         </select>
-        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">備註</label>
-        <input id="na-note" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit" placeholder="例如：術後復健、特殊需求...">
+        <label class="field-lbl">備註</label>
+        <input id="na-note" style="${fieldBox()}" placeholder="術後復健、特殊需求…">
       </div>
-
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">取消</button>
         <button class="mBtn primary" onclick="submitNewAppt()">確認新增</button>
@@ -1096,18 +1241,13 @@ function openNewApptAt(date, time){
   </div>`;
 }
 
-function openNewAppt(){
-  openNewApptAt(fmtDate(curDate), TIMES[0]);
-}
-
 function naSelectType(t){
   window._naType=t;
-  document.getElementById('na-new').style.cssText=`border:1.5px solid ${t==='new'?'var(--green)':'var(--border)'};border-radius:8px;padding:8px;text-align:center;cursor:pointer;background:${t==='new'?'var(--green-light)':'transparent'};color:${t==='new'?'var(--green-dark)':'var(--text)'};font-size:13px;font-weight:${t==='new'?'500':'400'}`;
-  document.getElementById('na-return').style.cssText=`border:1.5px solid ${t==='return'?'var(--green)':'var(--border)'};border-radius:8px;padding:8px;text-align:center;cursor:pointer;background:${t==='return'?'var(--green-light)':'transparent'};color:${t==='return'?'var(--green-dark)':'var(--text)'};font-size:13px;font-weight:${t==='return'?'500':'400'}`;
+  document.getElementById('na-new').style.cssText=`border:1px solid ${t==='new'?'var(--warm)':'var(--border)'};padding:8px;text-align:center;cursor:pointer;background:${t==='new'?'var(--glow)':'transparent'};color:${t==='new'?'var(--accent)':'var(--text)'};font-size:13px;font-weight:${t==='new'?'400':'300'}`;
+  document.getElementById('na-return').style.cssText=`border:1px solid ${t==='return'?'var(--warm)':'var(--border)'};padding:8px;text-align:center;cursor:pointer;background:${t==='return'?'var(--glow)':'transparent'};color:${t==='return'?'var(--accent)':'var(--text)'};font-size:13px;font-weight:${t==='return'?'400':'300'}`;
 }
 
 function getNextTimeSlot(t){
-  const TIMES=['09:00','09:30','10:00','10:30','11:00','11:30','13:30','14:00','14:30','15:00','15:30','16:00'];
   const idx=TIMES.indexOf(t);
   if(idx>=0&&idx<TIMES.length-1)return TIMES[idx+1];
   return null;
@@ -1121,61 +1261,40 @@ async function submitNewAppt(){
   const time=document.getElementById('na-time').value;
   const note=document.getElementById('na-note').value.trim();
   if(!name||!phone||!date||!time){showToast('請填寫必填欄位');return;}
-
   const service=window._naType==='new'?'初診評估':(document.getElementById('na-service')?.value||'複診一個部位');
   const is60=service.includes('兩個部位');
   const nextTime=is60?getNextTimeSlot(time):null;
-
   const{data:appt,error}=await sb.from('appointments').insert([{
     therapist_id:thId?parseInt(thId):null,
-    patient_name:name,
-    patient_phone:phone,
-    appointment_date:date,
-    appointment_time:time+':00',
-    type:window._naType||'return',
-    service:service,
-    symptoms:note,
-    note:'',
-    status:'confirmed'
+    patient_name:name,patient_phone:phone,
+    appointment_date:date,appointment_time:time+':00',
+    type:window._naType||'return',service,
+    symptoms:note,note:'',status:'confirmed'
   }]).select().single();
-
   if(error){showToast('新增失敗：'+error.message);return;}
-
-  // 60分鐘自動建立第二時段
   if(is60&&nextTime){
     await sb.from('appointments').insert([{
       therapist_id:thId?parseInt(thId):null,
-      patient_name:name,
-      patient_phone:phone,
-      appointment_date:date,
-      appointment_time:nextTime+':00',
-      type:window._naType||'return',
-      service:service+'（續）',
-      symptoms:note,
-      note:'（60分鐘第二時段）',
-      status:'confirmed'
+      patient_name:name,patient_phone:phone,
+      appointment_date:date,appointment_time:nextTime+':00',
+      type:window._naType||'return',service:service+'（續）',
+      symptoms:note,note:'（60分鐘第二時段）',status:'confirmed'
     }]);
   }
-
-  // 初診時自動建立病人資料
   if(window._naType==='new'){
     const{data:existing}=await sb.from('patients').select('id').eq('phone',phone).maybeSingle();
     if(!existing){
       await sb.from('patients').insert([{
-        name,phone,
-        body_parts:window._naParts&&window._naParts.length?window._naParts:[],
-        first_visit:date,
-        note:note||null
+        name,phone,body_parts:window._naParts&&window._naParts.length?window._naParts:[],
+        first_visit:date,note:note||null
       }]);
     }
   }
-
-  closeModal();showToast('✅ 預約已新增，病人資料自動儲存');await loadData();
+  closeModal();showToast('預約已新增');await loadData();
 }
 
 async function toggleType(id){
-  const a=appointments.find(x=>x.id===id);
-  if(!a)return;
+  const a=appointments.find(x=>x.id===id);if(!a)return;
   await sb.from('appointments').update({type:a.type==='new'?'return':'new'}).eq('id',id);
   showToast('已更新類型');await loadData();
 }
@@ -1189,8 +1308,11 @@ async function restoreAppt(id){
   showToast('已恢復預約');await loadData();
 }
 
-document.getElementById('mainContent').innerHTML='<div class="loading"><div class="spinner"></div>載入中...</div>';
-loadData();
+// 若已登入就載入資料
+if(sessionStorage.getItem('admin_auth')==='1'){
+  document.getElementById('mainContent').innerHTML='<div class="loading"><div class="spinner"></div><p>載入中</p></div>';
+  loadData();
+}
 </script>
 </body>
 </html>

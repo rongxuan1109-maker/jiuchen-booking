@@ -913,7 +913,8 @@ function resetBooking() {
   render();
 }
 
-initLiff().then(() => loadTherapists()).then(() => render());
+// LIFF 和治療師資料同時載入，不互相等待
+Promise.all([initLiff(), loadTherapists()]).then(() => render());
 </script>
 </body>
 </html>

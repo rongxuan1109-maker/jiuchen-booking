@@ -509,7 +509,7 @@ async function loadTherapists() {
 
 async function loadBookedSlots(dateStr, therapistId) {
   const base = sb.from('appointments')
-    .select('appointment_time, therapist_id, type')
+    .select('appointment_time, therapist_id, note')
     .eq('appointment_date', dateStr)
     .eq('status', 'confirmed');
 
@@ -518,14 +518,14 @@ async function loadBookedSlots(dateStr, therapistId) {
     const { data } = await base;
     state.bookedSlots = data || [];
   } else {
-    // 指定治療師：抓該治療師時段 + 全體治療師活動（therapist_id=null, type=event）
+    // 指定治療師：抓該治療師時段 + 全體治療師活動（note starts with 'event:', therapist_id=null）
     const [{ data: own }, { data: events }] = await Promise.all([
       base.eq('therapist_id', therapistId),
       sb.from('appointments')
-        .select('appointment_time, therapist_id, type')
+        .select('appointment_time, therapist_id, note')
         .eq('appointment_date', dateStr)
         .eq('status', 'confirmed')
-        .eq('type', 'event')
+        .like('note', 'event:%')
         .is('therapist_id', null)
     ]);
     state.bookedSlots = [...(own || []), ...(events || [])];

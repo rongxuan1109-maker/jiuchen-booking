@@ -164,7 +164,8 @@ body::before{
   align-items:center;gap:7px;flex-wrap:wrap;
   background:var(--surface);border-bottom:1px solid var(--border);
 }
-.date-bar-left{display:flex;align-items:center;gap:6px;flex:1;min-width:0;}
+.date-bar-left{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.date-bar-center{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;min-width:0;}
 .date-bar-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .nav-btn{
   width:28px;height:28px;
@@ -176,7 +177,7 @@ body::before{
 .nav-btn:hover{border-color:var(--warm);color:var(--warm);}
 .date-label{
   font-family:'Cormorant Garamond',serif;
-  font-size:15px;font-weight:400;flex:1;
+  font-size:15px;font-weight:400;
   color:var(--ink);letter-spacing:.5px;
 }
 .today-btn{
@@ -484,23 +485,28 @@ input,select,textarea{border-radius:8px;}
 
 <div class="th-tabs" id="thTabs"></div>
 <div class="date-bar">
-  <button class="nav-btn" onclick="navigate(-1)">‹</button>
-  <span class="date-label" id="dateLabel" onclick="openDatePicker()" style="cursor:pointer;display:flex;align-items:center;gap:4px"></span>
-  <button class="nav-btn" onclick="navigate(1)">›</button>
-  <button class="today-btn" onclick="goToday()">今天</button>
-  <button class="refresh-btn" onclick="loadData()">重新整理</button>
-  <button onclick="openNewAppt()"
-    style="padding:5px 13px;border:1px solid var(--warm);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
-    ＋ 新增預約
-  </button>
-  <button onclick="openNewEvent()"
-    style="padding:5px 13px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
-    活動
-  </button>
-  <button onclick="openProxyPicker()"
-    style="padding:5px 13px;border:1px solid #6b4fb0;background:transparent;color:#6b4fb0;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
-    代約
-  </button>
+  <div class="date-bar-left">
+    <button class="nav-btn" onclick="navigate(-1)">‹</button>
+    <button class="nav-btn" onclick="navigate(1)">›</button>
+    <button class="today-btn" onclick="goToday()">今天</button>
+    <span class="date-label" id="dateLabel" onclick="openDatePicker()" style="cursor:pointer;display:flex;align-items:center;gap:4px"></span>
+  </div>
+  <div class="date-bar-center" id="dateBarCenter"></div>
+  <div class="date-bar-right">
+    <button class="refresh-btn" onclick="loadData()">重新整理</button>
+    <button onclick="openNewAppt()"
+      style="padding:5px 13px;border:1px solid var(--warm);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;border-radius:8px">
+      ＋ 新增預約
+    </button>
+    <button onclick="openNewEvent()"
+      style="padding:5px 13px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;border-radius:8px">
+      活動
+    </button>
+    <button onclick="openProxyPicker()"
+      style="padding:5px 13px;border:1px solid #6b4fb0;background:transparent;color:#6b4fb0;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;border-radius:8px">
+      代約
+    </button>
+  </div>
 </div>
 <div class="stats" id="statsRow"></div>
 <div id="calGrid" style="display:flex;align-items:flex-start">

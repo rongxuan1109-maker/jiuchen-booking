@@ -1432,26 +1432,11 @@ function renderDay(){
   scrollCalToFirst('day-scroll', fmtDate(curDate));
 }
 
-// 把時間軸錨定到「第一位預約」的位置（找不到才退回早上 08:00）
-function scrollCalToFirst(id, dates){
+// 把時間軸錨定到中午 12:00
+function scrollCalToFirst(id){
   const c=document.getElementById(id);if(!c)return;
-  const dset=Array.isArray(dates)?dates:[dates];
-  let firstTime=null;
-  appointments.forEach(a=>{
-    if(a.status==='cancelled')return;
-    if(dset.indexOf(a.appointment_date)<0)return;
-    if(!(curThId===0||a.therapist_id===curThId||(isEvent(a)&&a.therapist_id===null)))return;
-    const t=a.appointment_time.slice(0,5);
-    if(!firstTime||t<firstTime)firstTime=t;
-  });
-  let idx;
-  if(firstTime){
-    idx=TIMES.indexOf(firstTime);
-    if(idx<0){ idx=0; for(let i=0;i<TIMES.length;i++){ if(TIMES[i]<=firstTime) idx=i; else break; } }
-    idx=Math.max(0, idx-1);   // 上方留一格，視覺較舒服
-  } else {
-    idx=TIMES.indexOf('08:00'); // 當天沒預約 → 預設早上
-  }
+  let idx=TIMES.indexOf('12:00');
+  if(idx<0) idx=TIMES.indexOf('08:00');
   c.scrollTop=(idx>0)?idx*SLOT_H:0;
 }
 

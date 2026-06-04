@@ -10,7 +10,7 @@
 <title>九辰物理治療所 · 治療師後台</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 44 44' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='44' height='44' fill='%232a1d12'/%3E%3Cpath d='M22 6C22 6 27 15 27 22C27 29 22 38 22 38C22 38 17 29 17 22C17 15 22 6 22 6Z' stroke='%23c08a52' stroke-width='1.8' fill='none'/%3E%3Cpath d='M6 22C6 22 15 17 22 17C29 17 38 22 38 22C38 22 29 27 22 27C15 27 6 22 6 22Z' stroke='%23c08a52' stroke-width='1.8' fill='none'/%3E%3Ccircle cx='22' cy='22' r='2.5' fill='%23c08a52' opacity='.7'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@200;300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@200;300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
 <style>
 :root{
   color-scheme:light only;
@@ -43,7 +43,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 html{background:#ffffff !important;}
 body{
-  font-family:'Noto Serif TC',serif;
+  font-family:'Noto Sans TC',sans-serif;
   background:var(--bg);color:var(--text);
   min-height:100vh;user-select:none;
 }
@@ -88,7 +88,7 @@ body::before{
   width:100%;border:none;
   border-bottom:1px solid var(--border);
   padding:10px 2px;font-size:15px;
-  font-family:'Noto Serif TC',serif;
+  font-family:'Noto Sans TC',sans-serif;
   background:transparent;color:var(--ink);
   outline:none;text-align:center;
   letter-spacing:4px;margin-bottom:24px;
@@ -98,7 +98,7 @@ body::before{
 .login-btn{
   width:100%;background:var(--ink);color:#f3ede1;
   border:none;padding:14px;
-  font-family:'Noto Serif TC',serif;
+  font-family:'Noto Sans TC',sans-serif;
   font-size:13px;letter-spacing:2px;cursor:pointer;
   position:relative;overflow:hidden;transition:all .3s;
 }
@@ -138,7 +138,7 @@ body::before{
 .view-btn{
   padding:5px 12px;font-size:12px;cursor:pointer;
   background:transparent;color:var(--muted);border:none;
-  font-family:'Noto Serif TC',serif;
+  font-family:'Noto Sans TC',sans-serif;
   transition:all .2s;letter-spacing:.5px;
 }
 .view-btn.active{background:var(--warm);color:#f3ede1;}
@@ -153,7 +153,7 @@ body::before{
   padding:5px 13px;
   border:1px solid var(--border);
   font-size:12px;cursor:pointer;white-space:nowrap;
-  font-family:'Noto Serif TC',serif;background:var(--surface);color:var(--text2);
+  font-family:'Noto Sans TC',sans-serif;background:var(--surface);color:var(--text2);
   transition:all .2s;font-weight:300;
 }
 .th-tab.active{font-weight:400;}
@@ -183,7 +183,7 @@ body::before{
   font-size:11px;padding:4px 10px;
   border:1px solid var(--border);cursor:pointer;
   background:var(--surface);color:var(--muted);
-  font-family:'Noto Serif TC',serif;transition:all .2s;
+  font-family:'Noto Sans TC',sans-serif;transition:all .2s;
   font-weight:300;
 }
 .today-btn:hover{border-color:var(--warm);color:var(--warm);}
@@ -191,7 +191,7 @@ body::before{
   font-size:11px;padding:4px 10px;
   border:1px solid var(--border);cursor:pointer;
   background:var(--glow);color:var(--accent);
-  font-family:'Noto Serif TC',serif;transition:all .2s;
+  font-family:'Noto Sans TC',sans-serif;transition:all .2s;
 }
 .refresh-btn:hover{border-color:var(--warm);}
 
@@ -238,7 +238,7 @@ body::before{
 .act-btn{
   flex:1;padding:7px;font-size:12px;cursor:pointer;
   border:1px solid var(--border);background:var(--bg);
-  color:var(--text2);font-family:'Noto Serif TC',serif;
+  color:var(--text2);font-family:'Noto Sans TC',sans-serif;
   transition:all .2s;font-weight:300;
 }
 .act-btn:hover{border-color:var(--warm);}
@@ -286,15 +286,15 @@ body::before{
 /* ── APPOINTMENT BLOCK ── */
 .appt-block{
   position:absolute;
-  padding:2px 6px;font-size:10px;cursor:grab;
-  display:flex;flex-direction:column;justify-content:flex-start;gap:0;
+  padding:3px 7px;font-size:13px;cursor:grab;border-radius:5px;
+  display:flex;flex-direction:column;justify-content:flex-start;gap:1px;
   transition:opacity .15s,box-shadow .15s;z-index:2;
-  touch-action:none;overflow:hidden;line-height:1.25;
+  touch-action:none;overflow:hidden;line-height:1.3;
 }
 .appt-block:hover{box-shadow:0 2px 8px rgba(28,22,17,.2);z-index:3;}
 .appt-block.dragging{opacity:.4;cursor:grabbing;}
-.appt-block b{font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.appt-block span{font-size:9px;opacity:.8;}
+.appt-block b{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.appt-block span{font-size:11px;opacity:.85;}
 
 /* ── 左側小日曆 ── */
 .mini-panel{width:218px;flex-shrink:0;padding:0 4px 0 16px;}
@@ -306,7 +306,7 @@ body::before{
 .drag-ghost{
   position:fixed;pointer-events:none;z-index:999;
   padding:4px 8px;font-size:11px;font-weight:600;
-  font-family:'Noto Serif TC',serif;
+  font-family:'Noto Sans TC',sans-serif;
   box-shadow:0 4px 16px rgba(28,22,17,.25);
   min-width:80px;opacity:.92;
 }
@@ -318,7 +318,7 @@ body::before{
   padding:10px 22px;
   font-size:12px;z-index:200;opacity:0;
   transition:opacity .3s;pointer-events:none;
-  letter-spacing:1px;font-family:'Noto Serif TC',serif;
+  letter-spacing:1px;font-family:'Noto Sans TC',sans-serif;
 }
 .toast.show{opacity:1;}
 
@@ -331,7 +331,7 @@ body::before{
 .modal{
   background:var(--surface);
   border-top:1px solid var(--border);
-  padding:20px;width:100%;max-width:480px;
+  padding:22px 26px;width:100%;max-width:400px;margin:0 auto;
   max-height:85vh;overflow-y:auto;
 }
 .modal-handle{
@@ -353,7 +353,7 @@ body::before{
 .mBtn{
   flex:1;padding:11px;font-size:12px;font-weight:400;cursor:pointer;
   border:1px solid var(--border);background:var(--bg);color:var(--text2);
-  font-family:'Noto Serif TC',serif;transition:all .2s;
+  font-family:'Noto Sans TC',sans-serif;transition:all .2s;
   letter-spacing:.5px;
 }
 .mBtn:hover{border-color:var(--warm);}
@@ -381,7 +381,7 @@ body::before{
 .field-input{
   width:100%;border:none;border-bottom:1px solid var(--border);
   padding:8px 2px;font-size:14px;
-  font-family:'Noto Serif TC',serif;color:var(--ink);
+  font-family:'Noto Sans TC',sans-serif;color:var(--ink);
   background:transparent;outline:none;transition:border-color .2s;
   font-weight:300;
 }
@@ -389,7 +389,7 @@ body::before{
 .field-select{
   width:100%;border:none;border-bottom:1px solid var(--border);
   padding:8px 18px 8px 2px;font-size:14px;
-  font-family:'Noto Serif TC',serif;color:var(--ink);
+  font-family:'Noto Sans TC',sans-serif;color:var(--ink);
   background:transparent;outline:none;appearance:none;cursor:pointer;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239b8a74' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 2px center;
@@ -462,11 +462,11 @@ body::before{
   </div>
   <div style="display:flex;gap:7px;align-items:center">
     <button onclick="setPage('calendar')" id="btnCalPage"
-      style="padding:5px 11px;border:1px solid rgba(192,138,82,.5);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px">
+      style="padding:5px 11px;border:1px solid rgba(192,138,82,.5);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
       📅 日曆
     </button>
     <button onclick="setPage('patients')" id="btnPatientsPage"
-      style="padding:5px 11px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px">
+      style="padding:5px 11px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
       👥 病人
     </button>
     <div class="view-toggle" id="viewToggle">
@@ -485,15 +485,15 @@ body::before{
   <button class="today-btn" onclick="goToday()">今天</button>
   <button class="refresh-btn" onclick="loadData()">重新整理</button>
   <button onclick="openNewAppt()"
-    style="padding:5px 13px;border:1px solid var(--warm);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px">
+    style="padding:5px 13px;border:1px solid var(--warm);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
     ＋ 新增預約
   </button>
   <button onclick="openNewEvent()"
-    style="padding:5px 13px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px">
+    style="padding:5px 13px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
     活動
   </button>
   <button onclick="openProxyPicker()"
-    style="padding:5px 13px;border:1px solid #6b4fb0;background:transparent;color:#6b4fb0;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px">
+    style="padding:5px 13px;border:1px solid #6b4fb0;background:transparent;color:#6b4fb0;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
     代約
   </button>
 </div>
@@ -547,7 +547,7 @@ const TIMES = (function(){
   }
   return arr;
 })();
-const SLOT_H = 34;            // 每個 30 分鐘格的高度（整點=68px，仿 Google 日曆）
+const SLOT_H = 44;            // 每個 30 分鐘格的高度（整點=88px，仿 Google 日曆，字大不被切）
 const DEFAULT_TIME = '09:00'; // 月檢視/新增預約的預設時段
 const isHourMark = t => t.endsWith(':00');
 
@@ -662,8 +662,8 @@ let partFilter = '';
 function setPage(page){
   curPage = page;
   const calActive = page==='calendar';
-  document.getElementById('btnCalPage').style.cssText=`padding:5px 11px;border:1px solid ${calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${calActive?'var(--warm)':'transparent'};color:${calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px`;
-  document.getElementById('btnPatientsPage').style.cssText=`padding:5px 11px;border:1px solid ${!calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${!calActive?'var(--warm)':'transparent'};color:${!calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px`;
+  document.getElementById('btnCalPage').style.cssText=`padding:5px 11px;border:1px solid ${calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${calActive?'var(--warm)':'transparent'};color:${calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px`;
+  document.getElementById('btnPatientsPage').style.cssText=`padding:5px 11px;border:1px solid ${!calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${!calActive?'var(--warm)':'transparent'};color:${!calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px`;
   document.getElementById('viewToggle').style.display=calActive?'flex':'none';
   document.getElementById('thTabs').style.display=calActive?'flex':'none';
   const dateBar=document.querySelector('.date-bar');
@@ -724,8 +724,8 @@ function renderPatients(){
       <div style="background:var(--surface);border:1px solid var(--border);padding:14px;margin-bottom:12px">
         <div style="display:flex;gap:8px;margin-bottom:10px">
           <input id="ptSearch" placeholder="搜尋姓名或電話…" value="${patientFilter}" oninput="debouncedSearch(this.value)"
-            style="flex:1;border:none;border-bottom:1px solid var(--border);padding:8px 2px;font-size:13px;font-family:'Noto Serif TC',serif;outline:none;background:transparent;font-weight:300">
-          <button onclick="openNewPatient()" style="padding:7px 13px;background:var(--warm);color:#f3ede1;border:none;font-size:12px;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px">＋ 新增</button>
+            style="flex:1;border:none;border-bottom:1px solid var(--border);padding:8px 2px;font-size:13px;font-family:'Noto Sans TC',sans-serif;outline:none;background:transparent;font-weight:300">
+          <button onclick="openNewPatient()" style="padding:7px 13px;background:var(--warm);color:#f3ede1;border:none;font-size:12px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">＋ 新增</button>
         </div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">
           <div onclick="partFilter='';renderPatients()" style="padding:3px 10px;font-size:11px;cursor:pointer;border:1px solid ${!partFilter?'var(--warm)':'var(--border)'};background:${!partFilter?'var(--glow)':'transparent'};color:${!partFilter?'var(--accent)':'var(--muted)'}">全部</div>
@@ -744,7 +744,7 @@ function renderPatients(){
 function partTagStyle(sel){
   return `padding:5px 10px;font-size:11px;cursor:pointer;border:1px solid ${sel?'var(--warm)':'var(--border)'};background:${sel?'var(--glow)':'transparent'};color:${sel?'var(--accent)':'var(--muted)'}`;
 }
-function fieldBox(){ return `width:100%;border:none;border-bottom:1px solid var(--border);padding:8px 2px;font-size:13px;font-family:'Noto Serif TC',serif;background:transparent;outline:none;font-weight:300`; }
+function fieldBox(){ return `width:100%;border:none;border-bottom:1px solid var(--border);padding:8px 2px;font-size:13px;font-family:'Noto Sans TC',sans-serif;background:transparent;outline:none;font-weight:300`; }
 
 function openNewPatient(){
   document.getElementById('modalArea').innerHTML=`
@@ -774,7 +774,7 @@ function openNewPatient(){
       </div>
       <div style="margin-bottom:12px">
         <label class="field-lbl">備註</label>
-        <textarea id="np-note" style="width:100%;border:1px solid var(--border);padding:8px 10px;font-size:13px;font-family:'Noto Serif TC',serif;resize:vertical;min-height:60px;background:rgba(243,237,225,.5);outline:none;font-weight:300" placeholder="過敏、慢性病、特殊注意事項…"></textarea>
+        <textarea id="np-note" style="width:100%;border:1px solid var(--border);padding:8px 10px;font-size:13px;font-family:'Noto Sans TC',sans-serif;resize:vertical;min-height:60px;background:rgba(243,237,225,.5);outline:none;font-weight:300" placeholder="過敏、慢性病、特殊注意事項…"></textarea>
       </div>
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">取消</button>
@@ -833,7 +833,7 @@ function openPatientDetail(id){
       </div>
       <div style="margin-bottom:12px">
         <label class="field-lbl">備註</label>
-        <textarea id="ep-note" style="width:100%;border:1px solid var(--border);padding:8px 10px;font-size:13px;font-family:'Noto Serif TC',serif;resize:vertical;min-height:60px;background:rgba(243,237,225,.5);outline:none;font-weight:300">${p.note||''}</textarea>
+        <textarea id="ep-note" style="width:100%;border:1px solid var(--border);padding:8px 10px;font-size:13px;font-family:'Noto Sans TC',sans-serif;resize:vertical;min-height:60px;background:rgba(243,237,225,.5);outline:none;font-weight:300">${p.note||''}</textarea>
       </div>
       <div class="modal-btns">
         <button class="mBtn danger" onclick="deletePatient(${p.id})">刪除</button>
@@ -1016,6 +1016,16 @@ function pickMiniDate(ds){
   miniCalDate=new Date(y,mo-1,1);
   loadData(); // 載入該日期範圍的預約並重繪（日→該日／週→該週／月→該月）
 }
+// 月檢視點某天 → 跳到該日的「日」檢視（看那天所有預約）
+function gotoDayView(ds){
+  const [y,mo,d]=ds.split('-').map(Number);
+  curDate=new Date(y,mo-1,d);
+  miniCalDate=new Date(y,mo-1,1);
+  curView='day';
+  var bD=document.getElementById('btnDay'),bW=document.getElementById('btnWeek'),bM=document.getElementById('btnMonth');
+  if(bD)bD.className='view-btn active'; if(bW)bW.className='view-btn'; if(bM)bM.className='view-btn';
+  loadData();
+}
 
 function renderThTabs(){
   document.getElementById('thTabs').innerHTML=`
@@ -1103,10 +1113,10 @@ function renderDay(){
   const el=document.getElementById('mainContent');
 
   // 時間欄（只在整點顯示標籤）
-  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:1px;font-size:13px;color:var(--ink);text-align:right;padding-right:6px;border-bottom:1px solid ${isHourMark(t)?'transparent':'var(--border)'};font-weight:600">${isHourMark(t)?t:''}</div>`).join('');
+  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:1px;font-size:13px;color:var(--ink);text-align:right;padding-right:6px;border-bottom:1px solid transparent;font-weight:600">${isHourMark(t)?t:''}</div>`).join('');
 
   // 背景行（拖拉與點擊目標）；半點分隔線變淡、整點線實
-  const rowsHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'var(--border)':'rgba(192,138,82,.12)'};"
+  const rowsHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'rgba(0,0,0,.07)':'transparent'};"
     onclick="if(!event.target.closest('[data-id]'))openNewApptAt('${ds}','${t}')"
     ondragover="event.preventDefault();this.style.background='var(--glow)'"
     ondragleave="this.style.background=''"
@@ -1131,8 +1141,8 @@ function renderDay(){
         ondragover="event.preventDefault()"
         ondrop="onCellDrop(event,'${ds}','${t}')"
         style="position:absolute;left:${(gi*colW).toFixed(1)}%;width:${(colW-0.5).toFixed(1)}%;top:${topPx}px;height:${heightPx}px;background:${apptBg(a)};color:${apptColor(a)};border-left:2px solid ${apptBorder(a)};padding:4px 7px;overflow:hidden;z-index:2;box-sizing:border-box;">
-        <b style="font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${apptLabel(a)?` <span style="font-size:9px;font-weight:600;background:rgba(28,22,17,.1);padding:1px 4px">${apptLabel(a)}</span>`:''}</b>
-        <span style="font-size:10px;opacity:.75;font-weight:300">${a.appointment_time.slice(0,5)}${span>1?' – '+group[span-1].appointment_time.slice(0,5):''}</span>
+        <b style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${apptLabel(a)?` <span style="font-size:10px;font-weight:600;background:rgba(28,22,17,.1);padding:1px 4px">${apptLabel(a)}</span>`:''}</b>
+        <span style="font-size:11px;opacity:.8;font-weight:400">${a.appointment_time.slice(0,5)}${span>1?' – '+group[span-1].appointment_time.slice(0,5):''}</span>
       </div>`;
     });
   });
@@ -1152,7 +1162,7 @@ function renderDay(){
     <div style="background:var(--surface);border:1px solid var(--border);overflow:hidden">
       <div style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;background:var(--bg);display:flex;align-items:center;justify-content:space-between">
         <span style="font-weight:400;letter-spacing:.5px">時間軸</span>
-        <button onclick="toggleDaySidebar()" id="sidebarToggle" style="border:none;background:var(--glow);color:var(--accent);padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif">隱藏清單 ›</button>
+        <button onclick="toggleDaySidebar()" id="sidebarToggle" style="border:none;background:var(--glow);color:var(--accent);padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">隱藏清單 ›</button>
       </div>
       <div id="day-scroll" class="cal-scroll" style="display:flex;max-height:64vh;overflow-y:auto">
         <div style="width:46px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
@@ -1213,7 +1223,7 @@ function renderMonth(){
     const isSun=d&&d.getDay()===0;
     const dayAppts=valid?appointments.filter(a=>a.appointment_date===ds&&a.status!=='cancelled'&&(curThId===0||a.therapist_id===curThId||(isEvent(a)&&a.therapist_id===null))):[];
     const lb=valid?lunarLabel(d):null;
-    html+=`<div onclick="${valid?`openNewApptAt('${ds}','${DEFAULT_TIME}')`:''}" style="min-height:96px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:4px;cursor:${valid?'pointer':'default'};${isToday?'background:rgba(192,138,82,.06)':''}${isSun&&!isToday?'background:rgba(217,110,40,.03)':''}">`;
+    html+=`<div onclick="${valid?`gotoDayView('${ds}')`:''}" style="min-height:96px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:4px;cursor:${valid?'pointer':'default'};${isToday?'background:rgba(192,138,82,.06)':''}${isSun&&!isToday?'background:rgba(217,110,40,.03)':''}">`;
     if(valid){
       html+=`<div style="margin-bottom:1px;display:flex;align-items:baseline;gap:3px">
         <span style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:${isToday?'500':'400'};background:${isToday?'var(--warm)':'transparent'};color:${isToday?'#f3ede1':isSun?'var(--new-color)':'var(--text)'};padding:${isToday?'0 4px':'0'};line-height:1.4">${dayNum}</span>
@@ -1252,7 +1262,7 @@ function renderWeek(){
   }).join('');
 
   // 時間欄（只在整點顯示標籤）
-  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:1px;padding-right:6px;font-size:13px;color:var(--ink);text-align:right;border-bottom:1px solid ${isHourMark(t)?'transparent':'var(--border)'};font-weight:600">${isHourMark(t)?t:''}</div>`).join('');
+  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:1px;padding-right:6px;font-size:13px;color:var(--ink);text-align:right;border-bottom:1px solid transparent;font-weight:600">${isHourMark(t)?t:''}</div>`).join('');
 
   // 七個日欄（各自含背景行 + 跨列方塊）
   const dayColumns=Array.from({length:7},(_,i)=>{
@@ -1265,7 +1275,7 @@ function renderWeek(){
     );
 
     // 背景行（半點分隔線變淡）
-    const rowsHtml=TIMES.map(t=>`<div class="week-cell ${isToday?'today-col':''}" style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'var(--border)':'rgba(192,138,82,.12)'};"
+    const rowsHtml=TIMES.map(t=>`<div class="week-cell ${isToday?'today-col':''}" style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'rgba(0,0,0,.07)':'transparent'};"
       ondragover="onCellDragOver(event)" ondragleave="onCellDragLeave(event)"
       ondrop="onCellDrop(event,'${ds}','${t}')"
       onclick="if(!event.target.closest('[data-id]'))openNewApptAt('${ds}','${t}')"></div>`).join('');
@@ -1570,7 +1580,7 @@ function openNewApptAt(date, time, edit){
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <span style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;color:var(--ink)">${date} &nbsp;${time}</span>
         ${edit?'':`<button onclick="closeModal();openNewEventOn('${date}')"
-          style="padding:5px 13px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px;flex-shrink:0">
+          style="padding:5px 13px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;flex-shrink:0">
           活動
         </button>`}
       </div>
@@ -1839,8 +1849,8 @@ function _renderEventModal(){
       <label class="field-lbl">封鎖時段 *</label>
       <div style="border:1px solid var(--border);padding:12px;margin-bottom:14px">
         <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button onclick="evSelectAllTimes()" style="padding:5px 12px;border:1px solid var(--warm);background:var(--warm);color:#f3ede1;font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif">全選</button>
-          <button onclick="evClearTimes()" style="padding:5px 12px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif">清除</button>
+          <button onclick="evSelectAllTimes()" style="padding:5px 12px;border:1px solid var(--warm);background:var(--warm);color:#f3ede1;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">全選</button>
+          <button onclick="evClearTimes()" style="padding:5px 12px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">清除</button>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px" id="ev-times-wrap">
           ${TIMES.map(t=>`<div onclick="evToggleTime('${t}')" id="ev-t-${t.replace(':','-')}" style="${partTagStyle(window._evTimes.includes(t))}">${t}</div>`).join('')}
@@ -2007,7 +2017,7 @@ if(sessionStorage.getItem('admin_auth')==='1'){
   </div>
   <button onclick="dismissA2hs()" style="background:transparent;border:1px solid rgba(192,138,82,.3);
     color:var(--muted);padding:6px 12px;font-size:11px;cursor:pointer;
-    font-family:'Noto Serif TC',serif;flex-shrink:0">
+    font-family:'Noto Sans TC',sans-serif;flex-shrink:0">
     知道了
   </button>
 </div>

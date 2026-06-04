@@ -673,7 +673,7 @@ function groupConsecutiveAppts(appts){
       const last=g[g.length-1];
       const li=TIMES.indexOf(last.appointment_time.slice(0,5));
       const ni=TIMES.indexOf(sorted[j].appointment_time.slice(0,5));
-      if(ni===li+1&&sorted[j].patient_phone===last.patient_phone&&sorted[j].therapist_id===last.therapist_id){
+      if(ni===li+1&&sorted[j].patient_name===last.patient_name&&sorted[j].patient_phone===last.patient_phone&&sorted[j].therapist_id===last.therapist_id){
         g.push(sorted[j]);used.add(sorted[j].id);
       }
     }

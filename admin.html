@@ -291,12 +291,13 @@ input,select,textarea{border-radius:8px;}
 /* ── APPOINTMENT BLOCK ── */
 .appt-block{
   position:absolute;
-  padding:3px 7px;font-size:13px;cursor:grab;border-radius:5px;
+  padding:3px 7px;font-size:13px;cursor:grab;border-radius:7px;
   display:flex;flex-direction:column;justify-content:flex-start;gap:1px;
-  transition:opacity .15s,box-shadow .15s;z-index:2;
+  transition:opacity .15s,box-shadow .15s,transform .12s;z-index:2;
   touch-action:none;overflow:hidden;line-height:1.3;
+  border:1px solid rgba(255,255,255,.35);box-shadow:0 1px 3px rgba(28,22,17,.22);
 }
-.appt-block:hover{box-shadow:0 2px 8px rgba(28,22,17,.2);z-index:3;}
+.appt-block:hover{box-shadow:0 3px 10px rgba(28,22,17,.3);transform:translateY(-1px);z-index:3;}
 .appt-block.dragging{opacity:.4;cursor:grabbing;}
 .appt-block b{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .appt-block span{font-size:11px;opacity:.85;}
@@ -660,6 +661,8 @@ const _twH={'1/1':'元旦','2/28':'和平','4/4':'清明','4/5':'清明',
 function twHoliday(date){return _twH[`${date.getMonth()+1}/${date.getDate()}`]||null;}
 function isEvent(a){return !!(a.note&&a.note.startsWith('event:'));}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// 某時段(HH:MM)的結束時間 = +30 分
+function slotEnd(t){t=t.slice(0,5);let[h,m]=t.split(':').map(Number);m+=30;if(m>=60){m-=60;h++;}return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;}
 
 /* 將同病人連續時段合併成群組，供跨時段方塊使用 */
 function groupConsecutiveAppts(appts){
@@ -1386,16 +1389,16 @@ function renderDay(){
     const colW=100/gs.length;
     gs.forEach((group,gi)=>{
       const a=group[0];const span=group.length;
-      const topPx=ti*CELL_H+2;const heightPx=span*CELL_H-4;
+      const topPx=ti*CELL_H+3;const heightPx=span*CELL_H-6;
       blocksHtml+=`<div class="appt-block"
         draggable="true" data-id="${a.id}"
         ondragstart="onDragStart(event,${a.id})" ondragend="onDragEnd(event)"
         onclick="event.stopPropagation();openModal(${a.id})"
         ondragover="event.preventDefault()"
         ondrop="onCellDrop(event,'${ds}','${t}')"
-        style="position:absolute;left:${(gi*colW).toFixed(1)}%;width:${(colW-0.5).toFixed(1)}%;top:${topPx}px;height:${heightPx}px;background:${apptBg(a)};color:${apptColor(a)};padding:4px 8px;overflow:hidden;z-index:2;box-sizing:border-box;border-radius:6px;">
+        style="position:absolute;left:${(gi*colW+0.4).toFixed(1)}%;width:${(colW-1.3).toFixed(1)}%;top:${topPx}px;height:${heightPx}px;background:${apptBg(a)};color:${apptColor(a)};padding:4px 8px;overflow:hidden;z-index:2;box-sizing:border-box;border-radius:7px;border:1px solid rgba(255,255,255,.35);box-shadow:0 1px 3px rgba(28,22,17,.22);">
         <b style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${apptLabel(a)?` <span style="font-size:10px;font-weight:600;background:rgba(255,255,255,.32);color:#fff;padding:1px 5px;border-radius:7px">${apptLabel(a)}</span>`:''}</b>
-        <span style="font-size:11px;opacity:.8;font-weight:400">${a.appointment_time.slice(0,5)}${span>1?' – '+group[span-1].appointment_time.slice(0,5):''}</span>
+        <span style="font-size:11px;opacity:.85;font-weight:400">${a.appointment_time.slice(0,5)} – ${slotEnd(group[span-1].appointment_time)}</span>
       </div>`;
     });
   });
@@ -1585,10 +1588,10 @@ function renderWeek(){
       const colW=100/gs.length;
       gs.forEach((group,gi)=>{
         const a=group[0];const span=group.length;
-        const topPx=ti*CELL_H+2;const heightPx=span*CELL_H-4;
+        const topPx=ti*CELL_H+3;const heightPx=span*CELL_H-6;
         blocksHtml+=`<div class="appt-block"
-          style="background:${apptBg(a)};color:${apptColor(a)};border-left:2px solid ${apptBorder(a)};
-                 position:absolute;left:${(gi*colW+0.5).toFixed(1)}%;width:${(colW-1).toFixed(1)}%;
+          style="background:${apptBg(a)};color:${apptColor(a)};
+                 position:absolute;left:${(gi*colW+0.6).toFixed(1)}%;width:${(colW-1.4).toFixed(1)}%;
                  top:${topPx}px;height:${heightPx}px;right:auto;"
           draggable="true" data-id="${a.id}"
           ondragstart="onDragStart(event,${a.id})"
@@ -1596,7 +1599,7 @@ function renderWeek(){
           ondrop="onCellDrop(event,'${ds}','${t}')"
           onclick="event.stopPropagation();openModal(${a.id})">
           <b>${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${!isEvent(a)&&a.type==='new'?' 初':''}</b>
-          <span>${a.appointment_time.slice(0,5)}${span>1?' – '+group[span-1].appointment_time.slice(0,5):''}</span>
+          <span>${a.appointment_time.slice(0,5)} – ${slotEnd(group[span-1].appointment_time)}</span>
         </div>`;
       });
     });

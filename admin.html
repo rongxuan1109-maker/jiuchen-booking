@@ -1482,12 +1482,53 @@ function renderMonth(){
         const a=g[0];const span=g.length;
         html+=`<div onclick="event.stopPropagation();openModal(${a.id})" style="background:${apptBg(a)};color:${apptColor(a)};padding:2px 6px;font-size:10px;margin-bottom:2px;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:400;border-radius:6px">${thCode(a)?thCode(a)+'—':''}${a.patient_name}${bm(a)}${!isEvent(a)&&a.type==='new'?' <span style="background:rgba(255,255,255,.32);padding:0 3px;border-radius:4px">初</span>':''} ${a.appointment_time.slice(0,5)}${span>1?'-'+g[span-1].appointment_time.slice(0,5):''}</div>`;
       });
-      if(groups.length>3)html+=`<div onclick="event.stopPropagation()" style="font-size:10px;color:var(--muted);padding:1px 3px;font-weight:300">+${groups.length-3}</div>`;
+      if(groups.length>3)html+=`<div onclick="event.stopPropagation();openDayPopover('${ds}',event)" style="font-size:10px;color:var(--accent);padding:2px 6px;font-weight:400;cursor:pointer;border-radius:6px;display:inline-block" onmouseover="this.style.background='var(--glow)'" onmouseout="this.style.background='transparent'">還有 ${groups.length-3} 個 ›</div>`;
     }
     html+=`</div>`;
   }
   html+=`</div></div></div>`;
   document.getElementById('mainContent').innerHTML=html;
+}
+
+// ── 月檢視：點「還有 N 個」彈出當日完整名單（Google 日曆風）──
+function openDayPopover(ds, ev){
+  closeDayPopover();
+  const list=appointments.filter(a=>a.appointment_date===ds&&a.status!=='cancelled'&&(curThId===0||a.therapist_id===curThId||(isEvent(a)&&a.therapist_id===null)))
+    .sort((a,b)=>a.appointment_time.localeCompare(b.appointment_time));
+  const d=new Date(ds+'T00:00:00');
+  const wrap=document.createElement('div');
+  wrap.id='dayPopover';
+  wrap.style.cssText='position:fixed;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 30px rgba(28,22,17,.22);width:288px;max-height:72vh;overflow-y:auto;padding:14px 14px 8px';
+  wrap.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div>
+        <div style="font-size:11px;color:var(--muted);font-weight:300">${DAYS[d.getDay()]}</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;line-height:1">${d.getMonth()+1}/${d.getDate()}</div>
+      </div>
+      <button onclick="closeDayPopover()" style="border:none;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:2px 4px">×</button>
+    </div>
+    ${list.length?list.map(a=>`
+      <div onmousedown="closeDayPopover();openModal(${a.id})" style="display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:8px;cursor:pointer" onmouseover="this.style.background='var(--glow)'" onmouseout="this.style.background='transparent'">
+        <span style="width:10px;height:10px;border-radius:50%;background:${apptBg(a)};flex-shrink:0"></span>
+        <span style="font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.appointment_time.slice(0,5)}　${thCode(a)?thCode(a)+'—':''}${esc(a.patient_name)}${!isEvent(a)&&a.type==='new'?' <span style="color:var(--new-color);font-size:10px;font-weight:500">初</span>':''}</span>
+      </div>`).join(''):'<div style="font-size:12px;color:var(--muted);padding:12px;text-align:center;font-weight:300">無預約</div>'}
+    <div style="text-align:center;padding:8px 0 4px;border-top:1px solid var(--border);margin-top:6px"><button onmousedown="closeDayPopover();gotoDayView('${ds}')" style="font-size:11px;color:var(--accent);background:var(--glow);border:1px solid var(--border);border-radius:8px;padding:5px 14px;cursor:pointer">看當日完整檢視 ›</button></div>`;
+  document.body.appendChild(wrap);
+  const pad=10, w=288, h=wrap.offsetHeight;
+  let x=(ev&&ev.clientX!=null)?ev.clientX:window.innerWidth/2;
+  let y=(ev&&ev.clientY!=null)?ev.clientY:window.innerHeight/2;
+  x=Math.max(pad, Math.min(x, window.innerWidth-w-pad));
+  y=Math.max(pad, Math.min(y, window.innerHeight-h-pad));
+  wrap.style.left=x+'px'; wrap.style.top=y+'px';
+  setTimeout(()=>document.addEventListener('mousedown',_dayPopoverOutside),0);
+}
+function _dayPopoverOutside(e){
+  const p=document.getElementById('dayPopover');
+  if(p&&!p.contains(e.target)) closeDayPopover();
+}
+function closeDayPopover(){
+  const p=document.getElementById('dayPopover'); if(p)p.remove();
+  document.removeEventListener('mousedown',_dayPopoverOutside);
 }
 
 function renderWeek(){

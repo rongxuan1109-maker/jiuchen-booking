@@ -684,6 +684,35 @@ function groupConsecutiveAppts(appts){
   }
   return groups;
 }
+// Google 風格重疊排版：每個 item 需有 s(起始格),e(結束格)；計算 col(第幾欄)、cols(總欄數)、span(向右擴張幾欄)
+function layoutOverlap(items){
+  items.sort((a,b)=> a.s-b.s || a.e-b.e);
+  let columns=[], lastEnd=null;
+  const flush=()=>{
+    const n=columns.length;
+    columns.forEach((col,ci)=>col.forEach(ev=>{
+      ev.col=ci; ev.cols=n;
+      let span=1;
+      for(let k=ci+1;k<n;k++){
+        if(columns[k].some(o=>o!==ev && o.s<ev.e && o.e>ev.s)) break;
+        span++;
+      }
+      ev.span=span;
+    }));
+    columns=[];
+  };
+  for(const ev of items){
+    if(lastEnd!==null && ev.s>=lastEnd){ flush(); lastEnd=null; }
+    let placed=false;
+    for(const col of columns){
+      if(col[col.length-1].e<=ev.s){ col.push(ev); placed=true; break; }
+    }
+    if(!placed) columns.push([ev]);
+    lastEnd=(lastEnd===null)?ev.e:Math.max(lastEnd,ev.e);
+  }
+  if(columns.length) flush();
+  return items;
+}
 function lunarLabel(date){
   const L=getLunar(date);const H=twHoliday(date);
   const lunar=L?.show||'';
@@ -1378,29 +1407,27 @@ function renderDay(){
     ondragleave="this.style.background=''"
     ondrop="this.style.background='';onCellDrop(event,'${ds}','${t}')"></div>`).join('');
 
-  // 將連續時段合併成群組，計算跨列高度
+  // 將連續時段合併成群組，並用 Google 風格演算法排重疊
   const groups=groupConsecutiveAppts(dayAppts);
-  const byStart={};
-  groups.forEach(g=>{const t=g[0].appointment_time.slice(0,5);if(!byStart[t])byStart[t]=[];byStart[t].push(g);});
+  const items=groups.map(g=>{const ti=TIMES.indexOf(g[0].appointment_time.slice(0,5));return{g,s:ti,e:ti+g.length};}).filter(x=>x.s>=0);
+  layoutOverlap(items);
 
   let blocksHtml='';
-  Object.entries(byStart).forEach(([t,gs])=>{
-    const ti=TIMES.indexOf(t);if(ti<0)return;
-    const colW=100/gs.length;
-    gs.forEach((group,gi)=>{
-      const a=group[0];const span=group.length;
-      const topPx=ti*CELL_H+3;const heightPx=span*CELL_H-6;
-      blocksHtml+=`<div class="appt-block"
-        draggable="true" data-id="${a.id}"
-        ondragstart="onDragStart(event,${a.id})" ondragend="onDragEnd(event)"
-        onclick="event.stopPropagation();openModal(${a.id})"
-        ondragover="event.preventDefault()"
-        ondrop="onCellDrop(event,'${ds}','${t}')"
-        style="position:absolute;left:${(gi*colW+0.4).toFixed(1)}%;width:${(colW-1.3).toFixed(1)}%;top:${topPx}px;height:${heightPx}px;background:${apptBg(a)};color:${apptColor(a)};padding:4px 8px;overflow:hidden;z-index:2;box-sizing:border-box;border-radius:7px;border:1px solid rgba(255,255,255,.35);box-shadow:0 1px 3px rgba(28,22,17,.22);">
-        <b style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${apptLabel(a)?` <span style="font-size:10px;font-weight:600;background:rgba(255,255,255,.32);color:#fff;padding:1px 5px;border-radius:7px">${apptLabel(a)}</span>`:''}</b>
-        <span style="font-size:11px;opacity:.85;font-weight:400">${a.appointment_time.slice(0,5)} – ${slotEnd(group[span-1].appointment_time)}</span>
-      </div>`;
-    });
+  items.forEach(it=>{
+    const group=it.g, a=group[0], slots=group.length;
+    const unit=100/it.cols;
+    const left=it.col*unit, width=it.span*unit;
+    const topPx=it.s*CELL_H+3;const heightPx=slots*CELL_H-6;
+    blocksHtml+=`<div class="appt-block"
+      draggable="true" data-id="${a.id}"
+      ondragstart="onDragStart(event,${a.id})" ondragend="onDragEnd(event)"
+      onclick="event.stopPropagation();openModal(${a.id})"
+      ondragover="event.preventDefault()"
+      ondrop="onCellDrop(event,'${ds}','${TIMES[it.s]}')"
+      style="position:absolute;left:${(left+0.4).toFixed(1)}%;width:${(width-1.2).toFixed(1)}%;top:${topPx}px;height:${heightPx}px;background:${apptBg(a)};color:${apptColor(a)};padding:4px 8px;overflow:hidden;z-index:${3+it.col};box-sizing:border-box;border-radius:7px;border:1px solid rgba(255,255,255,.35);box-shadow:0 1px 3px rgba(28,22,17,.22);">
+      <b style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${apptLabel(a)?` <span style="font-size:10px;font-weight:600;background:rgba(255,255,255,.32);color:#fff;padding:1px 5px;border-radius:7px">${apptLabel(a)}</span>`:''}</b>
+      <span style="font-size:11px;opacity:.85;font-weight:400">${a.appointment_time.slice(0,5)} – ${slotEnd(group[slots-1].appointment_time)}</span>
+    </div>`;
   });
 
   const listHtml=dayAppts.length?dayAppts.map(a=>`
@@ -1578,30 +1605,28 @@ function renderWeek(){
       ondrop="onCellDrop(event,'${ds}','${t}')"
       onclick="if(!event.target.closest('[data-id]'))openNewApptAt('${ds}','${t}')"></div>`).join('');
 
-    // 跨列方塊
+    // 跨列方塊（Google 風格重疊排版）
     const groups=groupConsecutiveAppts(colAppts);
-    const byStart={};
-    groups.forEach(g=>{const t=g[0].appointment_time.slice(0,5);if(!byStart[t])byStart[t]=[];byStart[t].push(g);});
+    const items=groups.map(g=>{const ti=TIMES.indexOf(g[0].appointment_time.slice(0,5));return{g,s:ti,e:ti+g.length};}).filter(x=>x.s>=0);
+    layoutOverlap(items);
     let blocksHtml='';
-    Object.entries(byStart).forEach(([t,gs])=>{
-      const ti=TIMES.indexOf(t);if(ti<0)return;
-      const colW=100/gs.length;
-      gs.forEach((group,gi)=>{
-        const a=group[0];const span=group.length;
-        const topPx=ti*CELL_H+3;const heightPx=span*CELL_H-6;
-        blocksHtml+=`<div class="appt-block"
-          style="background:${apptBg(a)};color:${apptColor(a)};
-                 position:absolute;left:${(gi*colW+0.6).toFixed(1)}%;width:${(colW-1.4).toFixed(1)}%;
-                 top:${topPx}px;height:${heightPx}px;right:auto;"
-          draggable="true" data-id="${a.id}"
-          ondragstart="onDragStart(event,${a.id})"
-          ondragend="onDragEnd(event)"
-          ondrop="onCellDrop(event,'${ds}','${t}')"
-          onclick="event.stopPropagation();openModal(${a.id})">
-          <b>${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${!isEvent(a)&&a.type==='new'?' 初':''}</b>
-          <span>${a.appointment_time.slice(0,5)} – ${slotEnd(group[span-1].appointment_time)}</span>
-        </div>`;
-      });
+    items.forEach(it=>{
+      const group=it.g, a=group[0], slots=group.length;
+      const unit=100/it.cols;
+      const left=it.col*unit, width=it.span*unit;
+      const topPx=it.s*CELL_H+3;const heightPx=slots*CELL_H-6;
+      blocksHtml+=`<div class="appt-block"
+        style="background:${apptBg(a)};color:${apptColor(a)};
+               position:absolute;left:${(left+0.6).toFixed(1)}%;width:${(width-1.3).toFixed(1)}%;
+               top:${topPx}px;height:${heightPx}px;right:auto;z-index:${3+it.col};"
+        draggable="true" data-id="${a.id}"
+        ondragstart="onDragStart(event,${a.id})"
+        ondragend="onDragEnd(event)"
+        ondrop="onCellDrop(event,'${ds}','${TIMES[it.s]}')"
+        onclick="event.stopPropagation();openModal(${a.id})">
+        <b>${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${!isEvent(a)&&a.type==='new'?' 初':''}</b>
+        <span>${a.appointment_time.slice(0,5)} – ${slotEnd(group[slots-1].appointment_time)}</span>
+      </div>`;
     });
 
     return `<div style="flex:1;border-left:1px solid var(--border);position:relative;min-width:0;">${rowsHtml}${blocksHtml}</div>`;

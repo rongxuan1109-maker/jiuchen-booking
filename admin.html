@@ -296,6 +296,12 @@ body::before{
 .appt-block b{font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .appt-block span{font-size:9px;opacity:.8;}
 
+/* ── 左側小日曆 ── */
+.mini-panel{width:218px;flex-shrink:0;padding:0 4px 0 16px;}
+.mini-day:hover{background:var(--glow);color:var(--accent)!important;}
+.cal-scroll{scrollbar-width:thin;}
+@media(max-width:880px){.mini-panel{display:none;}}
+
 /* ── DRAG GHOST ── */
 .drag-ghost{
   position:fixed;pointer-events:none;z-index:999;
@@ -488,7 +494,10 @@ body::before{
   </button>
 </div>
 <div class="stats" id="statsRow"></div>
-<div id="mainContent"></div>
+<div id="calGrid" style="display:flex;align-items:flex-start">
+  <div id="miniCalPanel" class="mini-panel"></div>
+  <div id="mainContent" style="flex:1;min-width:0"></div>
+</div>
 <div id="modalArea"></div>
 <div class="toast" id="toast"></div>
 
@@ -525,7 +534,18 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const DAYS = ['日','一','二','三','四','五','六'];
-const TIMES = ['09:00','09:30','10:00','10:30','11:00','11:30','13:30','14:00','14:30','15:00','15:30','16:00'];
+// 時間軸：上午 01:00 ～ 下午 23:00，每 30 分鐘一格（顯示時整點標籤、半點分隔線變淡）
+const TIMES = (function(){
+  const arr=[];
+  for(let h=1;h<=23;h++){
+    arr.push((h<10?'0'+h:''+h)+':00');
+    if(h<23) arr.push((h<10?'0'+h:''+h)+':30');
+  }
+  return arr;
+})();
+const SLOT_H = 30;            // 每個 30 分鐘格的高度（整點=60px，仿 Google 日曆）
+const DEFAULT_TIME = '09:00'; // 月檢視/新增預約的預設時段
+const isHourMark = t => t.endsWith(':00');
 
 function thColor(t){ return t.color||'#c08a52'; }
 function thBg(t){
@@ -541,6 +561,7 @@ function thText(t){
 
 let therapists=[], appointments=[];
 let curThId=0, curView='day', curDate=new Date();
+let miniCalDate=new Date();   // 左側小日曆目前瀏覽的月份（與主檢視日期獨立）
 let dragApptId=null, dragGhost=null;
 let birthMonthMap={}; // phone -> birth_month
 
@@ -645,6 +666,8 @@ function setPage(page){
   if(dateBar)dateBar.style.display=calActive?'flex':'none';
   const statsRow=document.getElementById('statsRow');
   if(statsRow)statsRow.style.display=calActive?'grid':'none';
+  const miniPanel=document.getElementById('miniCalPanel');
+  if(miniPanel)miniPanel.style.display=calActive?'':'none';
   if(page==='patients') renderPatients();
   else loadData();
 }
@@ -935,6 +958,59 @@ function render(){
   if(curView==='day')renderDay();
   else if(curView==='week')renderWeek();
   else renderMonth();
+  renderMiniCal();
+}
+
+/* ── 左側小日曆：點日期 → 主檢視跳到該日期（保留目前日/週/月層級）── */
+function renderMiniCal(){
+  const panel=document.getElementById('miniCalPanel');
+  if(!panel)return;
+  if(curPage!=='calendar'){panel.style.display='none';return;}
+  panel.style.display='';
+  const y=miniCalDate.getFullYear(), m=miniCalDate.getMonth();
+  const first=new Date(y,m,1).getDay();
+  const dim=new Date(y,m+1,0).getDate();
+  const todayS=fmtDate(new Date()), curS=fmtDate(curDate);
+  const wkStart=getWeekStart(curDate), wkEnd=new Date(wkStart);wkEnd.setDate(wkStart.getDate()+6);
+  const wkS=fmtDate(wkStart), wkE=fmtDate(wkEnd);
+  const wd=['日','一','二','三','四','五','六'];
+  const head=wd.map(d=>`<div style="text-align:center;font-size:10px;color:var(--muted);padding:3px 0;font-weight:300">${d}</div>`).join('');
+  let cells='';
+  const total=Math.ceil((first+dim)/7)*7;
+  for(let i=0;i<total;i++){
+    const dn=i-first+1, valid=dn>=1&&dn<=dim;
+    const d=valid?new Date(y,m,dn):null, ds=d?fmtDate(d):'';
+    const isToday=ds===todayS, isCur=ds===curS;
+    // 週檢視時，把整週淡淡標起來
+    const inWeek=curView==='week'&&valid&&ds>=wkS&&ds<=wkE;
+    let bg='transparent',col=valid?'var(--text)':'transparent',rad='50%',fw='400';
+    if(isCur){bg='var(--warm)';col='#f3ede1';fw='500';}
+    else if(isToday){bg='var(--glow)';col='var(--accent)';fw='500';}
+    else if(inWeek){bg='rgba(192,138,82,.10)';rad='0';}
+    cells+=`<div ${valid?`class="mini-day" onclick="pickMiniDate('${ds}')"`:''} style="text-align:center;font-size:11px;line-height:24px;height:24px;cursor:${valid?'pointer':'default'};background:${bg};color:${col};border-radius:${rad};font-weight:${fw};transition:background .12s">${valid?dn:''}</div>`;
+  }
+  panel.innerHTML=`
+    <div style="background:var(--surface);border:1px solid var(--border);padding:10px 9px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+        <span style="font-size:12px;font-weight:400;letter-spacing:.5px">${y}年${m+1}月</span>
+        <span>
+          <button onclick="miniCalNav(-1)" style="border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;padding:0 5px;font-family:serif">‹</button>
+          <button onclick="miniCalNav(1)" style="border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;padding:0 5px;font-family:serif">›</button>
+        </span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr)">${head}</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px 0">${cells}</div>
+    </div>`;
+}
+function miniCalNav(dir){
+  miniCalDate=new Date(miniCalDate.getFullYear(),miniCalDate.getMonth()+dir,1);
+  renderMiniCal();
+}
+function pickMiniDate(ds){
+  const [y,mo,d]=ds.split('-').map(Number);
+  curDate=new Date(y,mo-1,d);
+  miniCalDate=new Date(y,mo-1,1);
+  loadData(); // 載入該日期範圍的預約並重繪（日→該日／週→該週／月→該月）
 }
 
 function renderThTabs(){
@@ -1004,15 +1080,15 @@ function getThName(id){if(!id)return'不指定';const t=therapists.find(x=>x.id=
 
 function renderDay(){
   const ds=fmtDate(curDate);
-  const CELL_H=52;
+  const CELL_H=SLOT_H;
   const dayAppts=getFiltered(ds).filter(a=>a.status!=='cancelled').sort((a,b)=>a.appointment_time.localeCompare(b.appointment_time));
   const el=document.getElementById('mainContent');
 
-  // 時間欄
-  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:4px;font-size:10px;color:var(--muted);text-align:right;padding-right:5px;border-bottom:1px solid var(--border);font-weight:300">${t}</div>`).join('');
+  // 時間欄（只在整點顯示標籤）
+  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:1px;font-size:10px;color:var(--muted);text-align:right;padding-right:5px;border-bottom:1px solid ${isHourMark(t)?'transparent':'var(--border)'};font-weight:300">${isHourMark(t)?t:''}</div>`).join('');
 
-  // 背景行（拖拉與點擊目標）
-  const rowsHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;border-bottom:1px solid var(--border);"
+  // 背景行（拖拉與點擊目標）；半點分隔線變淡、整點線實
+  const rowsHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'var(--border)':'rgba(192,138,82,.12)'};"
     onclick="if(!event.target.closest('[data-id]'))openNewApptAt('${ds}','${t}')"
     ondragover="event.preventDefault();this.style.background='var(--glow)'"
     ondragleave="this.style.background=''"
@@ -1060,7 +1136,7 @@ function renderDay(){
         <span style="font-weight:400;letter-spacing:.5px">時間軸</span>
         <button onclick="toggleDaySidebar()" id="sidebarToggle" style="border:none;background:var(--glow);color:var(--accent);padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif">隱藏清單 ›</button>
       </div>
-      <div style="display:flex">
+      <div id="day-scroll" class="cal-scroll" style="display:flex;max-height:64vh;overflow-y:auto">
         <div style="width:46px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
         <div style="flex:1;position:relative;">${rowsHtml}${blocksHtml}</div>
       </div>
@@ -1072,6 +1148,14 @@ function renderDay(){
       ${listHtml}
     </div>
   </div>`;
+  scrollCalToMorning('day-scroll');
+}
+
+// 載入時把時間軸捲到早上（預設 08:00），不用從凌晨開始滑
+function scrollCalToMorning(id){
+  const c=document.getElementById(id);if(!c)return;
+  const idx=TIMES.indexOf('08:00');
+  if(idx>0) c.scrollTop=idx*SLOT_H;
 }
 
 function toggleDaySidebar(){
@@ -1111,7 +1195,7 @@ function renderMonth(){
     const isSun=d&&d.getDay()===0;
     const dayAppts=valid?appointments.filter(a=>a.appointment_date===ds&&a.status!=='cancelled'&&(curThId===0||a.therapist_id===curThId||(isEvent(a)&&a.therapist_id===null))):[];
     const lb=valid?lunarLabel(d):null;
-    html+=`<div onclick="${valid?`openNewApptAt('${ds}','${TIMES[0]}')`:''}" style="min-height:96px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:4px;cursor:${valid?'pointer':'default'};${isToday?'background:rgba(192,138,82,.06)':''}${isSun&&!isToday?'background:rgba(217,110,40,.03)':''}">`;
+    html+=`<div onclick="${valid?`openNewApptAt('${ds}','${DEFAULT_TIME}')`:''}" style="min-height:96px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:4px;cursor:${valid?'pointer':'default'};${isToday?'background:rgba(192,138,82,.06)':''}${isSun&&!isToday?'background:rgba(217,110,40,.03)':''}">`;
     if(valid){
       html+=`<div style="margin-bottom:1px;display:flex;align-items:baseline;gap:3px">
         <span style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:${isToday?'500':'400'};background:${isToday?'var(--warm)':'transparent'};color:${isToday?'#f3ede1':isSun?'var(--new-color)':'var(--text)'};padding:${isToday?'0 4px':'0'};line-height:1.4">${dayNum}</span>
@@ -1134,7 +1218,7 @@ function renderMonth(){
 function renderWeek(){
   const ws=getWeekStart(curDate);
   const todayStr=fmtDate(new Date());
-  const CELL_H=52;
+  const CELL_H=SLOT_H;
 
   // 欄位標題
   const headers=Array.from({length:7},(_,i)=>{
@@ -1149,8 +1233,8 @@ function renderWeek(){
     </div>`;
   }).join('');
 
-  // 時間欄
-  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:4px;padding-right:5px;font-size:10px;color:var(--muted);text-align:right;border-bottom:1px solid var(--border);font-weight:300">${t}</div>`).join('');
+  // 時間欄（只在整點顯示標籤）
+  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:1px;padding-right:5px;font-size:10px;color:var(--muted);text-align:right;border-bottom:1px solid ${isHourMark(t)?'transparent':'var(--border)'};font-weight:300">${isHourMark(t)?t:''}</div>`).join('');
 
   // 七個日欄（各自含背景行 + 跨列方塊）
   const dayColumns=Array.from({length:7},(_,i)=>{
@@ -1162,8 +1246,8 @@ function renderWeek(){
       (curThId===0||a.therapist_id===curThId||(isEvent(a)&&a.therapist_id===null))
     );
 
-    // 背景行
-    const rowsHtml=TIMES.map(t=>`<div class="week-cell ${isToday?'today-col':''}" style="height:${CELL_H}px;"
+    // 背景行（半點分隔線變淡）
+    const rowsHtml=TIMES.map(t=>`<div class="week-cell ${isToday?'today-col':''}" style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'var(--border)':'rgba(192,138,82,.12)'};"
       ondragover="onCellDragOver(event)" ondragleave="onCellDragLeave(event)"
       ondrop="onCellDrop(event,'${ds}','${t}')"
       onclick="if(!event.target.closest('[data-id]'))openNewApptAt('${ds}','${t}')"></div>`).join('');
@@ -1203,12 +1287,13 @@ function renderWeek(){
         <div style="width:46px;flex-shrink:0"></div>
         ${headers}
       </div>
-      <div style="display:flex">
+      <div id="week-scroll" class="cal-scroll" style="display:flex;max-height:64vh;overflow-y:auto">
         <div style="width:46px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
         ${dayColumns}
       </div>
     </div>
   </div>`;
+  scrollCalToMorning('week-scroll');
 }
 
 /* ── DRAG & DROP ── */
@@ -1442,7 +1527,7 @@ function onCellClick(e, date, time){
   if(e.target.closest('.appt-block'))return;
   openNewApptAt(date, time);
 }
-function openNewAppt(){openNewApptAt(fmtDate(curDate),TIMES[0]);}
+function openNewAppt(){openNewApptAt(fmtDate(curDate),DEFAULT_TIME);}
 
 function openNewApptAt(date, time){
   window._naType='return';window._naParts=[];

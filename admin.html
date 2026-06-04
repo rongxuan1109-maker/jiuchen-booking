@@ -514,7 +514,7 @@ input,select,textarea{border-radius:8px;}
       活動
     </button>
     <button onclick="openProxyPicker()"
-      style="padding:5px 13px;border:1px solid #6b4fb0;background:transparent;color:#6b4fb0;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;border-radius:8px">
+      style="padding:5px 13px;border:1px solid #7986CB;background:transparent;color:#7986CB;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;border-radius:8px">
       代約
     </button>
   </div>
@@ -575,7 +575,7 @@ const isHourMark = t => t.endsWith(':00');
 
 // 治療師代表色覆蓋（DB anon 無法改 therapists，故在前端指定）
 // 治療師代表色：對齊 Google 日曆顏色（劉恕愷尚未上班，維持資料庫紅色不動）
-const TH_COLOR_OVERRIDE={'徐若椏':'#E8710A','張維庭':'#616161','江榮軒':'#4285F4'};
+const TH_COLOR_OVERRIDE={'徐若椏':'#E8710A','張維庭':'#616161','江榮軒':'#039BE5'};
 function thColor(t){ return (t&&TH_COLOR_OVERRIDE[t.name])||t.color||'#c08a52'; }
 function thBg(t){
   const c=t.color||'#c08a52';
@@ -1271,7 +1271,7 @@ function renderDayNotesPanel(){
   return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 11px;margin-top:10px">
     <div style="font-size:12px;font-weight:500;color:var(--new-color);margin-bottom:8px;letter-spacing:.5px">📝 今日備註（${withNotes.length}）</div>
     ${withNotes.map(a=>`<div onclick="openModal(${a.id})" style="cursor:pointer;padding:6px 0;border-top:1px solid var(--border)">
-      <div style="font-size:12px;color:var(--ink)">${a.appointment_time.slice(0,5)}　${esc(a.patient_name)}${proxyOf(a)?' <span style="color:#6b4fb0;font-size:10px">代約</span>':''}</div>
+      <div style="font-size:12px;color:var(--ink)">${a.appointment_time.slice(0,5)}　${esc(a.patient_name)}${proxyOf(a)?' <span style="color:#7986CB;font-size:10px">代約</span>':''}</div>
       <div style="margin-top:3px"><span style="font-size:12px;color:var(--new-color);background:var(--new-bg);padding:2px 8px;border-radius:7px;line-height:1.6;display:inline-block">${esc(noteText(a))}</span></div>
     </div>`).join('')}
   </div>`;
@@ -1378,7 +1378,7 @@ function thCode(a){
 function apptBg(a){
   /* Google 日曆風：整塊實心填代表色 */
   if(isEvent(a)) return '#3a2818';                     /* 活動：深色 */
-  if(proxyOf(a)) return '#6b4fb0';                     /* 代約：紫 */
+  if(proxyOf(a)) return '#7986CB';                     /* 代約：薰衣草 */
   if(a.therapist_id){const t=therapists.find(x=>x.id===a.therapist_id);if(t)return thColor(t);}
   return '#F6BF26';                                    /* 未指定：黃色 */
 }
@@ -1386,7 +1386,7 @@ function isUnassigned(a){return !isEvent(a)&&!proxyOf(a)&&!a.therapist_id;}
 function apptColor(a){ return isUnassigned(a)?'#3d2f08':'#fff'; }  /* 未指定黃底→深字，其餘白字 */
 function apptBorder(a){
   if(isEvent(a)) return '#3a2818';                     /* 活動深色邊 */
-  if(proxyOf(a)) return '#6b4fb0';                     /* 代約紫邊 */
+  if(proxyOf(a)) return '#7986CB';                     /* 代約薰衣草邊 */
   if(a.therapist_id){const t=therapists.find(x=>x.id===a.therapist_id);if(t)return thColor(t);}
   return '#F6BF26';                                    /* 未指定：黃色 */
 }
@@ -1903,7 +1903,7 @@ function openNewApptAt(date, time, edit){
           活動
         </button>`}
       </div>
-      ${window._naProxyId?`<div style="background:rgba(124,92,191,.12);border:1px solid #6b4fb0;color:#4a3580;padding:9px 13px;margin-bottom:14px;font-size:12px;letter-spacing:.5px">🤝 代約：<b>${(therapists.find(t=>t.id===window._naProxyId)||{}).name||''}</b> 幫 <b>${(therapists.find(t=>t.id==preThId)||{}).name||'（請選治療師）'}</b> 代約</div>`:''}
+      ${window._naProxyId?`<div style="background:rgba(121,134,203,.18);border:1px solid #7986CB;color:#3949ab;padding:9px 13px;margin-bottom:14px;font-size:12px;letter-spacing:.5px">🤝 代約：<b>${(therapists.find(t=>t.id===window._naProxyId)||{}).name||''}</b> 幫 <b>${(therapists.find(t=>t.id==preThId)||{}).name||'（請選治療師）'}</b> 代約</div>`:''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px">
         <div><label class="field-lbl">姓名 *</label><input id="na-name" style="${fieldBox()}" placeholder="" value="${edit?String(edit.patient_name||'').replace(/"/g,'&quot;'):''}"></div>
         <div><label class="field-lbl">電話<span style="color:var(--muted);font-weight:300">（初診必填）</span></label><input id="na-phone" type="tel" style="${fieldBox()}" placeholder="" value="${edit?String(edit.patient_phone||'').replace(/"/g,'&quot;'):''}"></div>
@@ -2052,11 +2052,11 @@ function openProxyPicker(){ _proxyAgent=null;_proxyTarget=null;renderProxyPicker
 function renderProxyPicker(){
   const list=therapists.map(t=>{
     let badge='',bd='var(--border)',bg='transparent';
-    if(_proxyAgent===t.id){badge='1';bd='#6b4fb0';bg='rgba(124,92,191,.14)';}
-    else if(_proxyTarget===t.id){badge='2';bd='#6b4fb0';bg='rgba(124,92,191,.14)';}
+    if(_proxyAgent===t.id){badge='1';bd='#7986CB';bg='rgba(121,134,203,.18)';}
+    else if(_proxyTarget===t.id){badge='2';bd='#7986CB';bg='rgba(121,134,203,.18)';}
     return `<div onclick="proxyTap(${t.id})" style="display:flex;align-items:center;justify-content:space-between;border:1px solid ${bd};background:${bg};padding:12px 15px;margin-bottom:8px;cursor:pointer">
       <span style="font-size:15px;font-weight:400">${t.name}</span>
-      ${badge?`<span style="width:24px;height:24px;border-radius:50%;background:#6b4fb0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500">${badge}</span>`:''}
+      ${badge?`<span style="width:24px;height:24px;border-radius:50%;background:#7986CB;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500">${badge}</span>`:''}
     </div>`;
   }).join('');
   const ready=_proxyAgent&&_proxyTarget;
@@ -2065,7 +2065,7 @@ function renderProxyPicker(){
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
       <p class="modal-title">代約</p>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.8">先點 <b style="color:#6b4fb0">幫忙約的人</b>（標 1），再點 <b style="color:#6b4fb0">看診的治療師</b>（標 2）</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.8">先點 <b style="color:#7986CB">幫忙約的人</b>（標 1），再點 <b style="color:#7986CB">看診的治療師</b>（標 2）</p>
       ${list}
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">取消</button>

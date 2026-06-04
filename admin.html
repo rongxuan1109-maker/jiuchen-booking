@@ -714,7 +714,7 @@ function ptCard(p){
     <div style="flex:1">
       <div style="font-size:14px;font-weight:400;margin-bottom:3px;color:var(--ink)">${p.name}</div>
       <div style="font-size:12px;color:var(--muted);font-weight:300">${p.phone||'無電話'} · 編號 #${p.id}${(p.first_visit||p.created_at)?' · 加入：'+(p.first_visit||p.created_at.slice(0,10)):''}</div>
-      ${(function(){const v=patientVisitInfo(p);return v?`<div style="font-size:11px;color:var(--accent);font-weight:400;margin-top:2px">最近來訪：${v.last}　·　共 ${v.count} 次</div>`:'<div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:300">尚無就診紀錄</div>';})()}
+      ${(function(){const v=patientVisitInfo(p);return v?`<div style="font-size:11px;font-weight:400;margin-top:2px"><span style="color:#fff;background:${relColor(v.last)};padding:1px 7px;border-radius:9px">${relTime(v.last)}</span> <span style="color:var(--accent)">最近 ${v.last}　·　共 ${v.count} 次</span></div>`:'<div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:300">尚無就診紀錄</div>';})()}
       ${p.body_parts&&p.body_parts.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">${p.body_parts.map(bp=>`<span style="background:var(--glow);color:var(--accent);padding:2px 8px;font-size:10px;border:1px solid var(--border)">${bp}</span>`).join('')}</div>`:''}
     </div>
     <span style="color:var(--muted);font-size:16px">›</span>
@@ -810,6 +810,30 @@ function patientPassFilters(p){
   let recMatch=true;
   if(recencyFilter){const info=patientVisitInfo(p);const cut=recencyCutoff();recMatch=!!(info&&info.last>=cut);}
   return nameMatch&&partMatch&&recMatch;
+}
+// 相對時間：今天／X天前／X週前／X個月前／X年前
+function relTime(dateStr){
+  if(!dateStr)return'';
+  const d=new Date(dateStr+'T00:00:00'),now=new Date();
+  const days=Math.floor((now-d)/86400000);
+  if(days<0)return'未來';
+  if(days===0)return'今天';
+  if(days===1)return'昨天';
+  if(days<7)return days+'天前';
+  if(days<14)return'上週';
+  if(days<30)return Math.floor(days/7)+'週前';
+  if(days<365){const m=Math.floor(days/30);return m+'個月前';}
+  const y=Math.floor(days/365),rm=Math.floor((days%365)/30);
+  return y+'年'+(rm?rm+'個月':'')+'前';
+}
+// 相對時間的顏色（越近越亮）
+function relColor(dateStr){
+  const d=new Date(dateStr+'T00:00:00'),days=Math.floor((new Date()-d)/86400000);
+  if(days<30)return'#2e7d32';      // 近1月 綠
+  if(days<90)return'#6b4fb0';      // 近3月 紫
+  if(days<180)return'#c08a52';     // 近半年 暖
+  if(days<365)return'#9b8a74';     // 半年-1年 灰
+  return'#bbb';                    // 更早 淺灰
 }
 
 function renderPatients(){
@@ -971,13 +995,21 @@ async function loadPatientHistory(p){
     const k=a.appointment_date+a.appointment_time;if(seen.has(k))return false;seen.add(k);return true;
   }).sort((a,b)=>(b.appointment_date+b.appointment_time).localeCompare(a.appointment_date+a.appointment_time));
   if(!rows.length){el.innerHTML='<span style="color:var(--muted)">尚無就診紀錄</span>';return;}
-  el.innerHTML=`<div style="font-size:11px;color:var(--accent);margin-bottom:6px">共 ${rows.length} 次</div>`+
+  // 時段分布摘要（非重疊區間）
+  const valid=rows.filter(a=>a.status!=='cancelled');
+  const buckets=[['近1月',0,30],['1–3月',30,90],['3–6月',90,180],['半年–1年',180,365],['1年以上',365,9e9]];
+  const counts=buckets.map(()=>0);
+  valid.forEach(a=>{const days=Math.floor((new Date()-new Date(a.appointment_date+'T00:00:00'))/86400000);
+    for(let i=0;i<buckets.length;i++){if(days>=buckets[i][1]&&days<buckets[i][2]){counts[i]++;break;}}});
+  const summary=`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">`+
+    buckets.map((b,i)=>`<span style="font-size:11px;padding:3px 8px;border:1px solid var(--border);background:${counts[i]?'rgba(124,92,191,.08)':'transparent'};color:${counts[i]?'var(--ink)':'var(--muted)'}">${b[0]} <b style="color:${counts[i]?'#6b4fb0':'var(--muted)'}">${counts[i]}</b></span>`).join('')+`</div>`;
+  el.innerHTML=`<div style="font-size:11px;color:var(--accent);margin-bottom:8px">總共 ${valid.length} 次就診</div>`+summary+
     rows.slice(0,30).map(a=>{
       const th=a.therapist_id?(therapists.find(t=>t.id===a.therapist_id)||{}).name||'':'不指定';
       const cancelled=a.status==='cancelled';
-      return `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);${cancelled?'opacity:.45;text-decoration:line-through':''}">
-        <span>${a.appointment_date} ${a.appointment_time.slice(0,5)}</span>
-        <span style="color:var(--muted);font-size:11px">${a.type==='new'?'初診':'複診'}${th?' · '+th:''}${a.service&&!a.service.includes('一個部位')?' · '+a.service.replace('（續）',''):''}</span>
+      return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);${cancelled?'opacity:.45;text-decoration:line-through':''}">
+        <span style="display:flex;align-items:center;gap:7px"><span style="font-size:10px;color:#fff;background:${relColor(a.appointment_date)};padding:1px 7px;border-radius:9px;white-space:nowrap">${relTime(a.appointment_date)}</span><span>${a.appointment_date} ${a.appointment_time.slice(0,5)}</span></span>
+        <span style="color:var(--muted);font-size:11px;text-align:right">${a.type==='new'?'初診':'複診'}${th?' · '+th:''}</span>
       </div>`;
     }).join('')+(rows.length>30?`<div style="font-size:11px;color:var(--muted);margin-top:6px">（僅顯示最近 30 筆）</div>`:'');
 }

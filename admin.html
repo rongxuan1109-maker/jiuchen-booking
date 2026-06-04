@@ -729,6 +729,39 @@ async function loadPatients(){
   if(data)patients=data;
 }
 
+// 一次性整合：掃描所有預約，把每位病患回填到病患表（不重複建立）
+async function integratePatients(){
+  if(!confirm('要掃描所有預約、把病患整合建檔嗎？\n（已存在的不會重複，可重複執行）'))return;
+  showToast('整合中，請稍候…');
+  const{data:appts,error}=await sb.from('appointments').select('patient_name,patient_phone,appointment_date,note,status').limit(10000);
+  if(error){showToast('讀取預約失敗：'+error.message);return;}
+  const{data:existing}=await sb.from('patients').select('id,name,phone');
+  const exPhone=new Set((existing||[]).filter(p=>p.phone).map(p=>p.phone));
+  const exName=new Set((existing||[]).map(p=>p.name));
+  // 每位病患取最早日期（key=姓名|電話）
+  const map={};
+  (appts||[]).forEach(a=>{
+    if(!a.patient_name||a.status==='cancelled') return;
+    if(a.note&&a.note.startsWith('event:')) return;          // 排除活動
+    const key=a.patient_name+'|'+(a.patient_phone||'');
+    if(!map[key]||a.appointment_date<map[key].first) map[key]={name:a.patient_name,phone:a.patient_phone||'',first:a.appointment_date};
+  });
+  const toInsert=[];
+  Object.values(map).forEach(p=>{
+    if(p.phone){ if(exPhone.has(p.phone))return; exPhone.add(p.phone); }
+    else { if(exName.has(p.name))return; exName.add(p.name); }
+    toInsert.push({name:p.name,phone:p.phone||null,body_parts:[],first_visit:p.first||null,note:null});
+  });
+  if(!toInsert.length){showToast('沒有需要新增的病患（都已建檔）');renderPatients();return;}
+  // 分批插入避免過大
+  for(let i=0;i<toInsert.length;i+=200){
+    const{error:e}=await sb.from('patients').insert(toInsert.slice(i,i+200));
+    if(e){showToast('建立失敗：'+e.message);return;}
+  }
+  showToast('已整合 '+toInsert.length+' 位病患');
+  renderPatients();
+}
+
 // 整合病患：用「電話→姓名」比對，找不到才建立（first_visit = 第一次加入日期）
 async function upsertPatient(name, phone, date, parts, note){
   if(!name) return;
@@ -762,7 +795,8 @@ function renderPatients(){
         <div style="display:flex;gap:8px;margin-bottom:10px">
           <input id="ptSearch" placeholder="搜尋姓名或電話…" value="${patientFilter}" oninput="debouncedSearch(this.value)"
             style="flex:1;border:none;border-bottom:1px solid var(--border);padding:8px 2px;font-size:13px;font-family:'Noto Sans TC',sans-serif;outline:none;background:transparent;font-weight:300">
-          <button onclick="openNewPatient()" style="padding:7px 13px;background:var(--warm);color:#f3ede1;border:none;font-size:12px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">＋ 新增</button>
+          <button onclick="integratePatients()" style="padding:7px 13px;background:transparent;color:var(--accent);border:1px solid var(--warm);font-size:12px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;white-space:nowrap">整合舊預約</button>
+          <button onclick="openNewPatient()" style="padding:7px 13px;background:var(--warm);color:#f3ede1;border:none;font-size:12px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;white-space:nowrap">＋ 新增</button>
         </div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">
           <div onclick="partFilter='';renderPatients()" style="padding:3px 10px;font-size:11px;cursor:pointer;border:1px solid ${!partFilter?'var(--warm)':'var(--border)'};background:${!partFilter?'var(--glow)':'transparent'};color:${!partFilter?'var(--accent)':'var(--muted)'}">全部</div>

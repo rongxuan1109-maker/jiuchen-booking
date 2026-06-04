@@ -637,6 +637,7 @@ const _twH={'1/1':'元旦','2/28':'和平','4/4':'清明','4/5':'清明',
             '5/1':'勞動','10/10':'國慶','12/25':'聖誕','12/31':'跨年'};
 function twHoliday(date){return _twH[`${date.getMonth()+1}/${date.getDate()}`]||null;}
 function isEvent(a){return !!(a.note&&a.note.startsWith('event:'));}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* 將同病人連續時段合併成群組，供跨時段方塊使用 */
 function groupConsecutiveAppts(appts){
@@ -983,10 +984,10 @@ async function loadPatientHistory(p){
   const el=document.getElementById('pt-history');if(!el)return;
   let rows=[];
   if(p.phone){
-    const{data}=await sb.from('appointments').select('appointment_date,appointment_time,type,service,therapist_id,status,note').eq('patient_phone',p.phone).limit(500);
+    const{data}=await sb.from('appointments').select('appointment_date,appointment_time,type,service,therapist_id,status,note,symptoms').eq('patient_phone',p.phone).limit(500);
     if(data)rows=rows.concat(data);
   }
-  const{data:byName}=await sb.from('appointments').select('appointment_date,appointment_time,type,service,therapist_id,status,note').eq('patient_name',p.name).limit(500);
+  const{data:byName}=await sb.from('appointments').select('appointment_date,appointment_time,type,service,therapist_id,status,note,symptoms').eq('patient_name',p.name).limit(500);
   if(byName)rows=rows.concat(byName);
   // 去重 + 排除活動 + 依日期時間新到舊
   const seen=new Set();
@@ -1010,7 +1011,7 @@ async function loadPatientHistory(p){
       return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);${cancelled?'opacity:.45;text-decoration:line-through':''}">
         <span style="display:flex;align-items:center;gap:7px"><span style="font-size:10px;color:#fff;background:${relColor(a.appointment_date)};padding:1px 7px;border-radius:9px;white-space:nowrap">${relTime(a.appointment_date)}</span><span>${a.appointment_date} ${a.appointment_time.slice(0,5)}</span></span>
         <span style="color:var(--muted);font-size:11px;text-align:right">${a.type==='new'?'初診':'複診'}${th?' · '+th:''}</span>
-      </div>`;
+      </div>${noteText(a)?`<div style="font-size:11px;color:#6b4fb0;padding:2px 0 6px 2px;border-bottom:1px solid var(--border);line-height:1.5">📝 ${esc(noteText(a))}</div>`:''}`;
     }).join('')+(rows.length>30?`<div style="font-size:11px;color:var(--muted);margin-top:6px">（僅顯示最近 30 筆）</div>`:'');
 }
 
@@ -1174,7 +1175,23 @@ function renderMiniCal(){
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr)">${head}</div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px 0">${cells}</div>
-    </div>`;
+    </div>
+    ${renderDayNotesPanel()}`;
+}
+
+// 左下「今日備註」面板：只列出當天有備註的預約
+function renderDayNotesPanel(){
+  const ds=fmtDate(curDate);
+  const withNotes=appointments.filter(a=>a.appointment_date===ds&&a.status!=='cancelled'&&!isEvent(a)&&noteText(a))
+    .sort((a,b)=>a.appointment_time.localeCompare(b.appointment_time));
+  if(!withNotes.length) return '';
+  return `<div style="background:var(--surface);border:1px solid var(--border);padding:10px 11px;margin-top:10px">
+    <div style="font-size:12px;font-weight:500;color:#6b4fb0;margin-bottom:8px;letter-spacing:.5px">📝 今日備註（${withNotes.length}）</div>
+    ${withNotes.map(a=>`<div onclick="openModal(${a.id})" style="cursor:pointer;padding:6px 0;border-top:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--ink)">${a.appointment_time.slice(0,5)}　${esc(a.patient_name)}${proxyOf(a)?' <span style="color:#6b4fb0;font-size:10px">代約</span>':''}</div>
+      <div style="font-size:12px;color:#6b4fb0;line-height:1.5;margin-top:2px">${esc(noteText(a))}</div>
+    </div>`).join('')}
+  </div>`;
 }
 function miniCalNav(dir){
   miniCalDate=new Date(miniCalDate.getFullYear(),miniCalDate.getMonth()+dir,1);
@@ -1244,6 +1261,22 @@ function proxyOf(a){
   const m=a.note.match(/^proxy:(\d+)/);
   if(!m) return null;
   return therapists.find(t=>t.id===parseInt(m[1]))||null;
+}
+// 取出乾淨的病人備註（排除 event:、剝掉 proxy:id| 前綴）；舊資料 fallback symptoms
+function noteText(a){
+  if(!a) return '';
+  let n=a.note||'';
+  if(n.indexOf('event:')===0) return '';
+  if(n.indexOf('proxy:')===0){ const i=n.indexOf('|'); n=(i>=0)?n.slice(i+1):''; }
+  n=n.trim();
+  if(!n && a.symptoms) n=String(a.symptoms).trim();   // 舊後台備註存在 symptoms
+  return n;
+}
+// 組合 note 欄位：代約者id + 病人備註共存
+function buildNote(proxyId, text){
+  text=(text||'').trim();
+  if(proxyId) return 'proxy:'+proxyId+(text?'|'+text:'');
+  return text;
 }
 function thCodeRaw(t){ return t.code || t.name.slice(-1); }
 function thCode(a){
@@ -1321,10 +1354,10 @@ function renderDay(){
     <div onclick="openModal(${a.id})" style="border-left:2px solid ${apptBorder(a)};background:var(--surface);border:1px solid var(--border);border-left:2px solid ${apptBorder(a)};padding:10px 12px;margin-bottom:7px;cursor:pointer">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
         <span style="font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:400">${a.appointment_time.slice(0,5)}</span>
-        <span style="font-size:13px;font-weight:400;flex:1">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}</span>
+        <span style="font-size:13px;font-weight:400;flex:1">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${noteText(a)?' <span title="有備註" style="color:#6b4fb0">📝</span>':''}</span>
         <span class="badge ${isEvent(a)?'return':a.type}">${isEvent(a)?'活動':a.type==='new'?'初診':'回診'}</span>
       </div>
-      <div style="font-size:11px;color:var(--muted);font-weight:300">📞 ${a.patient_phone}${a.symptoms?' · '+a.symptoms:''}</div>
+      <div style="font-size:11px;color:var(--muted);font-weight:300">📞 ${a.patient_phone||'—'}${noteText(a)?' · <span style="color:#6b4fb0">'+esc(noteText(a)).slice(0,24)+(noteText(a).length>24?'…':'')+'</span>':''}</div>
     </div>`).join('')
   :`<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px;font-weight:300">今日無預約</div>`;
 
@@ -1795,7 +1828,7 @@ function openNewApptAt(date, time, edit){
           <option value="複診兩個部位／親友一起約" ${edit&&edit.service&&edit.service.includes('兩個部位')?'selected':''}>複診兩個部位／親友一起約（60 分鐘）</option>
         </select>
         <label class="field-lbl">備註</label>
-        <input id="na-note" style="${fieldBox()}" placeholder="術後復健、特殊需求…" value="${edit?String(edit.symptoms||'').replace(/"/g,'&quot;'):''}">
+        <input id="na-note" style="${fieldBox()}" placeholder="代約人姓名/關係/電話、特殊需求…" value="${edit?String(noteText(edit)||'').replace(/"/g,'&quot;'):''}">
       </div>
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">取消</button>
@@ -1840,7 +1873,7 @@ async function submitNewAppt(){
     patient_name:name,patient_phone:phone,
     appointment_date:date,appointment_time:time+':00',
     type:window._naType||'return',service,
-    symptoms:note,note:proxyNote,status:'confirmed'
+    symptoms:'',note:buildNote(proxyId,note),status:'confirmed'
   }]).select().single();
   if(error){showToast('新增失敗：'+error.message);return;}
   if(is60&&nextTime){
@@ -1849,7 +1882,7 @@ async function submitNewAppt(){
       patient_name:name,patient_phone:phone,
       appointment_date:date,appointment_time:nextTime+':00',
       type:window._naType||'return',service:service+'（續）',
-      symptoms:note,note:proxyNote,status:'confirmed'
+      symptoms:'',note:buildNote(proxyId,note),status:'confirmed'
     }]).select();
     if(err2){showToast('第二時段建立失敗：'+err2.message);}
   } else if(is60&&!nextTime){
@@ -1883,8 +1916,8 @@ async function submitEditAppt(id){
     therapist_id:thId?parseInt(thId):null,
     patient_name:name,patient_phone:phone,
     appointment_date:date,appointment_time:time+':00',
-    type:window._naType||'return',service,symptoms:note,
-    note:proxyId?('proxy:'+proxyId):''
+    type:window._naType||'return',service,symptoms:'',
+    note:buildNote(proxyId,note)
   }).eq('id',id);
   if(error){showToast('儲存失敗：'+error.message);return;}
   await upsertPatient(name, phone, date, [], note);   // 編輯也整合病患

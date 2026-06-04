@@ -229,10 +229,13 @@ body::before{
   font-size:16px;font-weight:400;color:var(--ink);
 }
 .appt-name{font-size:14px;font-weight:400;flex:1;}
-.badge{font-size:10px;padding:2px 8px;font-weight:400;letter-spacing:.5px;}
-.badge.new{background:var(--new-bg);color:var(--new-color);}
-.badge.return{background:var(--return-bg);color:var(--return-color);}
-.badge.cancelled{background:rgba(155,138,116,.12);color:var(--muted);}
+.badge{font-size:10px;padding:2px 9px;font-weight:500;letter-spacing:.5px;border-radius:10px;}
+.badge.new{background:var(--new-color);color:#fff;}
+.badge.return{background:var(--return-color);color:#fff;}
+.badge.cancelled{background:var(--muted);color:#fff;}
+/* 全域圓角：按鈕、輸入框、下拉一律修圓角，避免四四方方 */
+button{border-radius:8px;}
+input,select,textarea{border-radius:8px;}
 .appt-detail{font-size:12px;color:var(--muted);display:flex;gap:12px;font-weight:300;}
 .appt-actions{display:flex;gap:6px;margin-top:10px;}
 .act-btn{
@@ -1289,17 +1292,13 @@ function thCode(a){
   return tc;
 }
 function apptBg(a){
-  if(isEvent(a)) return 'rgba(42,29,18,.16)';          /* 活動加深 */
-  if(proxyOf(a)) return 'rgba(124,92,191,.22)';        /* 代約：紫色系 */
-  if(a.therapist_id){const t=therapists.find(x=>x.id===a.therapist_id);if(t)return thBg(t);}
-  return 'rgba(192,138,82,.2)';
+  /* Google 日曆風：整塊實心填代表色 */
+  if(isEvent(a)) return '#3a2818';                     /* 活動：深色 */
+  if(proxyOf(a)) return '#6b4fb0';                     /* 代約：紫 */
+  if(a.therapist_id){const t=therapists.find(x=>x.id===a.therapist_id);if(t)return thColor(t);}
+  return '#a06d34';
 }
-function apptColor(a){
-  if(isEvent(a)) return '#241910';
-  if(proxyOf(a)) return '#4a3580';                     /* 代約文字 */
-  if(a.therapist_id){const t=therapists.find(x=>x.id===a.therapist_id);if(t)return thText(t);}
-  return '#5a3d24';
-}
+function apptColor(a){ return '#fff'; }                 /* 實心填色一律白字 */
 function apptBorder(a){
   if(isEvent(a)) return '#3a2818';                     /* 活動深色邊 */
   if(proxyOf(a)) return '#6b4fb0';                     /* 代約紫邊 */
@@ -1344,7 +1343,7 @@ function renderDay(){
         ondragover="event.preventDefault()"
         ondrop="onCellDrop(event,'${ds}','${t}')"
         style="position:absolute;left:${(gi*colW).toFixed(1)}%;width:${(colW-0.5).toFixed(1)}%;top:${topPx}px;height:${heightPx}px;background:${apptBg(a)};color:${apptColor(a)};border-left:2px solid ${apptBorder(a)};padding:4px 7px;overflow:hidden;z-index:2;box-sizing:border-box;">
-        <b style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${apptLabel(a)?` <span style="font-size:10px;font-weight:600;background:rgba(28,22,17,.1);padding:1px 4px">${apptLabel(a)}</span>`:''}</b>
+        <b style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${apptLabel(a)?` <span style="font-size:10px;font-weight:600;background:rgba(255,255,255,.32);color:#fff;padding:1px 5px;border-radius:7px">${apptLabel(a)}</span>`:''}</b>
         <span style="font-size:11px;opacity:.8;font-weight:400">${a.appointment_time.slice(0,5)}${span>1?' – '+group[span-1].appointment_time.slice(0,5):''}</span>
       </div>`;
     });
@@ -1354,7 +1353,7 @@ function renderDay(){
     <div onclick="openModal(${a.id})" style="border-left:2px solid ${apptBorder(a)};background:var(--surface);border:1px solid var(--border);border-left:2px solid ${apptBorder(a)};padding:10px 12px;margin-bottom:7px;cursor:pointer">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
         <span style="font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:400">${a.appointment_time.slice(0,5)}</span>
-        <span style="font-size:13px;font-weight:400;flex:1">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${noteText(a)?' <span title="有備註" style="color:var(--new-color)">📝</span>':''}</span>
+        <span style="font-size:13px;font-weight:400;flex:1">${thCode(a)?`<span style="background:${apptBorder(a)};color:#fff;padding:1px 8px;border-radius:9px;font-size:11px;font-weight:500">${thCode(a)}</span> `:''}${a.patient_name}${bm(a)}${noteText(a)?' <span title="有備註" style="color:var(--new-color)">📝</span>':''}</span>
         <span class="badge ${isEvent(a)?'return':a.type}">${isEvent(a)?'活動':a.type==='new'?'初診':'回診'}</span>
       </div>
       <div style="font-size:11px;color:var(--muted);font-weight:300">📞 ${a.patient_phone||'—'}${noteText(a)?' <span style="color:var(--new-color);background:var(--new-bg);padding:1px 7px;border-radius:9px">'+esc(noteText(a)).slice(0,24)+(noteText(a).length>24?'…':'')+'</span>':''}</div>

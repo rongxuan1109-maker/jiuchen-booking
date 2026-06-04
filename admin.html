@@ -1456,31 +1456,25 @@ function openModal(id){
     </div>`;
     return;
   }
-  document.getElementById('modalArea').innerHTML=`
-  <div class="modal-bg" onclick="closeModal()">
-    <div class="modal" onclick="event.stopPropagation()">
-      <div class="modal-handle"></div>
-      <p class="modal-title">預約詳情</p>
-      <div class="modal-row"><span class="modal-lbl">姓名</span><span class="modal-val">${a.patient_name}</span></div>
-      <div class="modal-row"><span class="modal-lbl">電話</span><span class="modal-val">${a.patient_phone}</span></div>
-      <div class="modal-row"><span class="modal-lbl">日期時間</span><span class="modal-val">${a.appointment_date} ${a.appointment_time.slice(0,5)}</span></div>
-      <div class="modal-row"><span class="modal-lbl">治療師</span><span class="modal-val">${getThName(a.therapist_id)}</span></div>
-      ${proxyOf(a)?`<div class="modal-row"><span class="modal-lbl">代約</span><span class="modal-val" style="color:#6b4fb0">${proxyOf(a).name} 幫約</span></div>`:''}
-      <div class="modal-row"><span class="modal-lbl">服務</span><span class="modal-val">${a.service||'—'}</span></div>
-      <div class="modal-row"><span class="modal-lbl">類型</span><span class="modal-val"><span class="badge ${a.type}">${a.type==='new'?'初診':'回診'}</span></span></div>
-      ${a.symptoms?`<div class="modal-row"><span class="modal-lbl">症狀</span><span class="modal-val">${a.symptoms}</span></div>`:''}
-      ${a.note&&!a.note.startsWith('event:')&&a.note.indexOf('proxy:')!==0?`<div class="modal-row"><span class="modal-lbl">備註</span><span class="modal-val">${a.note}</span></div>`:''}
-      <div class="modal-btns">
-        ${a.status!=='cancelled'?`
-          <button class="mBtn primary" onclick="closeModal();openEditAppt(${a.id})">編輯預約</button>
-          <button class="mBtn success" onclick="toggleType(${a.id});closeModal()">${a.type==='new'?'改為回診':'改為初診'}</button>
-          <button class="mBtn" onclick="closeModal();openReschedule(${a.id})">修改時間</button>
-          <button class="mBtn danger" onclick="cancelAppt(${a.id});closeModal()">取消預約</button>`
-        :`<button class="mBtn primary" onclick="restoreAppt(${a.id});closeModal()">恢復預約</button>`}
-        <button class="mBtn" onclick="closeModal()">關閉</button>
+  // 已取消的預約：顯示恢復選項
+  if(a.status==='cancelled'){
+    document.getElementById('modalArea').innerHTML=`
+    <div class="modal-bg" onclick="closeModal()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <p class="modal-title">預約詳情（已取消）</p>
+        <div class="modal-row"><span class="modal-lbl">姓名</span><span class="modal-val">${a.patient_name}</span></div>
+        <div class="modal-row"><span class="modal-lbl">日期時間</span><span class="modal-val">${a.appointment_date} ${a.appointment_time.slice(0,5)}</span></div>
+        <div class="modal-btns">
+          <button class="mBtn primary" onclick="restoreAppt(${a.id});closeModal()">恢復預約</button>
+          <button class="mBtn" onclick="closeModal()">關閉</button>
+        </div>
       </div>
-    </div>
-  </div>`;
+    </div>`;
+    return;
+  }
+  // 一般預約：直接開可編輯的詳情（點任何欄位即可修改）
+  openEditAppt(id);
 }
 function closeModal(){document.getElementById('modalArea').innerHTML='';}
 
@@ -1577,7 +1571,7 @@ function openNewApptAt(date, time, edit){
   <div class="modal-bg" onclick="closeModal()">
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
-      <p class="modal-title">${edit?'編輯預約':'新增預約'}</p>
+      <p class="modal-title">${edit?'預約詳情':'新增預約'}</p>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <span style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;color:var(--ink)">${date} &nbsp;${time}</span>
         ${edit?'':`<button onclick="closeModal();openNewEventOn('${date}')"
@@ -1636,8 +1630,9 @@ function openNewApptAt(date, time, edit){
       </div>
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">取消</button>
-        <button class="mBtn primary" onclick="${edit?`submitEditAppt(${edit.id})`:'submitNewAppt()'}">${edit?'儲存變更':'確認新增'}</button>
+        <button class="mBtn primary" onclick="${edit?`submitEditAppt(${edit.id})`:'submitNewAppt()'}">${edit?'確認修改':'確認新增'}</button>
       </div>
+      ${edit?`<div style="text-align:center;margin-top:12px"><a onclick="cancelAppt(${edit.id});closeModal()" style="color:var(--new-color);font-size:12px;cursor:pointer;text-decoration:underline;letter-spacing:.5px">取消此預約</a></div>`:''}
     </div>
   </div>`;
   // 渲染行事曆
@@ -1680,13 +1675,16 @@ async function submitNewAppt(){
   }]).select().single();
   if(error){showToast('新增失敗：'+error.message);return;}
   if(is60&&nextTime){
-    await sb.from('appointments').insert([{
+    const{error:err2}=await sb.from('appointments').insert([{
       therapist_id:thId?parseInt(thId):null,
       patient_name:name,patient_phone:phone,
       appointment_date:date,appointment_time:nextTime+':00',
       type:window._naType||'return',service:service+'（續）',
       symptoms:note,note:proxyNote,status:'confirmed'
-    }]);
+    }]).select();
+    if(err2){showToast('第二時段建立失敗：'+err2.message);}
+  } else if(is60&&!nextTime){
+    showToast('已是最後時段，無法建立 60 分鐘第二格');
   }
   window._naProxyId=null;
   if(window._naType==='new'){

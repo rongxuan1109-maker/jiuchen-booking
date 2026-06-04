@@ -1416,7 +1416,7 @@ function renderDay(){
   items.forEach(it=>{
     const group=it.g, a=group[0], slots=group.length;
     const unit=100/it.cols;
-    const left=it.col*unit, width=it.span*unit;
+    const left=it.col*unit, width=(it.cols-it.col)*unit; // 交疊堆層：往右延伸到底，後欄疊上層
     const topPx=it.s*CELL_H+3;const heightPx=slots*CELL_H-6;
     blocksHtml+=`<div class="appt-block"
       draggable="true" data-id="${a.id}"
@@ -1613,7 +1613,7 @@ function renderWeek(){
     items.forEach(it=>{
       const group=it.g, a=group[0], slots=group.length;
       const unit=100/it.cols;
-      const left=it.col*unit, width=it.span*unit;
+      const left=it.col*unit, width=(it.cols-it.col)*unit; // 交疊堆層
       const topPx=it.s*CELL_H+3;const heightPx=slots*CELL_H-6;
       blocksHtml+=`<div class="appt-block"
         style="background:${apptBg(a)};color:${apptColor(a)};

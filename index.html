@@ -499,12 +499,31 @@ let state = {
   discomfortDuration: '', previousPT: '', surgeryHistory: '', otherNotes: '',
   calMonth: new Date(),
   therapists: [],
-  bookedSlots: []
+  bookedSlots: [],
+  savedInfo: false
 };
 
 async function loadTherapists() {
   const { data, error } = await sb.from('therapists').select('*').order('id');
   if (data) state.therapists = data;
+}
+
+// 用 LINE ID 找出病人上次填寫的資料，自動帶入（病人仍可修改）
+async function loadSavedInfo() {
+  if (!lineUserId) return;
+  try {
+    const { data } = await sb.from('appointments')
+      .select('patient_name, patient_phone, created_at')
+      .eq('line_user_id', lineUserId)
+      .not('patient_name', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (data && data.length) {
+      if (!state.name)  state.name  = data[0].patient_name  || '';
+      if (!state.phone) state.phone = data[0].patient_phone || '';
+      if (state.name || state.phone) state.savedInfo = true;
+    }
+  } catch(e) { console.log('loadSavedInfo failed:', e); }
 }
 
 async function loadBookedSlots(dateStr, therapistId) {
@@ -743,6 +762,7 @@ function renderForm(el) {
         <input class="form-input" id="f-phone" type="tel" placeholder="0912-345-678" value="${state.phone}" oninput="state.phone=this.value;updateBtn()">
       </div>
     </div>
+    ${state.savedInfo?`<p class="notice" style="margin-top:-6px;margin-bottom:12px;color:var(--warm)">✓ 已帶入您上次的資料，如有變動可直接修改</p>`:''}
     ${isNew?`
     <div class="form-group">
       <label class="form-label">出生年月日<span>*</span></label>
@@ -920,16 +940,20 @@ function renderSuccess(el) {
 
 function nextStep() { state.step++; render(); }
 function prevStep() { state.step--; render(); }
-function resetBooking() {
+async function resetBooking() {
   state = { step:0, type:null, service:null, therapistId:null, therapistName:null,
     date:null, time:null, name:'', phone:'', birthDate:'', discomfortArea:'',
     discomfortDuration:'', previousPT:'', surgeryHistory:'', otherNotes:'',
-    calMonth:new Date(), therapists:state.therapists, bookedSlots:[] };
+    calMonth:new Date(), therapists:state.therapists, bookedSlots:[], savedInfo:false };
+  await loadSavedInfo();
   render();
 }
 
 // LIFF 和治療師資料同時載入，不互相等待
-Promise.all([initLiff(), loadTherapists()]).then(() => render());
+Promise.all([initLiff(), loadTherapists()]).then(async () => {
+  await loadSavedInfo();
+  render();
+});
 </script>
 </body>
 </html>

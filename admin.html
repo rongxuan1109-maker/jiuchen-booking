@@ -1011,7 +1011,7 @@ async function loadPatientHistory(p){
       return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);${cancelled?'opacity:.45;text-decoration:line-through':''}">
         <span style="display:flex;align-items:center;gap:7px"><span style="font-size:10px;color:#fff;background:${relColor(a.appointment_date)};padding:1px 7px;border-radius:9px;white-space:nowrap">${relTime(a.appointment_date)}</span><span>${a.appointment_date} ${a.appointment_time.slice(0,5)}</span></span>
         <span style="color:var(--muted);font-size:11px;text-align:right">${a.type==='new'?'初診':'複診'}${th?' · '+th:''}</span>
-      </div>${noteText(a)?`<div style="font-size:11px;color:var(--new-color);padding:2px 0 6px 2px;border-bottom:1px solid var(--border);line-height:1.5">📝 ${esc(noteText(a))}</div>`:''}`;
+      </div>${noteText(a)?`<div style="padding:3px 0 7px 2px;border-bottom:1px solid var(--border)"><span style="font-size:11px;color:var(--new-color);background:var(--new-bg);padding:2px 8px;border-radius:7px;line-height:1.6;display:inline-block">📝 ${esc(noteText(a))}</span></div>`:''}`;
     }).join('')+(rows.length>30?`<div style="font-size:11px;color:var(--muted);margin-top:6px">（僅顯示最近 30 筆）</div>`:'');
 }
 
@@ -1189,7 +1189,7 @@ function renderDayNotesPanel(){
     <div style="font-size:12px;font-weight:500;color:var(--new-color);margin-bottom:8px;letter-spacing:.5px">📝 今日備註（${withNotes.length}）</div>
     ${withNotes.map(a=>`<div onclick="openModal(${a.id})" style="cursor:pointer;padding:6px 0;border-top:1px solid var(--border)">
       <div style="font-size:12px;color:var(--ink)">${a.appointment_time.slice(0,5)}　${esc(a.patient_name)}${proxyOf(a)?' <span style="color:#6b4fb0;font-size:10px">代約</span>':''}</div>
-      <div style="font-size:12px;color:var(--new-color);line-height:1.5;margin-top:2px">${esc(noteText(a))}</div>
+      <div style="margin-top:3px"><span style="font-size:12px;color:var(--new-color);background:var(--new-bg);padding:2px 8px;border-radius:7px;line-height:1.6;display:inline-block">${esc(noteText(a))}</span></div>
     </div>`).join('')}
   </div>`;
 }
@@ -1357,7 +1357,7 @@ function renderDay(){
         <span style="font-size:13px;font-weight:400;flex:1">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${noteText(a)?' <span title="有備註" style="color:var(--new-color)">📝</span>':''}</span>
         <span class="badge ${isEvent(a)?'return':a.type}">${isEvent(a)?'活動':a.type==='new'?'初診':'回診'}</span>
       </div>
-      <div style="font-size:11px;color:var(--muted);font-weight:300">📞 ${a.patient_phone||'—'}${noteText(a)?' · <span style="color:var(--new-color)">'+esc(noteText(a)).slice(0,24)+(noteText(a).length>24?'…':'')+'</span>':''}</div>
+      <div style="font-size:11px;color:var(--muted);font-weight:300">📞 ${a.patient_phone||'—'}${noteText(a)?' <span style="color:var(--new-color);background:var(--new-bg);padding:1px 7px;border-radius:9px">'+esc(noteText(a)).slice(0,24)+(noteText(a).length>24?'…':'')+'</span>':''}</div>
     </div>`).join('')
   :`<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px;font-weight:300">今日無預約</div>`;
 

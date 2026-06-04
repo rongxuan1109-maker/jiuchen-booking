@@ -491,7 +491,17 @@ input,select,textarea{border-radius:8px;}
     <button class="today-btn" onclick="goToday()">今天</button>
     <span class="date-label" id="dateLabel" onclick="openDatePicker()" style="cursor:pointer;display:flex;align-items:center;gap:4px"></span>
   </div>
-  <div class="date-bar-center" id="dateBarCenter"></div>
+  <div class="date-bar-center" id="dateBarCenter">
+    <div style="position:relative;width:100%;max-width:360px">
+      <input id="toolbarSearch" autocomplete="off"
+        oninput="toolbarSearchInput(this.value)"
+        onfocus="if(this.value)toolbarSearchInput(this.value)"
+        onblur="setTimeout(function(){var b=document.getElementById('toolbarSearchResults');if(b)b.style.display='none';},200)"
+        placeholder="🔍 搜尋病人姓名 / 電話"
+        style="width:100%;padding:6px 14px;border:1px solid var(--border);border-radius:18px;font-size:13px;font-family:'Noto Sans TC',sans-serif;background:var(--bg);outline:none;color:var(--ink)">
+      <div id="toolbarSearchResults" style="position:absolute;top:38px;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(28,22,17,.15);z-index:50;display:none;overflow-y:auto;max-height:340px"></div>
+    </div>
+  </div>
   <div class="date-bar-right">
     <button class="refresh-btn" onclick="loadData()">重新整理</button>
     <button onclick="openNewAppt()"
@@ -809,6 +819,34 @@ async function loadPatientVisits(){
 }
 function patientVisitInfo(p){
   return (p.phone&&patientLastVisit['p:'+p.phone])||patientLastVisit['n:'+p.name]||null;
+}
+// ── 工具列：快速搜尋病人 → 點選跳病歷 ──
+async function toolbarSearchInput(q){
+  q=(q||'').trim();
+  const box=document.getElementById('toolbarSearchResults');
+  if(!box)return;
+  if(!q){box.style.display='none';box.innerHTML='';return;}
+  if(!patients.length) await loadPatients();
+  if(!Object.keys(patientLastVisit).length) await loadPatientVisits();
+  const ql=q.toLowerCase();
+  const matches=patients.filter(p=>(p.name&&p.name.toLowerCase().includes(ql))||(p.phone&&p.phone.indexOf(q)>=0)).slice(0,8);
+  if(!matches.length){
+    box.innerHTML='<div style="padding:9px 13px;font-size:12px;color:var(--muted);font-weight:300">找不到符合的病人</div>';
+    box.style.display='block';return;
+  }
+  box.innerHTML=matches.map(p=>{
+    const v=patientVisitInfo(p);
+    return `<div onmousedown="tbPickPatient(${p.id})" style="padding:9px 13px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px" onmouseover="this.style.background='var(--glow)'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:13px;color:var(--ink)">${esc(p.name)}<span style="color:var(--muted);font-size:11px;margin-left:7px;font-weight:300">${p.phone||'無電話'}</span></span>
+      ${v?`<span style="font-size:10px;color:#fff;background:${relColor(v.last)};padding:1px 8px;border-radius:9px;white-space:nowrap">${relTime(v.last)}</span>`:'<span style="font-size:10px;color:var(--muted);font-weight:300;white-space:nowrap">尚無就診</span>'}
+    </div>`;
+  }).join('');
+  box.style.display='block';
+}
+function tbPickPatient(id){
+  const box=document.getElementById('toolbarSearchResults');if(box)box.style.display='none';
+  const inp=document.getElementById('toolbarSearch');if(inp)inp.value='';
+  openPatientDetail(id);
 }
 function recencyCutoff(){
   if(!recencyFilter)return null;

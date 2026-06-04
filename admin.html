@@ -285,11 +285,11 @@ body::before{
 
 /* ── APPOINTMENT BLOCK ── */
 .appt-block{
-  position:absolute;left:2px;right:2px;top:2px;bottom:2px;
-  padding:3px 5px;font-size:10px;cursor:grab;
-  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;
+  padding:2px 6px;font-size:10px;cursor:grab;
+  display:flex;flex-direction:column;justify-content:flex-start;gap:0;
   transition:opacity .15s,box-shadow .15s;z-index:2;
-  touch-action:none;
+  touch-action:none;overflow:hidden;line-height:1.25;
 }
 .appt-block:hover{box-shadow:0 2px 8px rgba(28,22,17,.2);z-index:3;}
 .appt-block.dragging{opacity:.4;cursor:grabbing;}
@@ -543,7 +543,7 @@ const TIMES = (function(){
   }
   return arr;
 })();
-const SLOT_H = 30;            // 每個 30 分鐘格的高度（整點=60px，仿 Google 日曆）
+const SLOT_H = 34;            // 每個 30 分鐘格的高度（整點=68px，仿 Google 日曆）
 const DEFAULT_TIME = '09:00'; // 月檢視/新增預約的預設時段
 const isHourMark = t => t.endsWith(':00');
 
@@ -1054,11 +1054,22 @@ function renderStats(){
     <div class="stat"><div class="stat-n" style="color:var(--return-color)">${f.filter(a=>a.type==='return').length}</div><div class="stat-l">回診</div></div>`;
 }
 
+// 代約：note 以 proxy:<代約者id> 記錄，回傳代約者治療師物件
+function proxyOf(a){
+  if(!a||!a.note||a.note.indexOf('proxy:')!==0) return null;
+  const m=a.note.match(/^proxy:(\d+)/);
+  if(!m) return null;
+  return therapists.find(t=>t.id===parseInt(m[1]))||null;
+}
+function thCodeRaw(t){ return t.code || t.name.slice(-1); }
 function thCode(a){
   if(!a.therapist_id) return '未';
   const t=therapists.find(x=>x.id===a.therapist_id);
   if(!t) return '未';
-  return t.code || t.name.slice(-1);
+  const tc=thCodeRaw(t);
+  const p=proxyOf(a);
+  if(p) return thCodeRaw(p)+'約'+tc;   // 代約顯示：軒約維
+  return tc;
 }
 function apptBg(a){
   if(isEvent(a)) return 'rgba(42,29,18,.16)';          /* 活動加深 */

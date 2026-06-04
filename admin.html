@@ -299,8 +299,8 @@ input,select,textarea{border-radius:8px;}
 }
 .appt-block:hover{box-shadow:inset 4px 0 0 #e53935,0 3px 10px rgba(28,22,17,.32);transform:translateY(-1px);z-index:30;}
 .appt-block.dragging{opacity:.4;cursor:grabbing;}
-.appt-block b{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.appt-block span{font-size:11px;opacity:.85;}
+.appt-block b{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}
+.appt-block span{font-size:11px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
 
 /* ── 左側小日曆 ── */
 .mini-panel{width:218px;flex-shrink:0;padding:0 4px 0 16px;}
@@ -1624,6 +1624,7 @@ function renderWeek(){
         draggable="true" data-id="${a.id}"
         ondragstart="onDragStart(event,${a.id})"
         ondragend="onDragEnd(event)"
+        ondragover="event.preventDefault()"
         ondrop="onCellDrop(event,'${ds}','${TIMES[it.s]}')"
         onclick="event.stopPropagation();openModal(${a.id})">
         <b>${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${!isEvent(a)&&a.type==='new'?' 初':''}</b>
@@ -1681,17 +1682,28 @@ async function onCellDrop(e, newDate, newTime){
   if(!dragApptId)return;
   const a=appointments.find(x=>x.id===dragApptId);
   if(!a)return;
-  if(a.appointment_date===newDate&&a.appointment_time.slice(0,5)===newTime)return;
-  // 樂觀更新：先更新畫面，背景再同步
-  const oldDate=a.appointment_date, oldTime=a.appointment_time;
-  a.appointment_date=newDate;
-  a.appointment_time=newTime+':00';
+  // 找出這張卡片代表的整組（連續同病人時段）→ 整組一起搬，保持相對位置
+  const dayAppts=appointments.filter(x=>x.appointment_date===a.appointment_date&&x.status!=='cancelled');
+  const grp=(groupConsecutiveAppts(dayAppts).find(g=>g.some(x=>x.id===dragApptId))||[a])
+            .slice().sort((x,y)=>x.appointment_time.localeCompare(y.appointment_time));
+  const baseIdx=TIMES.indexOf(grp[0].appointment_time.slice(0,5));
+  const newBaseIdx=TIMES.indexOf(newTime);
+  if(newBaseIdx<0)return;
+  if(grp[0].appointment_date===newDate && baseIdx===newBaseIdx)return;
+  // 每格依相對位移計算新時間
+  const moves=grp.map(x=>{
+    const off=TIMES.indexOf(x.appointment_time.slice(0,5))-baseIdx;
+    const ni=newBaseIdx+off;
+    return {row:x, nt:(ni>=0&&ni<TIMES.length)?TIMES[ni]+':00':null};
+  });
+  if(moves.some(m=>m.nt===null)){showToast('超出時間範圍');return;}
+  const backup=grp.map(x=>({x,d:x.appointment_date,t:x.appointment_time}));
+  moves.forEach(m=>{m.row.appointment_date=newDate;m.row.appointment_time=m.nt;});
   render();
   showToast(`已移至 ${newDate.slice(5)} ${newTime}`);
-  const{error}=await sb.from('appointments').update({appointment_date:newDate,appointment_time:newTime+':00'}).eq('id',dragApptId);
-  if(error){
-    a.appointment_date=oldDate;a.appointment_time=oldTime;
-    render();showToast('同步失敗，請重新整理');
+  for(const m of moves){
+    const{error}=await sb.from('appointments').update({appointment_date:newDate,appointment_time:m.nt}).eq('id',m.row.id);
+    if(error){backup.forEach(b=>{b.x.appointment_date=b.d;b.x.appointment_time=b.t;});render();showToast('同步失敗，請重新整理');return;}
   }
 }
 

@@ -1442,6 +1442,7 @@ function openModal(id){
       ${a.note&&!a.note.startsWith('event:')?`<div class="modal-row"><span class="modal-lbl">備註</span><span class="modal-val">${a.note}</span></div>`:''}
       <div class="modal-btns">
         ${a.status!=='cancelled'?`
+          <button class="mBtn primary" onclick="closeModal();openEditAppt(${a.id})">編輯預約</button>
           <button class="mBtn success" onclick="toggleType(${a.id});closeModal()">${a.type==='new'?'改為回診':'改為初診'}</button>
           <button class="mBtn" onclick="closeModal();openReschedule(${a.id})">修改時間</button>
           <button class="mBtn danger" onclick="cancelAppt(${a.id});closeModal()">取消預約</button>`
@@ -1529,34 +1530,36 @@ function onCellClick(e, date, time){
 }
 function openNewAppt(){openNewApptAt(fmtDate(curDate),DEFAULT_TIME);}
 
-function openNewApptAt(date, time){
-  window._naType='return';window._naParts=[];
-  const preThId=curThId!==0?curThId:'';
+function openNewApptAt(date, time, edit){
+  edit=edit||null;
+  window._naType=edit?(edit.type||'return'):'return';window._naParts=[];
+  const preThId=edit?(edit.therapist_id||''):(curThId!==0?curThId:'');
   // 初始化行事曆狀態
   const _d=new Date(date+'T00:00:00');
   _naCalY=_d.getFullYear();_naCalM=_d.getMonth();
   _naSelY=_d.getFullYear();_naSelM=_d.getMonth();_naSelD=_d.getDate();
+  const naTy=window._naType;
   document.getElementById('modalArea').innerHTML=`
   <div class="modal-bg" onclick="closeModal()">
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
-      <p class="modal-title">新增預約</p>
+      <p class="modal-title">${edit?'編輯預約':'新增預約'}</p>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <span style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;color:var(--ink)">${date} &nbsp;${time}</span>
-        <button onclick="closeModal();openNewEventOn('${date}')"
+        ${edit?'':`<button onclick="closeModal();openNewEventOn('${date}')"
           style="padding:5px 13px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif;letter-spacing:.5px;flex-shrink:0">
           活動
-        </button>
+        </button>`}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px">
-        <div><label class="field-lbl">姓名 *</label><input id="na-name" style="${fieldBox()}" placeholder=""></div>
-        <div><label class="field-lbl">電話 *</label><input id="na-phone" type="tel" style="${fieldBox()}" placeholder=""></div>
+        <div><label class="field-lbl">姓名 *</label><input id="na-name" style="${fieldBox()}" placeholder="" value="${edit?String(edit.patient_name||'').replace(/"/g,'&quot;'):''}"></div>
+        <div><label class="field-lbl">電話<span style="color:var(--muted);font-weight:300">（初診必填）</span></label><input id="na-phone" type="tel" style="${fieldBox()}" placeholder="" value="${edit?String(edit.patient_phone||'').replace(/"/g,'&quot;'):''}"></div>
       </div>
       <div style="margin-bottom:13px">
         <label class="field-lbl">類型 *</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div id="na-new" onclick="naSelectType('new')" style="border:1px solid var(--border);padding:8px;text-align:center;cursor:pointer;font-size:13px;font-weight:300">初診</div>
-          <div id="na-return" onclick="naSelectType('return')" style="border:1px solid var(--warm);padding:8px;text-align:center;cursor:pointer;background:var(--glow);color:var(--accent);font-size:13px;font-weight:400">複診</div>
+          <div id="na-new" onclick="naSelectType('new')" style="border:1px solid ${naTy==='new'?'var(--warm)':'var(--border)'};padding:8px;text-align:center;cursor:pointer;background:${naTy==='new'?'var(--glow)':'transparent'};color:${naTy==='new'?'var(--accent)':'var(--text)'};font-size:13px;font-weight:${naTy==='new'?'400':'300'}">初診</div>
+          <div id="na-return" onclick="naSelectType('return')" style="border:1px solid ${naTy==='return'?'var(--warm)':'var(--border)'};padding:8px;text-align:center;cursor:pointer;background:${naTy==='return'?'var(--glow)':'transparent'};color:${naTy==='return'?'var(--accent)':'var(--text)'};font-size:13px;font-weight:${naTy==='return'?'400':'300'}">複診</div>
         </div>
       </div>
       <div style="margin-bottom:13px">
@@ -1583,15 +1586,15 @@ function openNewApptAt(date, time){
         </div>
         <label class="field-lbl">服務項目（複診適用）</label>
         <select id="na-service" style="${fieldBox()}appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239b8a74' stroke-width='1.2' fill='none'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 2px center;padding-right:18px;margin-bottom:9px">
-          <option value="複診一個部位">複診一個部位（30 分鐘）</option>
-          <option value="複診兩個部位／親友一起約">複診兩個部位／親友一起約（60 分鐘）</option>
+          <option value="複診一個部位" ${edit&&edit.service==='複診一個部位'?'selected':''}>複診一個部位（30 分鐘）</option>
+          <option value="複診兩個部位／親友一起約" ${edit&&edit.service&&edit.service.includes('兩個部位')?'selected':''}>複診兩個部位／親友一起約（60 分鐘）</option>
         </select>
         <label class="field-lbl">備註</label>
-        <input id="na-note" style="${fieldBox()}" placeholder="術後復健、特殊需求…">
+        <input id="na-note" style="${fieldBox()}" placeholder="術後復健、特殊需求…" value="${edit?String(edit.symptoms||'').replace(/"/g,'&quot;'):''}">
       </div>
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">取消</button>
-        <button class="mBtn primary" onclick="submitNewAppt()">確認新增</button>
+        <button class="mBtn primary" onclick="${edit?`submitEditAppt(${edit.id})`:'submitNewAppt()'}">${edit?'儲存變更':'確認新增'}</button>
       </div>
     </div>
   </div>`;
@@ -1618,7 +1621,8 @@ async function submitNewAppt(){
   const date=`${_naSelY}-${String(_naSelM+1).padStart(2,'0')}-${String(_naSelD).padStart(2,'0')}`;
   const time=document.getElementById('na-time').value;
   const note=document.getElementById('na-note').value.trim();
-  if(!name||!phone||!time){showToast('請填寫必填欄位');return;}
+  if(!name||!time){showToast('請填寫姓名與時段');return;}
+  if(window._naType==='new'&&!phone){showToast('初診請填寫電話');return;}
   const service=window._naType==='new'?'初診評估':(document.getElementById('na-service')?.value||'複診一個部位');
   const is60=service.includes('兩個部位');
   const nextTime=is60?getNextTimeSlot(time):null;
@@ -1649,6 +1653,33 @@ async function submitNewAppt(){
     }
   }
   closeModal();showToast('預約已新增');_invalidateCache();await loadData();
+}
+
+// ── 編輯預約：開啟預填表單 ──
+function openEditAppt(id){
+  const a=appointments.find(x=>x.id===id);
+  if(!a)return;
+  openNewApptAt(a.appointment_date, a.appointment_time.slice(0,5), a);
+}
+// ── 編輯預約：儲存變更（更新姓名/電話/治療師/日期/時段/類型/服務/備註）──
+async function submitEditAppt(id){
+  const name=document.getElementById('na-name').value.trim();
+  const phone=document.getElementById('na-phone').value.trim();
+  const thId=document.getElementById('na-th').value;
+  const date=`${_naSelY}-${String(_naSelM+1).padStart(2,'0')}-${String(_naSelD).padStart(2,'0')}`;
+  const time=document.getElementById('na-time').value;
+  const note=document.getElementById('na-note').value.trim();
+  if(!name||!time){showToast('請填寫姓名與時段');return;}
+  if(window._naType==='new'&&!phone){showToast('初診請填寫電話');return;}
+  const service=window._naType==='new'?'初診評估':(document.getElementById('na-service')?.value||'複診一個部位');
+  const{error}=await sb.from('appointments').update({
+    therapist_id:thId?parseInt(thId):null,
+    patient_name:name,patient_phone:phone,
+    appointment_date:date,appointment_time:time+':00',
+    type:window._naType||'return',service,symptoms:note
+  }).eq('id',id);
+  if(error){showToast('儲存失敗：'+error.message);return;}
+  closeModal();showToast('預約已更新');_invalidateCache();await loadData();
 }
 
 async function toggleType(id){

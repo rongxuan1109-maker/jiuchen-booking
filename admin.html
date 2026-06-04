@@ -568,26 +568,43 @@ let therapists=[], appointments=[];
 let curThId=0, curView='day', curDate=new Date();
 let miniCalDate=new Date();   // 左側小日曆目前瀏覽的月份（與主檢視日期獨立）
 let dragApptId=null, dragGhost=null;
-let birthMonthMap={}; // phone -> birth_month
+let birthMonthMap={};      // phone -> birth_month
+let birthMonthNameMap={};  // name  -> birth_month（電話對不到時用姓名）
 
 async function loadBirthMonths(){
   const phones=[...new Set(appointments.map(a=>a.patient_phone).filter(Boolean))];
-  if(!phones.length){birthMonthMap={};return;}
-  const{data:newAppts}=await sb.from('appointments').select('id,patient_phone').in('patient_phone',phones).eq('type','new');
-  if(!newAppts?.length){birthMonthMap={};return;}
+  const names=[...new Set(appointments.map(a=>a.patient_name).filter(Boolean))];
+  birthMonthMap={};birthMonthNameMap={};
+  if(!phones.length&&!names.length)return;
+  // 找這些病患的初診預約（分別用電話、姓名比對，再合併）
+  let newAppts=[];
+  if(phones.length){
+    const{data}=await sb.from('appointments').select('id,patient_phone,patient_name').eq('type','new').in('patient_phone',phones);
+    if(data)newAppts=newAppts.concat(data);
+  }
+  if(names.length){
+    const{data}=await sb.from('appointments').select('id,patient_phone,patient_name').eq('type','new').in('patient_name',names);
+    if(data)newAppts=newAppts.concat(data);
+  }
+  if(!newAppts.length)return;
+  const seen=new Set();
+  newAppts=newAppts.filter(a=>seen.has(a.id)?false:(seen.add(a.id),true));
   const ids=newAppts.map(a=>a.id);
-  const phoneById=Object.fromEntries(newAppts.map(a=>[a.id,a.patient_phone]));
+  const metaById=Object.fromEntries(newAppts.map(a=>[a.id,{phone:a.patient_phone,name:a.patient_name}]));
   const{data:forms}=await sb.from('intake_forms').select('appointment_id,birth_date').in('appointment_id',ids).not('birth_date','is',null);
-  birthMonthMap={};
   (forms||[]).forEach(f=>{
-    const phone=phoneById[f.appointment_id];
-    if(phone&&f.birth_date&&!birthMonthMap[phone]){
-      birthMonthMap[phone]=parseInt(f.birth_date.split('-')[1]);
-    }
+    const meta=metaById[f.appointment_id];
+    if(!meta||!f.birth_date)return;
+    const mo=parseInt(f.birth_date.split('-')[1]);
+    if(meta.phone&&!birthMonthMap[meta.phone]) birthMonthMap[meta.phone]=mo;
+    if(meta.name&&!birthMonthNameMap[meta.name]) birthMonthNameMap[meta.name]=mo;
   });
 }
 
-function bm(a){const m=birthMonthMap[a.patient_phone];return m?` ·${m}月`:'';}
+function bm(a){
+  let m=(a.patient_phone&&birthMonthMap[a.patient_phone])||birthMonthNameMap[a.patient_name];
+  return m?` ·${m}月`:'';
+}
 
 
 function fmtDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}

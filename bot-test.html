@@ -43,6 +43,8 @@
 <script>
 const API = "https://vmkdawpukwpsifqguljy.supabase.co/functions/v1/clinic-bot";
 const CALL = "https://vmkdawpukwpsifqguljy.supabase.co/functions/v1/call-staff";
+// ⚠️ 測試用：暫時綁定院長本人 LINE 身分，讓網頁測試也能收到漂亮預約通知。正式上線/同事測試前要拿掉。
+const TEST_LINE_ID = "U6de9099563aed38d74a21f3076de659e";
 const log = document.getElementById('log');
 const q = document.getElementById('q');
 const send = document.getElementById('send');
@@ -88,7 +90,7 @@ async function ask(){
   add(text,'me'); history.push({role:'user',content:text});
   const typing = add('輸入中…','bot typing');
   try{
-    const r = await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history})});
+    const r = await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,lineUserId:TEST_LINE_ID})});
     const d = await r.json();
     const reply = d.reply || '不好意思，系統忙線中，請稍後再試 🙏';
     typing.remove(); add(reply,'bot');

@@ -114,7 +114,8 @@ document.getElementById('go').onclick=async ()=>{
   if(otherInput.value.trim()) parts=parts.replace('其他','其他('+otherInput.value.trim()+')');
   if(!name||!parts){ alert('麻煩填一下「稱呼」和「不適部位」喔～'); return; }
   const age=document.getElementById('age').value.trim();
-  const data={name,age,parts,symptoms:pick('symp'),dur:pick('dur'),cause:pick('cause'),dx:pick('dx'),note:document.getElementById('note').value.trim()};
+  const LINE_UID=new URLSearchParams(location.search).get('uid')||'U6de9099563aed38d74a21f3076de659e';
+  const data={name,age,parts,symptoms:pick('symp'),dur:pick('dur'),cause:pick('cause'),dx:pick('dx'),note:document.getElementById('note').value.trim(),lineUserId:LINE_UID};
   btn.disabled=true; btn.textContent='送出中…';
   try{
     await fetch('https://vmkdawpukwpsifqguljy.supabase.co/functions/v1/consult-submit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)});

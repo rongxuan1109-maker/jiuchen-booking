@@ -5,36 +5,97 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>九辰客服機器人 · 測試</title>
 <style>
-  :root{--warm:#c08a52;--ink:#2a1d12;--bot:#fff;--me:#dcf0d8;}
-  *{box-sizing:border-box;}
-  body{margin:0;font-family:"Noto Sans TC","PingFang TC",sans-serif;background:#e9e2d4;}
-  .wrap{max-width:480px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;background:#ece5d8;}
-  header{background:var(--ink);color:#fff;padding:14px 16px;text-align:center;}
-  header b{color:var(--warm);}
-  header small{display:block;color:#bbb;font-size:11px;margin-top:2px;}
-  #log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
-  .msg{max-width:82%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
-  .bot{background:var(--bot);align-self:flex-start;border-top-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.08);}
-  .me{background:var(--me);align-self:flex-end;border-top-right-radius:4px;}
-  .tip{align-self:center;font-size:11px;color:#8a7f72;background:#f3ede1;padding:5px 10px;border-radius:10px;text-align:center;}
-  .typing{color:#8a7f72;font-style:italic;}
-  .linkbtn{display:inline-block;margin-top:8px;background:var(--warm);color:#fff !important;text-decoration:none;padding:9px 16px;border-radius:18px;font-size:13px;font-weight:500;}
-  footer{display:flex;gap:8px;padding:10px;background:#ddd4c4;}
-  #q{flex:1;border:1px solid #c9bda8;border-radius:20px;padding:11px 15px;font-size:16px;outline:none;font-family:inherit;}
-  #send{background:var(--warm);color:#fff;border:none;border-radius:20px;padding:0 18px;font-size:14px;cursor:pointer;}
-  #send:disabled{opacity:.5;}
+  :root{
+    --warm:#c08a52;--warm-d:#a9753f;--ink:#2a1d12;
+    --paper:#ece4d6;--bot:#ffffff;--me:#d9efce;--me-ink:#2f4a25;
+    --muted:#9a8c78;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;font-family:"Noto Sans TC","PingFang TC",sans-serif;background:var(--paper);}
+  .wrap{max-width:480px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;
+        background:linear-gradient(180deg,#efe8db 0%,#e7ddcd 100%);}
+
+  /* header */
+  header{background:linear-gradient(135deg,#2f2013 0%,#3c2a18 100%);color:#fff;
+         padding:13px 16px;display:flex;align-items:center;gap:11px;box-shadow:0 2px 8px rgba(0,0,0,.18);z-index:2;}
+  .logo{width:40px;height:40px;border-radius:50%;background:rgba(192,138,82,.18);
+        border:1px solid rgba(192,138,82,.55);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+  .htxt b{font-size:16px;letter-spacing:.5px;}
+  .htxt b span{color:var(--warm);}
+  .htxt small{display:block;color:#c9bca9;font-size:11px;margin-top:2px;}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#5fce82;margin-right:4px;vertical-align:middle;box-shadow:0 0 0 0 rgba(95,206,130,.6);animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(95,206,130,.5)}70%{box-shadow:0 0 0 6px rgba(95,206,130,0)}100%{box-shadow:0 0 0 0 rgba(95,206,130,0)}}
+
+  /* log */
+  #log{flex:1;overflow-y:auto;padding:18px 14px 22px;display:flex;flex-direction:column;gap:12px;}
+  .row{display:flex;align-items:flex-end;gap:8px;max-width:92%;}
+  .row.bot{align-self:flex-start;}
+  .row.me{align-self:flex-end;flex-direction:row-reverse;}
+  .avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+          font-size:17px;background:linear-gradient(135deg,#caa06e,#a9753f);box-shadow:0 1px 3px rgba(0,0,0,.2);}
+  .msg{padding:11px 14px;border-radius:18px;font-size:15px;line-height:1.65;word-break:break-word;}
+  .bot{background:var(--bot);color:var(--ink);border-bottom-left-radius:5px;box-shadow:0 1px 2px rgba(0,0,0,.10);}
+  .me{background:var(--me);color:var(--me-ink);border-bottom-right-radius:5px;box-shadow:0 1px 2px rgba(0,0,0,.08);}
+  .msg strong{font-weight:700;color:var(--warm-d);}
+  .msg .li{padding-left:16px;position:relative;}
+  .msg .li::before{content:"・";position:absolute;left:0;color:var(--warm);}
+  .msg a.link{display:inline-flex;align-items:center;gap:5px;margin-top:9px;background:linear-gradient(135deg,#caa06e,#a9753f);
+              color:#fff !important;text-decoration:none;padding:10px 16px;border-radius:21px;font-size:14px;font-weight:600;
+              box-shadow:0 2px 6px rgba(169,117,63,.35);}
+  .tip{align-self:center;font-size:11.5px;color:#8a7c68;background:rgba(255,255,255,.5);
+       padding:6px 13px;border-radius:13px;text-align:center;max-width:90%;line-height:1.6;}
+  .callbtn{align-self:flex-start;margin-left:40px;background:#fff;border:1.5px solid var(--warm);color:var(--warm-d);
+           padding:9px 16px;border-radius:21px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+
+  /* typing */
+  .typing{display:flex;gap:4px;padding:13px 15px !important;}
+  .typing span{width:7px;height:7px;border-radius:50%;background:#c3b49d;animation:blink 1.3s infinite both;}
+  .typing span:nth-child(2){animation-delay:.2s;}
+  .typing span:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+
+  /* input */
+  footer{display:flex;gap:9px;padding:10px 12px;background:#ddd2bf;border-top:1px solid rgba(0,0,0,.05);}
+  #q{flex:1;border:none;border-radius:22px;padding:12px 16px;font-size:16px;outline:none;font-family:inherit;
+     background:#fff;box-shadow:inset 0 1px 2px rgba(0,0,0,.06);}
+  #send{background:linear-gradient(135deg,#caa06e,#a9753f);color:#fff;border:none;border-radius:22px;
+        padding:0 20px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 2px 5px rgba(169,117,63,.3);}
+  #send:disabled{opacity:.45;}
+
+  /* cards（像 LINE 通知卡的呈現） */
+  .card{background:#fff;border-radius:18px;border-bottom-left-radius:5px;overflow:hidden;
+        box-shadow:0 2px 6px rgba(0,0,0,.13);width:100%;max-width:300px;}
+  .card-hd{padding:13px 16px;color:#fff;}
+  .card-hd.book{background:linear-gradient(135deg,#b58247,#a9753f);}
+  .card-hd.slots{background:linear-gradient(135deg,#caa06e,#a9753f);}
+  .card-hd.resc{background:linear-gradient(135deg,#5f9070,#4f7a5a);}
+  .card-hd.canc{background:linear-gradient(135deg,#a3a3a3,#808080);}
+  .hd-sub{font-size:12px;opacity:.88;letter-spacing:.5px;}
+  .hd-main{font-size:19px;font-weight:800;margin-top:2px;letter-spacing:1px;}
+  .card-bd{padding:14px 16px 15px;}
+  .card-text{font-size:14.5px;line-height:1.6;color:var(--ink);margin-bottom:13px;}
+  .dt-block{background:#f4eee2;border-radius:13px;padding:15px 12px;text-align:center;margin-bottom:13px;}
+  .dt-date{font-size:15px;color:var(--warm-d);font-weight:700;letter-spacing:1px;}
+  .dt-time{font-size:44px;font-weight:800;color:var(--warm);letter-spacing:3px;line-height:1.15;}
+  .kv{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid #f1e9db;font-size:14px;}
+  .kv span{color:var(--muted);} .kv b{color:var(--ink);font-weight:600;}
+  .card-ft{margin-top:11px;padding-top:11px;border-top:1px solid #f1e9db;font-size:12.5px;color:#8a7c68;line-height:1.8;}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;}
+  .pill{border:1.5px solid var(--warm);color:var(--warm-d);background:#fff;border-radius:16px;
+        padding:9px 15px;font-size:14.5px;font-weight:700;cursor:pointer;transition:.15s;}
+  .pill:active{background:var(--warm);color:#fff;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header><b>九辰物理治療所</b> 客服小幫手<small>🤖 測試版</small></header>
-  <div id="log">
-    <div class="msg bot">嗨～我是九辰的線上小幫手 🙂
-營業時間、收費、初診要帶什麼都能問我；
-複診想「約時間、改時間、取消」也可以直接跟我說，我幫您處理～
-有什麼需要,直接打字就好！</div>
-    <div class="tip">測試版｜可試：「禮拜六早上有空嗎」「我要改時間」「幫我取消預約」</div>
-  </div>
+  <header>
+    <div class="logo">🌿</div>
+    <div class="htxt">
+      <b><span>九辰</span>物理治療所 客服小幫手</b>
+      <small><span class="dot"></span>線上中・AI 小幫手（測試版）</small>
+    </div>
+  </header>
+  <div id="log"></div>
   <footer>
     <input id="q" placeholder="輸入訊息…" autocomplete="off">
     <button id="send">送出</button>
@@ -45,34 +106,53 @@ const API = "https://vmkdawpukwpsifqguljy.supabase.co/functions/v1/clinic-bot";
 const CALL = "https://vmkdawpukwpsifqguljy.supabase.co/functions/v1/call-staff";
 // ⚠️ 測試用：暫時綁定院長本人 LINE 身分，讓網頁測試也能收到漂亮預約通知。正式上線/同事測試前要拿掉。
 const TEST_LINE_ID = "U6de9099563aed38d74a21f3076de659e";
+
 const log = document.getElementById('log');
 const q = document.getElementById('q');
 const send = document.getElementById('send');
 let history = [];
 let lastUserMsg = "";
+
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function botHtml(t){
-  let h = esc(t).replace(/\n/g,'<br>');
-  h = h.replace(/https?:\/\/[^\s<)）]+/g, m=>{
-    const label = m.indexOf('consult-form')>-1 ? '📝 填症狀諮詢表單'
-                : (m.indexOf('jiuchen-booking')>-1 ? '📅 點這裡查詢可預約時段' : '🔗 點這裡開啟');
-    return `<a class="linkbtn" href="${m}" target="_blank">${label}</a>`;
-  });
-  return h;
+
+// 把機器人文字轉成漂亮 HTML：**粗體**、條列、連結按鈕、換行
+function fmt(t){
+  return t.split('\n').map(line=>{
+    const isLi = /^\s*[-–•]\s+/.test(line);
+    let l = esc(line.replace(/^\s*[-–•]\s+/,''));
+    l = l.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    l = l.replace(/https?:\/\/[^\s<)）]+/g, m=>{
+      const label = m.indexOf('consult-form')>-1 ? '📝 填症狀諮詢表單'
+                  : (m.indexOf('jiuchen-booking')>-1 ? '📅 點這裡查詢可預約時段' : '🔗 點這裡開啟');
+      return `<a class="link" href="${m}" target="_blank">${label}</a>`;
+    });
+    if(l.trim()==='') return '<div style="height:6px"></div>';
+    return isLi ? `<div class="li">${l}</div>` : `<div>${l}</div>`;
+  }).join('');
 }
-function add(text, cls){
-  const isBot = cls.indexOf('bot')>-1 && cls.indexOf('typing')<0;
-  const hasCall = isBot && text.indexOf('[[CALL_STAFF]]')>-1;
+
+function botRow(html){
+  const row = document.createElement('div'); row.className='row bot';
+  const av = document.createElement('div'); av.className='avatar'; av.textContent='🤖';
+  const d = document.createElement('div'); d.className='msg bot'; d.innerHTML=html;
+  row.appendChild(av); row.appendChild(d); log.appendChild(row);
+  return row;
+}
+
+function add(text, who){
+  if(who==='me'){
+    const row=document.createElement('div'); row.className='row me';
+    const d=document.createElement('div'); d.className='msg me'; d.textContent=text;
+    row.appendChild(d); log.appendChild(row);
+    log.scrollTop=log.scrollHeight; return;
+  }
+  // bot
+  const hasCall = text.indexOf('[[CALL_STAFF]]')>-1;
   const clean = text.replace('[[CALL_STAFF]]','').trim();
-  const d = document.createElement('div');
-  d.className = 'msg ' + cls;
-  if(isBot) d.innerHTML = botHtml(clean); else d.textContent = clean;
-  log.appendChild(d);
+  botRow(fmt(clean));
   if(hasCall){
-    const b = document.createElement('button');
-    b.className='linkbtn'; b.style.border='none'; b.style.cursor='pointer'; b.style.alignSelf='flex-start';
-    b.textContent='🔔 請治療師回覆我';
-    b.onclick=async ()=>{
+    const b=document.createElement('button'); b.className='callbtn'; b.textContent='🔔 請治療師回覆我';
+    b.onclick=async()=>{
       b.disabled=true; b.textContent='通知中…';
       try{ await fetch(CALL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({lastMessage:lastUserMsg})}); }catch(e){}
       const t=document.createElement('div'); t.className='tip';
@@ -81,25 +161,77 @@ function add(text, cls){
     };
     log.appendChild(b);
   }
-  log.scrollTop = log.scrollHeight; return d;
+  log.scrollTop=log.scrollHeight;
 }
+
+function showTyping(){
+  const row=document.createElement('div'); row.className='row bot'; row.id='typingRow';
+  const av=document.createElement('div'); av.className='avatar'; av.textContent='🤖';
+  const d=document.createElement('div'); d.className='msg bot typing';
+  d.innerHTML='<span></span><span></span><span></span>';
+  row.appendChild(av); row.appendChild(d); log.appendChild(row);
+  log.scrollTop=log.scrollHeight;
+}
+function hideTyping(){ const r=document.getElementById('typingRow'); if(r) r.remove(); }
+
+function thLabel(t){ return (!t||t==='不指定') ? '不指定（系統安排）' : t+' 治療師'; }
+function pick(t){ q.value='我約 '+t; ask(); }
+
+// 把「成功/查空檔」做成漂亮卡片，文字融在卡片裡（不再另開灰泡泡）
+function renderCard(text, card){
+  const clean = text.replace('[[CALL_STAFF]]','').trim();
+  const ft = `<div class="card-ft">📍 高雄市楠梓區清豐二路108號2樓<br>☎ 07-351-6097</div>`;
+  let hd='', bd='';
+  if(card.type==='booking'){
+    hd = `<div class="card-hd book"><div class="hd-sub">九辰物理治療所</div><div class="hd-main">預約成功 ✓</div></div>`;
+    bd = `<div class="card-bd"><div class="card-text">${fmt(clean)}</div>
+          <div class="dt-block"><div class="dt-date">${card.dateText}</div><div class="dt-time">${card.time}</div></div>
+          <div class="kv"><span>治療師</span><b>${thLabel(card.therapist)}</b></div>${ft}</div>`;
+  } else if(card.type==='slots'){
+    const sub = (card.therapist && card.therapist!=='不指定') ? card.dateText+' · '+card.therapist+' 治療師' : card.dateText+' · 可任選治療師';
+    const pills = (card.times||[]).map(t=>`<button class="pill" onclick="pick('${t}')">${t}</button>`).join('');
+    hd = `<div class="card-hd slots"><div class="hd-sub">${sub}</div><div class="hd-main">可預約時段 🗓️</div></div>`;
+    bd = `<div class="card-bd"><div class="card-text">${fmt(clean)}</div><div class="pills">${pills}</div></div>`;
+  } else if(card.type==='reschedule'){
+    hd = `<div class="card-hd resc"><div class="hd-sub">九辰物理治療所</div><div class="hd-main">已改時間 ✓</div></div>`;
+    bd = `<div class="card-bd"><div class="card-text">${fmt(clean)}</div>
+          <div class="dt-block"><div class="dt-date">${card.dateText}</div><div class="dt-time">${card.time}</div></div>${ft}</div>`;
+  } else if(card.type==='cancel'){
+    hd = `<div class="card-hd canc"><div class="hd-sub">九辰物理治療所</div><div class="hd-main">已取消預約</div></div>`;
+    bd = `<div class="card-bd"><div class="card-text">${fmt(clean)}</div><div class="card-ft">需要的話隨時可以再跟我預約唷 🙂<br>☎ 07-351-6097</div></div>`;
+  } else { add(text,'bot'); return; }
+  const row=document.createElement('div'); row.className='row bot';
+  const av=document.createElement('div'); av.className='avatar'; av.textContent='🤖';
+  const c=document.createElement('div'); c.className='card'; c.innerHTML=hd+bd;
+  row.appendChild(av); row.appendChild(c); log.appendChild(row);
+  log.scrollTop=log.scrollHeight;
+}
+
 async function ask(){
-  const text = q.value.trim(); if(!text) return;
+  const text=q.value.trim(); if(!text) return;
   q.value=''; send.disabled=true; q.disabled=true;
-  lastUserMsg = text;
+  lastUserMsg=text;
   add(text,'me'); history.push({role:'user',content:text});
-  const typing = add('輸入中…','bot typing');
+  showTyping();
   try{
-    const r = await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,lineUserId:TEST_LINE_ID})});
-    const d = await r.json();
-    const reply = d.reply || '不好意思，系統忙線中，請稍後再試 🙏';
-    typing.remove(); add(reply,'bot');
+    const r=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,lineUserId:TEST_LINE_ID})});
+    const d=await r.json();
+    const reply=d.reply||'不好意思，系統忙線中，請稍後再試 🙏';
+    hideTyping();
+    const card=(d.cards&&d.cards[0])||null;
+    if(card) renderCard(reply,card); else add(reply,'bot');
     history.push({role:'assistant',content:reply.replace('[[CALL_STAFF]]','').trim()});
-  }catch(e){ typing.remove(); add('⚠️ 連線錯誤，請稍後再試','bot'); }
+  }catch(e){ hideTyping(); add('⚠️ 連線錯誤，請稍後再試','bot'); }
   send.disabled=false; q.disabled=false; q.focus();
 }
-send.onclick = ask;
-q.addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
+send.onclick=ask;
+q.addEventListener('keydown',e=>{ if(e.key==='Enter') ask(); });
+
+// 開場白
+add('嗨～我是九辰的線上小幫手 🙂\n營業時間、收費、初診要帶什麼都能問我；\n複診想「約時間、改時間、取消」也可以直接跟我說，我幫您處理～\n有什麼需要，直接打字就好！','bot');
+const tip=document.createElement('div'); tip.className='tip';
+tip.textContent='測試版｜可試：「禮拜六早上有空嗎」「我要改時間」「幫我取消預約」';
+log.appendChild(tip);
 </script>
 </body>
 </html>

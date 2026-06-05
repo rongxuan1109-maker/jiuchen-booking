@@ -457,10 +457,24 @@ input,select,textarea{border-radius:8px;}
   .stats{display:none;}
   .date-bar-right{display:none;}          /* 動作按鈕收掉，改用浮動＋鈕 */
   #dayTLHeader{display:none!important;}    /* 「時間軸/隱藏清單」標題列隱藏（inline style 要用 !important 蓋過）*/
-  #day-layout{padding:0 6px 70px!important;overflow-x:clip;}
+
+  /* ═══ 標準單一捲動架構（仿 Google 日曆 App）═══
+     #appBody 固定 100dvh 直向排列 → 工具列 flex:0 固定 → #mainContent 是唯一捲動區
+     淺層 flex 鏈、每層 min-height:0，iOS 不卡死、不溢出 */
+  body.page-cal{overflow:hidden;height:100dvh;}
+  body.page-cal #appBody{height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
+  body.page-cal .header,
+  body.page-cal .th-tabs,
+  body.page-cal .date-bar{flex-shrink:0;}
+  body.page-cal #calGrid{flex:1 1 auto;min-height:0;align-items:stretch;}
+  body.page-cal #mainContent{min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  /* 內層時間軸交給 #mainContent 捲，自己不捲 */
+  body.page-cal #day-scroll{max-height:none!important;overflow:visible!important;padding:16px 0 140px;}
+  /* 週檢視保留自身橫向捲動（7天），垂直交給 mainContent */
+  body.page-cal #week-scroll{max-height:none!important;overflow-x:auto!important;overflow-y:visible!important;padding-bottom:140px;}
+  #day-layout{padding:0 6px!important;}
   #day-layout>div:first-child{border:none!important;border-radius:0!important;}
-  /* 單一整頁捲動：時間軸不自己捲（避免雙層打架、sticky標題被切），整頁一起捲、標題固定 */
-  #day-scroll,#week-scroll{max-height:none!important;overflow-x:clip!important;overflow-y:visible!important;padding-bottom:120px;}
   #fab{display:flex;}
   /* 手機卡片：沿用桌面版樣式，只保留手機較小字級與深色字；觸控只允許上下滑(避免左右飄) */
   .appt-block{padding:1px 7px;line-height:1.1;touch-action:pan-y!important;}
@@ -811,8 +825,7 @@ let partFilter = '';
 function setPage(page){
   curPage = page;
   const calActive = page==='calendar';
-  document.body.classList.toggle('page-cal', calActive);   // 行事曆頁→手機鎖整頁、只時間軸滾
-  if(!calActive) document.body.classList.remove('view-cal','view-day');  // 病人頁解除鎖定，清單才能滾
+  document.body.classList.toggle('page-cal', calActive);   // 行事曆頁→啟用單一捲動鎖定；病人頁→解除，清單正常滾
   document.getElementById('btnCalPage').style.cssText=`padding:5px 11px;border:1px solid ${calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${calActive?'var(--warm)':'transparent'};color:${calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px`;
   document.getElementById('btnPatientsPage').style.cssText=`padding:5px 11px;border:1px solid ${!calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${!calActive?'var(--warm)':'transparent'};color:${!calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px`;
   document.getElementById('viewToggle').style.display=calActive?'flex':'none';
@@ -1289,8 +1302,7 @@ function navigate(dir){
 function goToday(){curDate=new Date();loadData();}
 
 function render(){
-  document.body.classList.toggle('view-day', curView==='day' && curPage==='calendar');
-  document.body.classList.toggle('view-cal', (curView==='day'||curView==='week') && curPage==='calendar');
+  document.body.classList.add('page-cal');   // 進到行事曆渲染即為行事曆頁，啟用單一捲動架構
   renderThTabs();renderDateLabel();renderStats();
   if(curView==='day')renderDay();
   else if(curView==='week')renderWeek();
@@ -1594,22 +1606,19 @@ function scrollCalToFirst(id){
   const mobile=window.innerWidth<=640;
   const fi=first?TIMES.indexOf(first):TIMES.indexOf('12:00');
   const li=last?TIMES.indexOf(last):TIMES.indexOf('12:00');
+  const midPx=((fi+li)/2)*SLOT_H + SLOT_H/2;
   if(mobile){
-    // 單一整頁捲動 → 捲 window；扣掉上方固定工具列高度，讓預約中點落在可視區中央
-    const padTop=24;
+    // 手機：捲動區是 #mainContent；用實測位置把預約中點置中
+    const sc=document.getElementById('mainContent'); if(!sc)return;
     requestAnimationFrame(()=>{
-      const inner=c.querySelector('div:last-child')||c;
-      const baseTop=inner.getBoundingClientRect().top + window.scrollY;
-      const headerH=(document.querySelector('.date-bar')?.getBoundingClientRect().bottom)||110;
-      const midDocY=baseTop + padTop + ((fi+li)/2)*SLOT_H + SLOT_H/2;
-      const y=Math.max(0, Math.round(midDocY - (headerH + (window.innerHeight-headerH)/2)));
-      window.scrollTo(0,y);
+      const padTop=parseFloat(getComputedStyle(c).paddingTop)||0;
+      const innerTop=c.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
+      const midY=innerTop + padTop + midPx;
+      sc.scrollTop=Math.max(0, Math.round(midY - sc.clientHeight/2));
     });
     return;
   }
   const visH=c.clientHeight||c.offsetHeight||400;
-  if(!first){ c.scrollTop=Math.max(0,Math.round(fi*SLOT_H-visH/2)); return; }
-  const midPx=((fi+li)/2)*SLOT_H + SLOT_H/2;
   c.scrollTop=Math.max(0, Math.round(midPx - visH/2));
 }
 

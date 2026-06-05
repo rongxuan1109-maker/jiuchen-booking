@@ -106,16 +106,26 @@ const otherInput=document.getElementById('partOther');
     if(!on) otherInput.value='';
   });
 });
-document.getElementById('go').onclick=()=>{
+document.getElementById('go').onclick=async ()=>{
+  const btn=document.getElementById('go');
   const pick=id=>[...document.querySelectorAll('#'+id+' .chip.on')].map(c=>c.textContent).join('、');
   const name=document.getElementById('name').value.trim();
   let parts=pick('parts');
   if(otherInput.value.trim()) parts=parts.replace('其他','其他('+otherInput.value.trim()+')');
   if(!name||!parts){ alert('麻煩填一下「稱呼」和「不適部位」喔～'); return; }
   const age=document.getElementById('age').value.trim();
-  const summary=`稱呼：${name}\n年齡：${age||'—'}\n部位：${parts}\n症狀：${pick('symp')||'—'}\n多久：${pick('dur')||'—'}\n如何發生：${pick('cause')||'—'}\n診斷書：${pick('dx')||'—'}\n補充：${document.getElementById('note').value||'—'}`;
-  document.querySelector('.wrap').innerHTML=`<div class="done"><div class="ic">✅</div><h2>已送出！</h2><p>我們已收到您的狀況，<br>治療師看到後會盡快在 LINE 回覆您 🙏</p><pre style="text-align:left;background:#f3ede1;padding:14px;border-radius:10px;font-size:13px;white-space:pre-wrap;font-family:inherit">${summary}</pre></div>`;
+  const data={name,age,parts,symptoms:pick('symp'),dur:pick('dur'),cause:pick('cause'),dx:pick('dx'),note:document.getElementById('note').value.trim()};
+  btn.disabled=true; btn.textContent='送出中…';
+  try{
+    await fetch('https://vmkdawpukwpsifqguljy.supabase.co/functions/v1/consult-submit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)});
+  }catch(e){}
+  document.querySelector('.wrap').innerHTML=`<div class="done"><div class="ic">✅</div><h2>已送出！</h2><p>我們已收到您的狀況，<br>治療師看到後會盡快在 LINE 回覆您 🙏</p><button onclick="closeForm()" style="margin-top:24px;background:#c08a52;color:#fff;border:none;border-radius:24px;padding:13px 30px;font-size:15px;cursor:pointer">關閉，回到聊天室</button></div>`;
 };
+function closeForm(){
+  try{ if(window.liff && liff.closeWindow){ liff.closeWindow(); return; } }catch(e){}
+  try{ window.close(); }catch(e){}
+  alert('請點畫面右上角的 ✕ 關閉，即可回到聊天室～');
+}
 </script>
 </body>
 </html>

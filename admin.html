@@ -472,21 +472,18 @@ input,select,textarea{border-radius:8px;}
   .date-bar-right{display:none;}          /* 動作按鈕收掉，改用浮動＋鈕 */
   #dayTLHeader{display:none!important;}    /* 「時間軸/隱藏清單」標題列隱藏（inline style 要用 !important 蓋過）*/
 
-  /* ═══ 標準單一捲動架構（仿 Google 日曆 App）═══
-     #appBody 固定 100dvh 直向排列 → 工具列 flex:0 固定 → #mainContent 是唯一捲動區
-     淺層 flex 鏈、每層 min-height:0，iOS 不卡死、不溢出 */
-  body.page-cal{overflow:hidden;height:100dvh;}
-  body.page-cal #appBody{height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
-  body.page-cal .header,
-  body.page-cal .th-tabs,
-  body.page-cal .date-bar{flex-shrink:0;}
-  body.page-cal #calGrid{flex:1 1 auto;min-height:0;align-items:stretch;}
-  body.page-cal #mainContent{min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;
-    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
-  /* 內層時間軸交給 #mainContent 捲，自己不捲 */
-  body.page-cal #day-scroll{max-height:none!important;overflow:visible!important;padding:16px 0 140px;}
-  /* 週檢視保留自身橫向捲動（7天），垂直交給 mainContent */
-  body.page-cal #week-scroll{max-height:none!important;overflow-x:auto!important;overflow-y:visible!important;padding-bottom:140px;}
+  /* ═══ 手機捲動：打掉重來（2026-06-05）═══
+     舊的「100dvh 鎖死整頁＋#mainContent 唯一捲動區」在 iPhone 上會卡死、且開在空白處。
+     改成「整個網頁自然往下捲」——最原始、最不會凍結。.header 仍 sticky 釘頂。
+     ⛔ 不要再加 overflow:hidden / height:100dvh 鎖死，那是卡死元兇。 */
+  body.page-cal{overflow:visible!important;height:auto!important;}
+  body.page-cal #appBody{height:auto!important;display:block!important;overflow:visible!important;}
+  body.page-cal #calGrid{display:block!important;}
+  body.page-cal #mainContent{overflow:visible!important;min-height:0;}
+  /* 日檢視時間軸：自己不捲，交給整頁捲 */
+  body.page-cal #day-scroll{max-height:none!important;overflow:visible!important;padding:16px 0 120px;}
+  /* 週檢視：只保留「左右滑看七天」的橫向捲動；上下交給整頁 */
+  body.page-cal #week-scroll{max-height:none!important;overflow-x:auto!important;overflow-y:visible!important;padding-bottom:120px;}
   #day-layout{padding:0 6px!important;}
   #day-layout>div:first-child{border:none!important;border-radius:0!important;}
   #fab{display:flex;}
@@ -1624,19 +1621,20 @@ function scrollCalToFirst(id){
   const li=last?TIMES.indexOf(last):TIMES.indexOf('12:00');
   const midPx=((fi+li)/2)*SLOT_H + SLOT_H/2;
   if(mobile){
-    // 手機：捲動區是 #mainContent；用實測位置把預約中點置中
-    const sc=document.getElementById('mainContent'); if(!sc)return;
-    // 量畫面位置容易因字體載入/網址列縮放而算錯 → 連續多次校正，最後一次最準（解決打開像空白）
+    // 整頁自然捲動：把第一筆預約捲到畫面中間；沒有預約就捲到上午工作時段（不再停在凌晨空白）
+    const host=document.getElementById('mainContent'); if(!host)return;
     const place=()=>{
-      const cc=document.getElementById(id);            // 重新取得，避免重繪後參照失效
-      if(!cc||!cc.isConnected||!sc.isConnected)return;
-      const padTop=parseFloat(getComputedStyle(cc).paddingTop)||0;
-      const innerTop=cc.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
-      const midY=innerTop + padTop + midPx;
-      sc.scrollTop=Math.max(0, Math.round(midY - sc.clientHeight/2));
+      if(!host.isConnected)return;
+      const block=host.querySelector('.appt-block');
+      if(block){ block.scrollIntoView({block:'center'}); return; }   // 有預約→帶到畫面中間
+      const cc=document.getElementById(id);                          // 無預約→捲到 09:00 附近
+      if(cc&&cc.isConnected){
+        const y=cc.getBoundingClientRect().top+window.scrollY+TIMES.indexOf('09:00')*SLOT_H-60;
+        window.scrollTo(0, Math.max(0, Math.round(y)));
+      }
     };
-    requestAnimationFrame(()=>requestAnimationFrame(place));  // 等版面穩定後再量
-    setTimeout(place,160);                                    // 字體/網址列縮放後再校正一次
+    requestAnimationFrame(()=>requestAnimationFrame(place));  // 等版面穩定後再捲
+    setTimeout(place,180);                                    // 字體/網址列縮放後再校正一次
     return;
   }
   const visH=c.clientHeight||c.offsetHeight||400;

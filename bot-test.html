@@ -63,7 +63,8 @@
   #send:disabled{opacity:.45;}
 
   /* cards（像 LINE 通知卡的呈現） */
-  .card{background:#fff;border-radius:18px;border-bottom-left-radius:5px;overflow:hidden;
+  .row.card-row{align-items:flex-start;}
+  .card{background:#fff;border-radius:18px;overflow:hidden;
         box-shadow:0 2px 6px rgba(0,0,0,.13);width:100%;max-width:300px;}
   .card-hd{padding:13px 16px;color:#fff;}
   .card-hd.book{background:linear-gradient(135deg,#b58247,#a9753f);}
@@ -92,7 +93,7 @@
     <div class="logo">🌿</div>
     <div class="htxt">
       <b><span>九辰</span>物理治療所 客服小幫手</b>
-      <small><span class="dot"></span>線上中・AI 小幫手（測試版）</small>
+      <small><span class="dot"></span>線上中・AI 小幫手 瓦力（測試版）</small>
     </div>
   </header>
   <div id="log"></div>
@@ -106,6 +107,14 @@ const API = "https://vmkdawpukwpsifqguljy.supabase.co/functions/v1/clinic-bot";
 const CALL = "https://vmkdawpukwpsifqguljy.supabase.co/functions/v1/call-staff";
 // ⚠️ 測試用：暫時綁定院長本人 LINE 身分，讓網頁測試也能收到漂亮預約通知。正式上線/同事測試前要拿掉。
 const TEST_LINE_ID = "U6de9099563aed38d74a21f3076de659e";
+
+// 瓦力風格的原創小機器人頭像（雙筒望遠鏡眼睛）
+const AVATAR = '<svg viewBox="0 0 40 40" width="23" height="23" xmlns="http://www.w3.org/2000/svg">'
++'<circle cx="13.5" cy="20" r="8.5" fill="#3a2f25"/><circle cx="26.5" cy="20" r="8.5" fill="#3a2f25"/>'
++'<circle cx="13.5" cy="20" r="6" fill="#e7eef0"/><circle cx="26.5" cy="20" r="6" fill="#e7eef0"/>'
++'<circle cx="15" cy="21" r="2.7" fill="#26333b"/><circle cx="25" cy="21" r="2.7" fill="#26333b"/>'
++'<circle cx="16" cy="19.6" r="0.9" fill="#fff"/><circle cx="26" cy="19.6" r="0.9" fill="#fff"/>'
++'</svg>';
 
 const log = document.getElementById('log');
 const q = document.getElementById('q');
@@ -133,7 +142,7 @@ function fmt(t){
 
 function botRow(html){
   const row = document.createElement('div'); row.className='row bot';
-  const av = document.createElement('div'); av.className='avatar'; av.textContent='🤖';
+  const av = document.createElement('div'); av.className='avatar'; av.innerHTML=AVATAR;
   const d = document.createElement('div'); d.className='msg bot'; d.innerHTML=html;
   row.appendChild(av); row.appendChild(d); log.appendChild(row);
   return row;
@@ -166,7 +175,7 @@ function add(text, who){
 
 function showTyping(){
   const row=document.createElement('div'); row.className='row bot'; row.id='typingRow';
-  const av=document.createElement('div'); av.className='avatar'; av.textContent='🤖';
+  const av=document.createElement('div'); av.className='avatar'; av.innerHTML=AVATAR;
   const d=document.createElement('div'); d.className='msg bot typing';
   d.innerHTML='<span></span><span></span><span></span>';
   row.appendChild(av); row.appendChild(d); log.appendChild(row);
@@ -200,8 +209,8 @@ function renderCard(text, card){
     hd = `<div class="card-hd canc"><div class="hd-sub">九辰物理治療所</div><div class="hd-main">已取消預約</div></div>`;
     bd = `<div class="card-bd"><div class="card-text">${fmt(clean)}</div><div class="card-ft">需要的話隨時可以再跟我預約唷 🙂<br>☎ 07-351-6097</div></div>`;
   } else { add(text,'bot'); return; }
-  const row=document.createElement('div'); row.className='row bot';
-  const av=document.createElement('div'); av.className='avatar'; av.textContent='🤖';
+  const row=document.createElement('div'); row.className='row bot card-row';
+  const av=document.createElement('div'); av.className='avatar'; av.innerHTML=AVATAR;
   const c=document.createElement('div'); c.className='card'; c.innerHTML=hd+bd;
   row.appendChild(av); row.appendChild(c); log.appendChild(row);
   log.scrollTop=log.scrollHeight;
@@ -228,7 +237,7 @@ send.onclick=ask;
 q.addEventListener('keydown',e=>{ if(e.key==='Enter') ask(); });
 
 // 開場白
-add('嗨～我是九辰的線上小幫手 🙂\n營業時間、收費、初診要帶什麼都能問我；\n複診想「約時間、改時間、取消」也可以直接跟我說，我幫您處理～\n有什麼需要，直接打字就好！','bot');
+add('嗨～我是九辰的 AI 小幫手「瓦力」🤖\n營業時間、收費、初診要帶什麼都能問我；\n複診想「約時間、改時間、取消」也可以直接跟我說，我幫您處理～\n有什麼需要，直接打字就好！','bot');
 const tip=document.createElement('div'); tip.className='tip';
 tip.textContent='測試版｜可試：「禮拜六早上有空嗎」「我要改時間」「幫我取消預約」';
 log.appendChild(tip);

@@ -460,15 +460,20 @@ input,select,textarea{border-radius:8px;}
   .appt-block b{font-size:11.5px;line-height:1.25;}
   .appt-block>span{display:none;}   /* 手機只顯示名字（時間從位置看得出來），像 Google，避免字被裁 */
 
-  /* 日檢視：鎖定整頁不滾，只有時間軸會滾（消除上下亂滑） */
-  body.view-day{overflow:hidden;height:100dvh;}
-  body.view-day #appBody{height:100dvh;display:flex;flex-direction:column;}
-  body.view-day .header,body.view-day .th-tabs,body.view-day .date-bar{flex-shrink:0;}
-  body.view-day #calGrid{flex:1;min-height:0;align-items:stretch;}
-  body.view-day #mainContent{height:100%;min-height:0;}
+  /* 日/週檢視：鎖定整頁不滾，只有時間軸會滾（消除上下亂滑、底部被裁） */
+  body.view-cal{overflow:hidden;height:100dvh;}
+  body.view-cal #appBody{height:100dvh;display:flex;flex-direction:column;}
+  body.view-cal .header,body.view-cal .th-tabs,body.view-cal .date-bar{flex-shrink:0;}
+  body.view-cal #calGrid{flex:1;min-height:0;align-items:stretch;}
+  body.view-cal #mainContent{height:100%;min-height:0;display:flex;flex-direction:column;}
+  /* 日檢視鏈 */
   body.view-day #day-layout{height:100%;padding:0 14px!important;display:block!important;}
   body.view-day #day-layout>div:first-child{height:100%;display:flex;flex-direction:column;}
-  body.view-day #day-scroll{flex:1;min-height:0;max-height:none!important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  body.view-day #day-scroll{flex:1;min-height:0;max-height:none!important;padding-bottom:48px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  /* 週檢視鏈 */
+  body.view-cal .week-outer{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:0!important;}
+  body.view-cal .week-outer>div{flex:1;min-height:0;display:flex;flex-direction:column;}
+  body.view-cal #week-scroll{flex:1;min-height:0;max-height:none!important;padding-bottom:48px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
 }
 /* 浮動新增鈕（僅手機顯示） */
 #fab{display:none;position:fixed;right:18px;bottom:24px;width:56px;height:56px;border-radius:50%;
@@ -815,6 +820,7 @@ function setPage(page){
   curPage = page;
   const calActive = page==='calendar';
   document.body.classList.toggle('page-cal', calActive);   // 行事曆頁→手機鎖整頁、只時間軸滾
+  if(!calActive) document.body.classList.remove('view-cal','view-day');  // 病人頁解除鎖定，清單才能滾
   document.getElementById('btnCalPage').style.cssText=`padding:5px 11px;border:1px solid ${calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${calActive?'var(--warm)':'transparent'};color:${calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px`;
   document.getElementById('btnPatientsPage').style.cssText=`padding:5px 11px;border:1px solid ${!calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${!calActive?'var(--warm)':'transparent'};color:${!calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px`;
   document.getElementById('viewToggle').style.display=calActive?'flex':'none';
@@ -1292,6 +1298,7 @@ function goToday(){curDate=new Date();loadData();}
 
 function render(){
   document.body.classList.toggle('view-day', curView==='day' && curPage==='calendar');
+  document.body.classList.toggle('view-cal', (curView==='day'||curView==='week') && curPage==='calendar');
   renderThTabs();renderDateLabel();renderStats();
   if(curView==='day')renderDay();
   else if(curView==='week')renderWeek();

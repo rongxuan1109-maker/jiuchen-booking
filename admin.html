@@ -42,9 +42,20 @@
   --glow:#f2e9da;
   --surface:#ffffff;
   --deep:#2a1d12;
+  --grid:rgba(0,0,0,.07);
+}
+/* 深色模式（仿 Google App 黑底）：只覆蓋變數值 */
+body.dark{
+  --bg:#1b1b1d; --white:#27272a; --surface:#27272a; --paper:#27272a;
+  --border:rgba(255,255,255,.14); --grid:rgba(255,255,255,.10);
+  --text:#e8e6e3; --text2:#c8c2b8; --text3:#9a9286;
+  --ink:#f1efec; --muted:#9b9384; --glow:#34302b; --accent:#e0c39a;
+  --new-bg:rgba(217,110,40,.22); --return-bg:#3a322a; --shadow:0 2px 14px rgba(0,0,0,.5);
+  background:#1b1b1d;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-html{background:#ffffff !important;}
+html{background:#ffffff;}
+html.dark{background:#1b1b1d !important;}
 body{
   font-family:'Noto Sans TC',sans-serif;
   background:var(--bg);color:var(--text);
@@ -511,6 +522,7 @@ input,select,textarea{border-radius:8px;}
   <div class="date-bar-left">
     <button class="nav-btn" onclick="navigate(-1)">‹</button>
     <button class="nav-btn" onclick="navigate(1)">›</button>
+    <button class="nav-btn" id="themeToggle" onclick="toggleTheme()" title="深色模式" style="font-size:15px">🌙</button>
     <button class="today-btn" onclick="goToday()">今天</button>
     <span class="date-label" id="dateLabel" onclick="openDatePicker()" style="cursor:pointer;display:flex;align-items:center;gap:4px"></span>
   </div>
@@ -577,6 +589,20 @@ if(sessionStorage.getItem('admin_auth')==='1'){
   document.getElementById('appBody').style.display='block';
 }
 
+/* ── 深色模式 ── */
+function applyTheme(){
+  const dark=localStorage.getItem('admin_theme')==='dark';
+  document.body.classList.toggle('dark',dark);
+  document.documentElement.classList.toggle('dark',dark);
+  const b=document.getElementById('themeToggle'); if(b)b.textContent=dark?'☀️':'🌙';
+}
+function toggleTheme(){
+  const dark=localStorage.getItem('admin_theme')==='dark';
+  localStorage.setItem('admin_theme', dark?'light':'dark');
+  applyTheme();
+}
+applyTheme();
+
 /* ── Supabase ── */
 const SUPABASE_URL = 'https://vmkdawpukwpsifqguljy.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZta2Rhd3B1a3dwc2lmcWd1bGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjE2MDUsImV4cCI6MjA5NTQzNzYwNX0.hq8rbjKe3NOUhV1sbViBtuQLSzQuWCnK1_4QSrCy2xM';
@@ -595,6 +621,13 @@ const TIMES = (function(){
 const SLOT_H = window.innerWidth<=640 ? 22 : 44;  // 手機壓縮(22)讓整天約一頁；電腦44
 const DEFAULT_TIME = '09:00'; // 月檢視/新增預約的預設時段
 const isHourMark = t => t.endsWith(':00');
+// 時間軸標示：09:00→上午9時、15:00→下午3時、12:00→中午12時、00:00→凌晨12時
+function fmtAmPm(t){
+  let h=parseInt(t.slice(0,2),10);
+  let ap = h<6?'凌晨':(h<12?'上午':(h===12?'中午':'下午'));
+  let hh=h%12; if(hh===0)hh=12;
+  return ap+hh+'時';
+}
 
 // 治療師代表色覆蓋（DB anon 無法改 therapists，故在前端指定）
 // 治療師代表色：對齊 Google 日曆顏色（劉恕愷尚未上班，維持資料庫紅色不動）
@@ -1432,10 +1465,10 @@ function renderDay(){
   const el=document.getElementById('mainContent');
 
   // 時間欄（只在整點顯示標籤）
-  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:1px;font-size:13px;color:var(--ink);text-align:right;padding-right:6px;border-bottom:1px solid transparent;font-weight:600">${isHourMark(t)?t:''}</div>`).join('');
+  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:1px;font-size:11px;color:var(--muted);text-align:right;padding-right:6px;border-bottom:1px solid transparent;font-weight:500;white-space:nowrap">${isHourMark(t)?fmtAmPm(t):''}</div>`).join('');
 
   // 背景行（拖拉與點擊目標）；半點分隔線變淡、整點線實
-  const rowsHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'rgba(0,0,0,.07)':'transparent'};"
+  const rowsHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'var(--grid)':'transparent'};"
     onclick="if(!event.target.closest('[data-id]'))openNewApptAt('${ds}','${t}')"
     ondragover="event.preventDefault();this.style.background='var(--glow)'"
     ondragleave="this.style.background=''"
@@ -1490,7 +1523,7 @@ function renderDay(){
         <button onclick="toggleDaySidebar()" id="sidebarToggle" style="border:none;background:var(--glow);color:var(--accent);padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">隱藏清單 ›</button>
       </div>
       <div id="day-scroll" class="cal-scroll" style="display:flex;max-height:64vh;overflow-y:auto">
-        <div style="width:46px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
+        <div style="width:56px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
         <div style="flex:1;position:relative;">${rowsHtml}${blocksHtml}${nowLineHtml}</div>
       </div>
     </div>
@@ -1650,7 +1683,7 @@ function renderWeek(){
   }).join('');
 
   // 時間欄（只在整點顯示標籤）
-  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:1px;padding-right:6px;font-size:13px;color:var(--ink);text-align:right;border-bottom:1px solid transparent;font-weight:600">${isHourMark(t)?t:''}</div>`).join('');
+  const timeColHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;display:flex;align-items:flex-start;padding-top:1px;padding-right:6px;font-size:11px;color:var(--muted);text-align:right;border-bottom:1px solid transparent;font-weight:500;white-space:nowrap">${isHourMark(t)?fmtAmPm(t):''}</div>`).join('');
 
   // 七個日欄（各自含背景行 + 跨列方塊）
   const dayColumns=Array.from({length:7},(_,i)=>{
@@ -1663,7 +1696,7 @@ function renderWeek(){
     );
 
     // 背景行（半點分隔線變淡）
-    const rowsHtml=TIMES.map(t=>`<div class="week-cell ${isToday?'today-col':''}" style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'rgba(0,0,0,.07)':'transparent'};"
+    const rowsHtml=TIMES.map(t=>`<div class="week-cell ${isToday?'today-col':''}" style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'var(--grid)':'transparent'};"
       ondragover="onCellDragOver(event)" ondragleave="onCellDragLeave(event)"
       ondrop="onCellDrop(event,'${ds}','${t}')"
       onclick="if(!event.target.closest('[data-id]'))openNewApptAt('${ds}','${t}')"></div>`).join('');
@@ -1700,11 +1733,11 @@ function renderWeek(){
   document.getElementById('mainContent').innerHTML=`<div class="week-outer">
     <div style="min-width:520px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
       <div style="display:flex;border-bottom:1px solid var(--border);background:var(--bg)">
-        <div style="width:46px;flex-shrink:0"></div>
+        <div style="width:56px;flex-shrink:0"></div>
         ${headers}
       </div>
       <div id="week-scroll" class="cal-scroll" style="display:flex;max-height:64vh;overflow-y:auto">
-        <div style="width:46px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
+        <div style="width:56px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
         ${dayColumns}
       </div>
     </div>

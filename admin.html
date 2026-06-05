@@ -426,12 +426,17 @@ input,select,textarea{border-radius:8px;}
   .modal{padding:14px;}
   .modal-title{font-size:15px;}
   .mBtn{font-size:11px;padding:9px 6px;}
-  /* 手機：統計收起、時間軸填滿螢幕、給浮動鈕空間 */
+  /* 手機：精簡工具列、時間軸填滿、整天接近一頁 */
   .stats{display:none;}
-  #day-scroll,#week-scroll{max-height:calc(100dvh - 132px)!important;}
-  .date-bar-right{flex-wrap:wrap;justify-content:flex-end;}
+  .date-bar-right{display:none;}          /* 動作按鈕收掉，改用浮動＋鈕 */
+  #dayTLHeader{display:none;}              /* 「時間軸/隱藏清單」標題列隱藏 */
+  #day-layout{padding:0 8px 70px!important;}
+  #day-layout>div:first-child{border:none!important;border-radius:0!important;}
+  #day-scroll,#week-scroll{max-height:calc(100dvh - 120px)!important;}
   #fab{display:flex;}
-  .appt-block b{font-size:13px;}
+  .appt-block{padding:2px 6px;}
+  .appt-block b{font-size:12px;}
+  .appt-block>span{font-size:10px;}
 }
 /* 浮動新增鈕（僅手機顯示） */
 #fab{display:none;position:fixed;right:18px;bottom:24px;width:56px;height:56px;border-radius:50%;
@@ -584,7 +589,7 @@ const TIMES = (function(){
   }
   return arr;
 })();
-const SLOT_H = 44;            // 每個 30 分鐘格的高度（整點=88px，仿 Google 日曆，字大不被切）
+const SLOT_H = window.innerWidth<=640 ? 30 : 44;  // 手機壓縮(30)讓整天接近一頁；電腦44
 const DEFAULT_TIME = '09:00'; // 月檢視/新增預約的預設時段
 const isHourMark = t => t.endsWith(':00');
 
@@ -1477,7 +1482,7 @@ function renderDay(){
 
   el.innerHTML=`<div id="day-layout" style="display:grid;grid-template-columns:1fr 270px;gap:14px;padding:0 16px 80px;align-items:start">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-      <div style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;background:var(--bg);display:flex;align-items:center;justify-content:space-between">
+      <div id="dayTLHeader" style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;background:var(--bg);display:flex;align-items:center;justify-content:space-between">
         <span style="font-weight:400;letter-spacing:.5px">時間軸</span>
         <button onclick="toggleDaySidebar()" id="sidebarToggle" style="border:none;background:var(--glow);color:var(--accent);padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">隱藏清單 ›</button>
       </div>

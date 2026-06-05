@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>九辰 · 症狀諮詢表單</title>
+<style>
+  :root{--warm:#c08a52;--ink:#2a1d12;--bg:#f3ede1;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Noto Sans TC","PingFang TC",sans-serif;background:#e9e2d4;color:var(--ink);}
+  .wrap{max-width:460px;margin:0 auto;min-height:100vh;background:#fdfbf7;}
+  header{background:var(--ink);color:#fff;padding:18px 16px;text-align:center;}
+  header b{color:var(--warm);}
+  header small{display:block;color:#bbb;font-size:12px;margin-top:4px;}
+  form{padding:18px 16px 40px;}
+  .g{margin-bottom:18px;}
+  label.t{display:block;font-size:14px;font-weight:600;margin-bottom:8px;}
+  label.t span{color:#c0392b;}
+  input[type=text],select,textarea{width:100%;border:1px solid #cdbfa6;border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;background:#fff;outline:none;}
+  textarea{resize:vertical;min-height:70px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{border:1px solid #cdbfa6;border-radius:18px;padding:7px 14px;font-size:13px;cursor:pointer;background:#fff;user-select:none;}
+  .chip.on{background:var(--warm);color:#fff;border-color:var(--warm);}
+  .radio{display:flex;flex-wrap:wrap;gap:8px;}
+  .submit{width:100%;background:var(--warm);color:#fff;border:none;border-radius:24px;padding:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:8px;}
+  .done{text-align:center;padding:50px 24px;}
+  .done .ic{font-size:48px;}
+  .done h2{color:var(--warm);}
+  .hint{font-size:12px;color:#9b8a74;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><b>九辰物理治療所</b> 症狀諮詢表單<small>填好送出，治療師看到會盡快回覆您 🙏</small></header>
+  <form id="f">
+    <div class="g">
+      <label class="t">您的稱呼 <span>*</span></label>
+      <input type="text" id="name" placeholder="例：王先生 / 陳小姐">
+    </div>
+    <div class="g">
+      <label class="t">年齡</label>
+      <input type="text" id="age" inputmode="numeric" placeholder="例：35">
+    </div>
+    <div class="g">
+      <label class="t">不適部位 <span>*</span></label>
+      <div class="chips" data-single="0" id="parts">
+        <div class="chip">頸部</div><div class="chip">肩膀</div><div class="chip">手肘/手腕</div>
+        <div class="chip">腰部</div><div class="chip">背部</div><div class="chip">髖/臀</div>
+        <div class="chip">膝蓋</div><div class="chip">腳踝/腳</div><div class="chip">其他</div>
+      </div>
+      <input type="text" id="partOther" placeholder="其他部位請填寫…" style="display:none;margin-top:8px;">
+    </div>
+    <div class="g">
+      <label class="t">目前症狀（可複選）</label>
+      <div class="chips" id="symp">
+        <div class="chip">腫脹</div><div class="chip">疼痛</div><div class="chip">瘀青</div>
+        <div class="chip">無力</div><div class="chip">活動受限</div><div class="chip">麻木/刺痛</div>
+      </div>
+    </div>
+    <div class="g">
+      <label class="t">大概多久了？</label>
+      <div class="radio" id="dur">
+        <div class="chip">今天</div><div class="chip">3天內</div><div class="chip">1週內</div>
+        <div class="chip">1個月內</div><div class="chip">超過1個月</div>
+      </div>
+    </div>
+    <div class="g">
+      <label class="t">怎麼發生的？</label>
+      <div class="radio" id="cause">
+        <div class="chip">運動受傷</div><div class="chip">跌倒/扭到</div><div class="chip">姿勢/久坐</div>
+        <div class="chip">睡醒/落枕</div><div class="chip">原因不明</div>
+      </div>
+      <div class="hint">想詳細說明受傷經過，可在下方「補充說明」欄補充喔～</div>
+    </div>
+    <div class="g">
+      <label class="t">有沒有醫師診斷書？（3個月內）</label>
+      <div class="radio" id="dx">
+        <div class="chip">有</div><div class="chip">沒有</div><div class="chip">不確定</div>
+      </div>
+      <div class="hint">沒有診斷書也沒關係，可先到樓下 1F 德杏中醫看診取得喔～</div>
+    </div>
+    <div class="g">
+      <label class="t">補充說明（選填）</label>
+      <textarea id="note" placeholder="想多描述的狀況、或想問治療師的問題…"></textarea>
+    </div>
+    <button type="button" class="submit" id="go">送出給治療師</button>
+    <div class="hint" style="text-align:center;margin-top:10px">🔒 這是示範表單，送出不會真的儲存（正式版會傳給治療師）</div>
+  </form>
+</div>
+<script>
+document.querySelectorAll('.chips, .radio').forEach(box=>{
+  const single = box.classList.contains('radio');
+  box.querySelectorAll('.chip').forEach(c=>{
+    c.onclick=()=>{
+      if(single) box.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+      c.classList.toggle('on');
+    };
+  });
+});
+// 「其他」部位 → 顯示自填欄
+const otherInput=document.getElementById('partOther');
+[...document.querySelectorAll('#parts .chip')].forEach(c=>{
+  if(c.textContent==='其他') c.addEventListener('click',()=>{
+    const on=c.classList.contains('on');
+    otherInput.style.display=on?'block':'none';
+    if(!on) otherInput.value='';
+  });
+});
+document.getElementById('go').onclick=()=>{
+  const pick=id=>[...document.querySelectorAll('#'+id+' .chip.on')].map(c=>c.textContent).join('、');
+  const name=document.getElementById('name').value.trim();
+  let parts=pick('parts');
+  if(otherInput.value.trim()) parts=parts.replace('其他','其他('+otherInput.value.trim()+')');
+  if(!name||!parts){ alert('麻煩填一下「稱呼」和「不適部位」喔～'); return; }
+  const age=document.getElementById('age').value.trim();
+  const summary=`稱呼：${name}\n年齡：${age||'—'}\n部位：${parts}\n症狀：${pick('symp')||'—'}\n多久：${pick('dur')||'—'}\n如何發生：${pick('cause')||'—'}\n診斷書：${pick('dx')||'—'}\n補充：${document.getElementById('note').value||'—'}`;
+  document.querySelector('.wrap').innerHTML=`<div class="done"><div class="ic">✅</div><h2>已送出！</h2><p>我們已收到您的狀況，<br>治療師看到後會盡快在 LINE 回覆您 🙏</p><pre style="text-align:left;background:#f3ede1;padding:14px;border-radius:10px;font-size:13px;white-space:pre-wrap;font-family:inherit">${summary}</pre></div>`;
+};
+</script>
+</body>
+</html>

@@ -452,8 +452,10 @@ input,select,textarea{border-radius:8px;}
   #day-scroll>div:last-child{padding-left:5px;}   /* 時間欄與卡片之間留點空隙 */
   #day-scroll,#week-scroll{max-height:calc(100dvh - 108px)!important;}
   #fab{display:flex;}
-  .appt-block{padding:1px 6px;line-height:1.1;}
-  .appt-block b{font-size:12px;line-height:1.2;}
+  /* 手機卡片：扁平乾淨（無白邊框/投影，只留乾淨紅色左條），消除毛邊感 */
+  .appt-block{padding:2px 7px;line-height:1.15;border:none!important;box-shadow:inset 3px 0 0 #e53935!important;border-radius:6px;}
+  .appt-block:hover{box-shadow:inset 3px 0 0 #e53935!important;}
+  .appt-block b{font-size:12px;line-height:1.25;}
   .appt-block>span{font-size:10px;}
 }
 /* 浮動新增鈕（僅手機顯示） */

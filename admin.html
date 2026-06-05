@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -131,6 +131,7 @@ body::before{
   background:var(--surface);
   border-bottom:1px solid var(--border);
   padding:10px 16px;
+  padding-top:calc(10px + env(safe-area-inset-top));
   display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:50;
 }
@@ -420,7 +421,7 @@ input,select,textarea{border-radius:8px;}
 
 /* ── MOBILE ── */
 @media (max-width:640px){
-  .header{padding:8px 12px;}
+  .header{padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top));}
   .header-title{font-size:13px;}
   .header-sub{font-size:10px;}
   #btnCalPage,#btnPatientsPage{font-size:10px;padding:5px 9px;}
@@ -1540,30 +1541,19 @@ function renderDay(){
 // 把時間軸錨定到中午 12:00
 function scrollCalToFirst(id){
   const c=document.getElementById(id);if(!c)return;
-  const today=fmtDate(new Date());
-  let target=null;
-  // 檢視今天 → 錨定「現在時間」
-  if(curView==='day' && fmtDate(curDate)===today){
-    const n=new Date();
-    target=`${String(n.getHours()).padStart(2,'0')}:${n.getMinutes()<30?'00':'30'}`;
-  }
-  // 否則錨定當天/當週第一筆預約
-  if(!target){
-    const ds=curView==='day'?fmtDate(curDate):null;
-    let first=null;
-    appointments.forEach(a=>{
-      if(a.status==='cancelled')return;
-      if(ds&&a.appointment_date!==ds)return;
-      if(!(curThId===0||a.therapist_id===curThId||(isEvent(a)&&a.therapist_id===null)))return;
-      const t=a.appointment_time.slice(0,5);
-      if(!first||t<first)first=t;
-    });
-    target=first||'12:00';
-  }
-  let idx=TIMES.indexOf(target); if(idx<0)idx=TIMES.indexOf('12:00');
-  // 置中：讓目標約落在可視區上方 28%
-  const visH=c.clientHeight||c.offsetHeight||320;
-  c.scrollTop=Math.max(0, Math.round(idx*SLOT_H - visH*0.28));
+  // 錨定當天/當週「第一筆預約」，上方留約 3 格(1.5小時)，讓整個營業日從開頭就看得到
+  const ds=curView==='day'?fmtDate(curDate):null;
+  let first=null;
+  appointments.forEach(a=>{
+    if(a.status==='cancelled')return;
+    if(ds&&a.appointment_date!==ds)return;
+    if(!(curThId===0||a.therapist_id===curThId||(isEvent(a)&&a.therapist_id===null)))return;
+    const t=a.appointment_time.slice(0,5);
+    if(!first||t<first)first=t;
+  });
+  const target=first||'09:00';
+  let idx=TIMES.indexOf(target); if(idx<0)idx=TIMES.indexOf('09:00');
+  c.scrollTop=Math.max(0, (idx-3)*SLOT_H);
 }
 
 function toggleDaySidebar(){

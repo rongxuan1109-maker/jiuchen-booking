@@ -60,6 +60,7 @@ body{
   font-family:'Noto Sans TC',sans-serif;
   background:var(--bg);color:var(--text);
   min-height:100vh;user-select:none;
+  overflow-x:hidden;          /* 防止任何水平溢出造成整頁偏移 */
 }
 body::before{
   content:'';position:fixed;inset:0;
@@ -445,8 +446,9 @@ input,select,textarea{border-radius:8px;}
   .stats{display:none;}
   .date-bar-right{display:none;}          /* 動作按鈕收掉，改用浮動＋鈕 */
   #dayTLHeader{display:none;}              /* 「時間軸/隱藏清單」標題列隱藏 */
-  #day-layout{padding:0 8px 70px!important;}
+  #day-layout{padding:0 14px 70px!important;}
   #day-layout>div:first-child{border:none!important;border-radius:0!important;}
+  #day-scroll>div:last-child{padding-left:5px;}   /* 時間欄與卡片之間留點空隙 */
   #day-scroll,#week-scroll{max-height:calc(100dvh - 108px)!important;}
   #fab{display:flex;}
   .appt-block{padding:1px 6px;line-height:1.1;}
@@ -1450,6 +1452,7 @@ function apptBorder(a){
 function apptLabel(a){ return a.type==='new'?'初':''; }
 // 滑鼠移過去：浮到最上層 + 展開到完整寬度（解決最上層窄卡片看不全）
 function apptHover(el,on){
+  if(window.innerWidth<=640) return;   // 手機無滑鼠，不做浮起展開（避免撐爆寬度）
   if(on){
     el.dataset.ow=el.style.width||''; el.dataset.oz=el.style.zIndex||'';
     el.style.zIndex='999'; el.style.width='auto'; el.style.minWidth='200px'; el.style.maxWidth='320px';

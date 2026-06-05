@@ -54,7 +54,7 @@ body.dark{
   background:#1b1b1d;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-html{background:#ffffff;}
+html{background:#ffffff;overflow-x:hidden;max-width:100%;}
 html.dark{background:#1b1b1d !important;}
 body{
   font-family:'Noto Sans TC',sans-serif;
@@ -453,10 +453,10 @@ input,select,textarea{border-radius:8px;}
   #day-scroll,#week-scroll{max-height:calc(100dvh - 108px)!important;}
   #fab{display:flex;}
   /* 手機卡片：扁平乾淨（無白邊框/投影，只留乾淨紅色左條），消除毛邊感 */
-  .appt-block{padding:2px 7px;line-height:1.15;border:none!important;box-shadow:inset 3px 0 0 #e53935!important;border-radius:6px;}
+  .appt-block{padding:1px 7px;line-height:1.1;border:none!important;box-shadow:inset 3px 0 0 #e53935!important;border-radius:6px;}
   .appt-block:hover{box-shadow:inset 3px 0 0 #e53935!important;}
-  .appt-block b{font-size:12px;line-height:1.25;}
-  .appt-block>span{font-size:10px;}
+  .appt-block b{font-size:11.5px;line-height:1.2;}
+  .appt-block>span{font-size:9.5px;}
 }
 /* 浮動新增鈕（僅手機顯示） */
 #fab{display:none;position:fixed;right:18px;bottom:24px;width:56px;height:56px;border-radius:50%;
@@ -608,6 +608,10 @@ function toggleTheme(){
   applyTheme();
 }
 applyTheme();
+// 手機初次載入版面有時沒算準（滿版/無留白）→ 載入與旋轉後自動重排校正
+function relayoutSoon(){ if(window.innerWidth<=640 && typeof render==='function' && sessionStorage.getItem('admin_auth')==='1'){ setTimeout(()=>{try{render();}catch(e){}},120); setTimeout(()=>{try{render();}catch(e){}},450); } }
+window.addEventListener('load', relayoutSoon);
+window.addEventListener('orientationchange', ()=>setTimeout(relayoutSoon,200));
 
 /* ── Supabase ── */
 const SUPABASE_URL = 'https://vmkdawpukwpsifqguljy.supabase.co';
@@ -624,7 +628,7 @@ const TIMES = (function(){
   }
   return arr;
 })();
-const SLOT_H = window.innerWidth<=640 ? 22 : 44;  // 手機壓縮(22)讓整天約一頁；電腦44
+const SLOT_H = window.innerWidth<=640 ? 19 : 44;  // 手機壓縮(19)讓整天一頁、比例更精巧；電腦44
 const DEFAULT_TIME = '09:00'; // 月檢視/新增預約的預設時段
 const isHourMark = t => t.endsWith(':00');
 // 時間軸標示：09:00→上午9時、15:00→下午3時、12:00→中午12時、00:00→凌晨12時
@@ -1445,7 +1449,13 @@ function apptBg(a){
   return '#F6BF26';                                    /* 未指定：黃色 */
 }
 function isUnassigned(a){return !isEvent(a)&&!proxyOf(a)&&!a.therapist_id;}
-function apptColor(a){ return isUnassigned(a)?'#3d2f08':'#fff'; }  /* 未指定黃底→深字，其餘白字 */
+// 依底色亮度自動選字色（亮底→深字、暗底→白字），確保每張卡片都清楚易讀
+function lumOf(hex){
+  if(!hex||hex[0]!=='#'||hex.length<7) return 0;
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return 0.299*r+0.587*g+0.114*b;
+}
+function apptColor(a){ return lumOf(apptBg(a))>165 ? '#2b2b2b' : '#fff'; }
 function apptBorder(a){
   if(isEvent(a)) return '#3a2818';                     /* 活動深色邊 */
   if(proxyOf(a)) return '#7986CB';                     /* 代約薰衣草邊 */

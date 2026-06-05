@@ -49,7 +49,11 @@ let history = [];
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function botHtml(t){
   let h = esc(t).replace(/\n/g,'<br>');
-  h = h.replace(/https?:\/\/[^\s<)）]+/g, m=>`<a class="linkbtn" href="${m}" target="_blank">📅 點這裡查詢可預約時段</a>`);
+  h = h.replace(/https?:\/\/[^\s<)）]+/g, m=>{
+    const label = m.indexOf('consult-form')>-1 ? '📝 填症狀諮詢表單'
+                : (m.indexOf('jiuchen-booking')>-1 ? '📅 點這裡查詢可預約時段' : '🔗 點這裡開啟');
+    return `<a class="linkbtn" href="${m}" target="_blank">${label}</a>`;
+  });
   return h;
 }
 function add(text, cls){

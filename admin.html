@@ -426,7 +426,21 @@ input,select,textarea{border-radius:8px;}
   .modal{padding:14px;}
   .modal-title{font-size:15px;}
   .mBtn{font-size:11px;padding:9px 6px;}
+  /* 手機：統計收起、時間軸填滿螢幕、給浮動鈕空間 */
+  .stats{display:none;}
+  #day-scroll,#week-scroll{max-height:calc(100dvh - 132px)!important;}
+  .date-bar-right{flex-wrap:wrap;justify-content:flex-end;}
+  #fab{display:flex;}
+  .appt-block b{font-size:13px;}
 }
+/* 浮動新增鈕（僅手機顯示） */
+#fab{display:none;position:fixed;right:18px;bottom:24px;width:56px;height:56px;border-radius:50%;
+  background:var(--warm);color:#fff;border:none;font-size:30px;line-height:1;align-items:center;justify-content:center;
+  box-shadow:0 5px 16px rgba(28,22,17,.4);z-index:60;cursor:pointer;padding-bottom:3px;}
+#fab:active{transform:scale(.94);}
+/* 現在時間指示線 */
+.now-line{position:absolute;left:0;right:0;height:2px;background:#ea4335;z-index:25;pointer-events:none;}
+.now-line::before{content:'';position:absolute;left:-1px;top:-4px;width:10px;height:10px;border-radius:50%;background:#ea4335;}
 </style>
 </head>
 <body>
@@ -524,6 +538,7 @@ input,select,textarea{border-radius:8px;}
   <div id="miniCalPanel" class="mini-panel"></div>
   <div id="mainContent" style="flex:1;min-width:0"></div>
 </div>
+<button id="fab" onclick="openNewAppt()" title="新增預約">＋</button>
 <div id="modalArea"></div>
 <div class="toast" id="toast"></div>
 
@@ -1442,6 +1457,13 @@ function renderDay(){
     </div>`;
   });
 
+  // 現在時間指示線（只在檢視今天時顯示）
+  let nowLineHtml='';
+  if(ds===fmtDate(new Date())){
+    const n=new Date(), mins=n.getHours()*60+n.getMinutes()-60; // 從 01:00 起算
+    if(mins>=0){ nowLineHtml=`<div class="now-line" style="top:${(mins/30*CELL_H).toFixed(1)}px"></div>`; }
+  }
+
   const listHtml=dayAppts.length?dayAppts.map(a=>`
     <div onclick="openModal(${a.id})" style="border-left:2px solid ${apptBorder(a)};background:var(--surface);border:1px solid var(--border);border-radius:10px;border-left:2px solid ${apptBorder(a)};padding:10px 12px;margin-bottom:7px;cursor:pointer">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
@@ -1461,7 +1483,7 @@ function renderDay(){
       </div>
       <div id="day-scroll" class="cal-scroll" style="display:flex;max-height:64vh;overflow-y:auto">
         <div style="width:46px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
-        <div style="flex:1;position:relative;">${rowsHtml}${blocksHtml}</div>
+        <div style="flex:1;position:relative;">${rowsHtml}${blocksHtml}${nowLineHtml}</div>
       </div>
     </div>
     <div id="day-sidebar" style="display:${window.innerWidth<=640?'none':'block'}">
@@ -1477,9 +1499,30 @@ function renderDay(){
 // 把時間軸錨定到中午 12:00
 function scrollCalToFirst(id){
   const c=document.getElementById(id);if(!c)return;
-  let idx=TIMES.indexOf('12:00');
-  if(idx<0) idx=TIMES.indexOf('08:00');
-  c.scrollTop=(idx>0)?idx*SLOT_H:0;
+  const today=fmtDate(new Date());
+  let target=null;
+  // 檢視今天 → 錨定「現在時間」
+  if(curView==='day' && fmtDate(curDate)===today){
+    const n=new Date();
+    target=`${String(n.getHours()).padStart(2,'0')}:${n.getMinutes()<30?'00':'30'}`;
+  }
+  // 否則錨定當天/當週第一筆預約
+  if(!target){
+    const ds=curView==='day'?fmtDate(curDate):null;
+    let first=null;
+    appointments.forEach(a=>{
+      if(a.status==='cancelled')return;
+      if(ds&&a.appointment_date!==ds)return;
+      if(!(curThId===0||a.therapist_id===curThId||(isEvent(a)&&a.therapist_id===null)))return;
+      const t=a.appointment_time.slice(0,5);
+      if(!first||t<first)first=t;
+    });
+    target=first||'12:00';
+  }
+  let idx=TIMES.indexOf(target); if(idx<0)idx=TIMES.indexOf('12:00');
+  // 置中：讓目標約落在可視區上方 28%
+  const visH=c.clientHeight||c.offsetHeight||320;
+  c.scrollTop=Math.max(0, Math.round(idx*SLOT_H - visH*0.28));
 }
 
 function toggleDaySidebar(){

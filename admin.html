@@ -136,6 +136,10 @@ body::before{
   display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:50;
 }
+/* 加到主畫面(standalone)時，狀態列/動態島會蓋住內容，強制給足上方間距避免標題被切 */
+@media all and (display-mode:standalone){
+  .header{padding-top:max(calc(10px + env(safe-area-inset-top)), 56px)!important;}
+}
 .header-left{display:flex;align-items:center;gap:12px;}
 .logo{
   width:32px;height:32px;border-radius:50%;
@@ -452,19 +456,17 @@ input,select,textarea{border-radius:8px;}
   body::before{display:none;}              /* 關掉雜訊紋理，手機上較銳利乾淨 */
   .stats{display:none;}
   .date-bar-right{display:none;}          /* 動作按鈕收掉，改用浮動＋鈕 */
-  #dayTLHeader{display:none;}              /* 「時間軸/隱藏清單」標題列隱藏 */
+  #dayTLHeader{display:none!important;}    /* 「時間軸/隱藏清單」標題列隱藏（inline style 要用 !important 蓋過）*/
   #day-layout{padding:0 14px 70px!important;}
   #day-layout>div:first-child{border:none!important;border-radius:0!important;}
   #day-scroll>div:last-child{padding-left:5px;}   /* 時間欄與卡片之間留點空隙 */
-  #day-scroll,#week-scroll{max-height:calc(100dvh - 108px)!important;}
+  /* 單一整頁捲動：時間軸不自己捲（避免雙層打架、sticky標題被切），整頁一起捲、標題固定 */
+  #day-scroll,#week-scroll{max-height:none!important;overflow:visible!important;padding-bottom:120px;}
   #fab{display:flex;}
   /* 手機卡片：沿用桌面版樣式（白邊框＋投影＋紅色左條＋圓角），只保留手機較小字級與深色字 */
   .appt-block{padding:1px 7px;line-height:1.1;}
   .appt-block b{font-size:11.5px;line-height:1.25;}
   .appt-block>span{display:none;}   /* 手機只顯示名字（時間從位置看得出來），像 Google，避免字被裁 */
-
-  /* 時間軸自身捲動 + 上下緩衝，順暢不卡死 */
-  #day-scroll,#week-scroll{padding-top:24px;padding-bottom:110px;-webkit-overflow-scrolling:touch;}
 }
 /* 浮動新增鈕（僅手機顯示） */
 #fab{display:none;position:fixed;right:18px;bottom:24px;width:56px;height:56px;border-radius:50%;
@@ -1579,7 +1581,7 @@ function renderDay(){
 // 把時間軸錨定到中午 12:00
 function scrollCalToFirst(id){
   const c=document.getElementById(id);if(!c)return;
-  // 算出當天/當週預約範圍(第一筆~最後一筆)，把範圍中點置中到螢幕中央，盡量一次看到全部
+  // 算出當天/當週預約範圍(第一筆~最後一筆)中點
   const ds=curView==='day'?fmtDate(curDate):null;
   let first=null,last=null;
   appointments.forEach(a=>{
@@ -1590,11 +1592,25 @@ function scrollCalToFirst(id){
     if(!first||t<first)first=t;
     if(!last||t>last)last=t;
   });
+  const mobile=window.innerWidth<=640;
+  const fi=first?TIMES.indexOf(first):TIMES.indexOf('12:00');
+  const li=last?TIMES.indexOf(last):TIMES.indexOf('12:00');
+  if(mobile){
+    // 單一整頁捲動 → 捲 window；扣掉上方固定工具列高度，讓預約中點落在可視區中央
+    const padTop=24;
+    requestAnimationFrame(()=>{
+      const inner=c.querySelector('div:last-child')||c;
+      const baseTop=inner.getBoundingClientRect().top + window.scrollY;
+      const headerH=(document.querySelector('.date-bar')?.getBoundingClientRect().bottom)||110;
+      const midDocY=baseTop + padTop + ((fi+li)/2)*SLOT_H + SLOT_H/2;
+      const y=Math.max(0, Math.round(midDocY - (headerH + (window.innerHeight-headerH)/2)));
+      window.scrollTo(0,y);
+    });
+    return;
+  }
   const visH=c.clientHeight||c.offsetHeight||400;
-  const padTop=(window.innerWidth<=640)?28:0;   // 手機時間軸上方緩衝
-  if(!first){ const i=TIMES.indexOf('12:00'); c.scrollTop=Math.max(0,Math.round(padTop+i*SLOT_H-visH/2)); return; }
-  const fi=TIMES.indexOf(first), li=TIMES.indexOf(last);
-  const midPx=padTop+((fi+li)/2)*SLOT_H + SLOT_H/2;  // 範圍中點
+  if(!first){ c.scrollTop=Math.max(0,Math.round(fi*SLOT_H-visH/2)); return; }
+  const midPx=((fi+li)/2)*SLOT_H + SLOT_H/2;
   c.scrollTop=Math.max(0, Math.round(midPx - visH/2));
 }
 

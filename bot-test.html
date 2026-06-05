@@ -29,10 +29,10 @@
 <div class="wrap">
   <header><b>九辰物理治療所</b> 客服小幫手<small>🤖 測試版</small></header>
   <div id="log">
-    <div class="msg bot">您好～我是九辰物理治療所的 AI 客服小幫手 🤖
-可以幫您解答營業時間、收費、預約、就診流程等問題，也能協助您線上預約喔！
-如果需要專人服務，我也會幫您轉接給同事～
-請問有什麼可以幫您的呢？😊</div>
+    <div class="msg bot">嗨～我是九辰的線上小幫手 🙂
+營業時間、收費、怎麼預約、初診要帶什麼，這些都可以問我！
+需要的話，我也能幫您找治療師。
+有什麼想問的，直接跟我說就好～</div>
     <div class="tip">這是測試版，隨便打字問問看～</div>
   </div>
   <footer>
@@ -42,10 +42,12 @@
 </div>
 <script>
 const API = "https://vmkdawpukwpsifqguljy.supabase.co/functions/v1/clinic-bot";
+const CALL = "https://vmkdawpukwpsifqguljy.supabase.co/functions/v1/call-staff";
 const log = document.getElementById('log');
 const q = document.getElementById('q');
 const send = document.getElementById('send');
 let history = [];
+let lastUserMsg = "";
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function botHtml(t){
   let h = esc(t).replace(/\n/g,'<br>');
@@ -57,22 +59,40 @@ function botHtml(t){
   return h;
 }
 function add(text, cls){
+  const isBot = cls.indexOf('bot')>-1 && cls.indexOf('typing')<0;
+  const hasCall = isBot && text.indexOf('[[CALL_STAFF]]')>-1;
+  const clean = text.replace('[[CALL_STAFF]]','').trim();
   const d = document.createElement('div');
   d.className = 'msg ' + cls;
-  if(cls.indexOf('bot')>-1 && cls.indexOf('typing')<0) d.innerHTML = botHtml(text);
-  else d.textContent = text;
-  log.appendChild(d); log.scrollTop = log.scrollHeight; return d;
+  if(isBot) d.innerHTML = botHtml(clean); else d.textContent = clean;
+  log.appendChild(d);
+  if(hasCall){
+    const b = document.createElement('button');
+    b.className='linkbtn'; b.style.border='none'; b.style.cursor='pointer'; b.style.alignSelf='flex-start';
+    b.textContent='🔔 請治療師回覆我';
+    b.onclick=async ()=>{
+      b.disabled=true; b.textContent='通知中…';
+      try{ await fetch(CALL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({lastMessage:lastUserMsg})}); }catch(e){}
+      const t=document.createElement('div'); t.className='tip';
+      t.textContent='✅ 已通知治療師，請稍等～若正在忙可能晚一點回覆 🙏';
+      b.replaceWith(t); log.scrollTop=log.scrollHeight;
+    };
+    log.appendChild(b);
+  }
+  log.scrollTop = log.scrollHeight; return d;
 }
 async function ask(){
   const text = q.value.trim(); if(!text) return;
   q.value=''; send.disabled=true; q.disabled=true;
+  lastUserMsg = text;
   add(text,'me'); history.push({role:'user',content:text});
   const typing = add('輸入中…','bot typing');
   try{
     const r = await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history})});
     const d = await r.json();
     const reply = d.reply || '不好意思，系統忙線中，請稍後再試 🙏';
-    typing.remove(); add(reply,'bot'); history.push({role:'assistant',content:reply});
+    typing.remove(); add(reply,'bot');
+    history.push({role:'assistant',content:reply.replace('[[CALL_STAFF]]','').trim()});
   }catch(e){ typing.remove(); add('⚠️ 連線錯誤，請稍後再試','bot'); }
   send.disabled=false; q.disabled=false; q.focus();
 }

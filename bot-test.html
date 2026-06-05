@@ -214,7 +214,7 @@ async function ask(){
   add(text,'me'); history.push({role:'user',content:text});
   showTyping();
   try{
-    const r=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,lineUserId:TEST_LINE_ID})});
+    const r=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,lineUserId:TEST_LINE_ID,test:true})});
     const d=await r.json();
     const reply=d.reply||'不好意思，系統忙線中，請稍後再試 🙏';
     hideTyping();

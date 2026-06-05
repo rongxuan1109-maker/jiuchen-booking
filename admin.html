@@ -1408,9 +1408,92 @@ function renderThTabs(){
       const c=thColor(t),active=curThId===t.id;
       const dot=active?'':`<span style='width:9px;height:9px;border-radius:50%;background:${c};display:inline-block;margin-right:6px;vertical-align:middle'></span>`;
       return `<button class="th-tab ${active?'active':''}" style="${active?`border-color:${c};background:${c};color:#fff`:''}" onclick="selectTh(${t.id})">${dot}${t.name}</button>`;
-    }).join('')}`;
+    }).join('')}
+    <button class="th-tab" style="border-color:var(--accent);color:var(--accent)" onclick="openShiftScheduler()">🗓️ 排班</button>`;
 }
 function selectTh(id){curThId=id;render();}
+
+/* ════════ 治療師排班（每週固定班表）════════ */
+let schedules={};            // {therapist_id: {"1":["am","pm"], ...}}  星期1~6=一~六、0=日
+let _shiftTid=null;          // 排班視窗目前選的治療師
+const SHIFT_BLOCKS=[
+  {code:'am', name:'早診',  time:'09:00–11:00'},
+  {code:'pm', name:'下午診',time:'15:00–18:00'},
+  {code:'eve',name:'晚診',  time:'18:00–20:00'},
+];
+const SHIFT_WDAYS=[{w:1,n:'一'},{w:2,n:'二'},{w:3,n:'三'},{w:4,n:'四'},{w:5,n:'五'},{w:6,n:'六'},{w:0,n:'日'}];
+
+async function loadSchedules(){
+  const{data}=await sb.from('therapist_schedules').select('therapist_id,shifts');
+  schedules={};
+  (data||[]).forEach(r=>{schedules[r.therapist_id]=r.shifts||{};});
+}
+
+async function openShiftScheduler(){
+  if(!therapists.length){const{data}=await sb.from('therapists').select('*').order('id');if(data)therapists=data;}
+  await loadSchedules();
+  if(_shiftTid===null)_shiftTid=therapists[0]?therapists[0].id:1;
+  renderShiftScheduler();
+}
+
+function _shiftOn(tid,wd,code){return ((schedules[tid]||{})[String(wd)]||[]).includes(code);}
+
+function renderShiftScheduler(){
+  const tid=_shiftTid;
+  const thBtns=therapists.map(t=>`<div onclick="_shiftTid=${t.id};renderShiftScheduler()" style="padding:5px 13px;border:1px solid ${t.id===tid?'var(--warm)':'var(--border)'};border-radius:10px;font-size:12px;cursor:pointer;background:${t.id===tid?'var(--glow)':'transparent'};color:${t.id===tid?'var(--accent)':'var(--text2)'};white-space:nowrap;flex-shrink:0">${t.name}</div>`).join('');
+  const headRow=`<div style="display:grid;grid-template-columns:58px repeat(7,1fr);gap:4px;margin-bottom:5px">
+    <div></div>${SHIFT_WDAYS.map(d=>`<div style="text-align:center;font-size:12px;color:var(--muted)">${d.n}</div>`).join('')}
+  </div>`;
+  const rows=SHIFT_BLOCKS.map(b=>`<div style="display:grid;grid-template-columns:58px repeat(7,1fr);gap:4px;margin-bottom:4px;align-items:center">
+    <div style="font-size:11px;color:var(--text2);line-height:1.25">${b.name}<br><span style="font-size:9px;color:var(--muted)">${b.time}</span></div>
+    ${SHIFT_WDAYS.map(d=>{const on=_shiftOn(tid,d.w,b.code);return `<div onclick="toggleShift(${d.w},'${b.code}')" style="height:36px;border-radius:8px;border:1px solid ${on?'var(--warm)':'var(--border)'};background:${on?'var(--warm)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:15px">${on?'✓':''}</div>`;}).join('')}
+  </div>`).join('');
+  document.getElementById('modalArea').innerHTML=`
+  <div class="modal-bg" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:540px">
+      <div class="modal-handle"></div>
+      <p class="modal-title">🗓️ 治療師排班</p>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px;font-weight:300;line-height:1.6">勾選＝該治療師這個時段有上班。病人預約選到他時，只會看到打勾的時段。臨時請假請用日曆的「公休／活動」擋當天，不用動這張班表。</p>
+      <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;-webkit-overflow-scrolling:touch;padding-bottom:2px">${thBtns}</div>
+      ${headRow}${rows}
+      <div style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap">
+        <button class="mBtn" onclick="clearShifts()">清空這位</button>
+        <button class="mBtn" onclick="copyShiftsToAll()">複製到其他人</button>
+      </div>
+      <div class="modal-btns">
+        <button class="mBtn" onclick="closeModal()">關閉</button>
+        <button class="mBtn primary" onclick="saveShifts()">儲存班表</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleShift(wd,code){
+  const tid=_shiftTid;
+  if(!schedules[tid])schedules[tid]={};
+  const k=String(wd);
+  const arr=(schedules[tid][k]||[]).slice();
+  const i=arr.indexOf(code);
+  if(i>=0)arr.splice(i,1);else arr.push(code);
+  if(arr.length)schedules[tid][k]=arr;else delete schedules[tid][k];
+  renderShiftScheduler();
+}
+
+function clearShifts(){schedules[_shiftTid]={};renderShiftScheduler();}
+
+function copyShiftsToAll(){
+  const src=JSON.stringify(schedules[_shiftTid]||{});
+  therapists.forEach(t=>{if(t.id!==_shiftTid)schedules[t.id]=JSON.parse(src);});
+  showToast('已複製到其他治療師（記得按儲存）');
+}
+
+async function saveShifts(){
+  const rows=therapists.map(t=>({therapist_id:t.id,shifts:schedules[t.id]||{},updated_at:new Date().toISOString()}));
+  const{error}=await sb.from('therapist_schedules').upsert(rows,{onConflict:'therapist_id'});
+  if(error){showToast('儲存失敗：'+error.message);return;}
+  showToast('班表已儲存 ✓');
+  closeModal();
+}
 
 function renderDateLabel(){
   let txt='';

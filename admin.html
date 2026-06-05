@@ -435,10 +435,10 @@ input,select,textarea{border-radius:8px;}
   #dayTLHeader{display:none;}              /* 「時間軸/隱藏清單」標題列隱藏 */
   #day-layout{padding:0 8px 70px!important;}
   #day-layout>div:first-child{border:none!important;border-radius:0!important;}
-  #day-scroll,#week-scroll{max-height:calc(100dvh - 120px)!important;}
+  #day-scroll,#week-scroll{max-height:calc(100dvh - 108px)!important;}
   #fab{display:flex;}
-  .appt-block{padding:2px 6px;}
-  .appt-block b{font-size:12px;}
+  .appt-block{padding:1px 6px;line-height:1.1;}
+  .appt-block b{font-size:12px;line-height:1.2;}
   .appt-block>span{font-size:10px;}
 }
 /* 浮動新增鈕（僅手機顯示） */
@@ -592,7 +592,7 @@ const TIMES = (function(){
   }
   return arr;
 })();
-const SLOT_H = window.innerWidth<=640 ? 30 : 44;  // 手機壓縮(30)讓整天接近一頁；電腦44
+const SLOT_H = window.innerWidth<=640 ? 22 : 44;  // 手機壓縮(22)讓整天約一頁；電腦44
 const DEFAULT_TIME = '09:00'; // 月檢視/新增預約的預設時段
 const isHourMark = t => t.endsWith(':00');
 

@@ -1605,6 +1605,8 @@ function renderDay(){
 // 把時間軸錨定到中午 12:00
 function scrollCalToFirst(id){
   const c=document.getElementById(id);if(!c)return;
+  // 拖放/編輯後的重畫不要自動捲，否則畫面會跳（保持使用者當下的捲動位置）
+  if(window._noAutoScroll){window._noAutoScroll=false;return;}
   // 算出當天/當週預約範圍(第一筆~最後一筆)中點
   const ds=curView==='day'?fmtDate(curDate):null;
   let first=null,last=null;
@@ -1869,11 +1871,12 @@ async function onCellDrop(e, newDate, newTime){
   if(moves.some(m=>m.nt===null)){showToast('超出時間範圍');return;}
   const backup=grp.map(x=>({x,d:x.appointment_date,t:x.appointment_time}));
   moves.forEach(m=>{m.row.appointment_date=newDate;m.row.appointment_time=m.nt;});
+  window._noAutoScroll=true;   // 拖放後重畫不自動捲，避免螢幕亂跳
   render();
   showToast(`已移至 ${newDate.slice(5)} ${newTime}`);
   for(const m of moves){
     const{error}=await sb.from('appointments').update({appointment_date:newDate,appointment_time:m.nt}).eq('id',m.row.id);
-    if(error){backup.forEach(b=>{b.x.appointment_date=b.d;b.x.appointment_time=b.t;});render();showToast('同步失敗，請重新整理');return;}
+    if(error){backup.forEach(b=>{b.x.appointment_date=b.d;b.x.appointment_time=b.t;});window._noAutoScroll=true;render();showToast('同步失敗，請重新整理');return;}
   }
 }
 

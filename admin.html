@@ -317,6 +317,10 @@ input,select,textarea{border-radius:8px;}
 .appt-block.dragging{opacity:.4;cursor:grabbing;}
 .appt-block b{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}
 .appt-block>span{font-size:11px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+/* 週檢視欄位窄：字級縮小、內距收緊、紅條變細，讓名字多顯示 */
+.week-outer .appt-block{padding:2px 5px;box-shadow:inset 3px 0 0 #e53935,0 1px 3px rgba(28,22,17,.22);}
+.week-outer .appt-block b{font-size:11px;}
+.week-outer .appt-block>span{font-size:9px;}
 
 /* ── 左側小日曆 ── */
 .mini-panel{width:218px;flex-shrink:0;padding:0 4px 0 16px;}

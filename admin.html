@@ -449,9 +449,23 @@ input,select,textarea{border-radius:8px;}
   #day-sidebar{display:none;}
   .week-outer{padding:0 0 80px;}
   .week-container{min-width:500px;}
-  .modal{padding:14px;}
+  /* 手機：視窗改「底部升起的抽屜」式，鍵盤跳出時不亂飄；確認鈕固定在底部一定按得到 */
+  .modal-bg{align-items:flex-end;padding:0;}
+  .modal{
+    padding:16px 14px calc(14px + env(safe-area-inset-bottom));
+    width:100%;max-width:none;
+    max-height:92dvh;
+    border-radius:16px 16px 0 0;
+  }
   .modal-title{font-size:15px;}
-  .mBtn{font-size:11px;padding:9px 6px;}
+  .modal-btns{
+    position:sticky;bottom:0;
+    background:var(--surface);
+    margin-left:-14px;margin-right:-14px;
+    padding:12px 14px calc(4px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--border);
+  }
+  .mBtn{font-size:12px;padding:12px 6px;}
   /* 手機：精簡工具列、時間軸填滿、整天接近一頁 */
   body::before{display:none;}              /* 關掉雜訊紋理，手機上較銳利乾淨 */
   .stats{display:none;}
@@ -478,6 +492,8 @@ input,select,textarea{border-radius:8px;}
   #fab{display:flex;}
   /* 手機卡片：沿用桌面版樣式，只保留手機較小字級與深色字；觸控只允許上下滑(避免左右飄) */
   .appt-block{padding:1px 7px;line-height:1.1;touch-action:pan-y!important;}
+  /* 週檢視：方塊上也要能左右滑(看七天)，否則手指一落在方塊上就卡住 → 允許上下＋左右滑 */
+  .week-outer .appt-block{touch-action:pan-x pan-y!important;}
   .appt-block b{font-size:11.5px;line-height:1.25;}
   .appt-block>span{display:none;}   /* 手機只顯示名字（時間從位置看得出來），像 Google，避免字被裁 */
 }
@@ -651,7 +667,7 @@ const TIMES = (function(){
   }
   return arr;
 })();
-const SLOT_H = window.innerWidth<=640 ? 19 : 44;  // 手機壓縮(19)讓整天一頁、比例更精巧；電腦44
+const SLOT_H = window.innerWidth<=640 ? 34 : 44;  // 手機 34（原 19 太扁→名字被裁、難點）；整天改為可上下捲；電腦 44
 const DEFAULT_TIME = '09:00'; // 月檢視/新增預約的預設時段
 const isHourMark = t => t.endsWith(':00');
 // 時間軸標示：09:00→上午9時、15:00→下午3時、12:00→中午12時、00:00→凌晨12時
@@ -1610,12 +1626,17 @@ function scrollCalToFirst(id){
   if(mobile){
     // 手機：捲動區是 #mainContent；用實測位置把預約中點置中
     const sc=document.getElementById('mainContent'); if(!sc)return;
-    requestAnimationFrame(()=>{
-      const padTop=parseFloat(getComputedStyle(c).paddingTop)||0;
-      const innerTop=c.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
+    // 量畫面位置容易因字體載入/網址列縮放而算錯 → 連續多次校正，最後一次最準（解決打開像空白）
+    const place=()=>{
+      const cc=document.getElementById(id);            // 重新取得，避免重繪後參照失效
+      if(!cc||!cc.isConnected||!sc.isConnected)return;
+      const padTop=parseFloat(getComputedStyle(cc).paddingTop)||0;
+      const innerTop=cc.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
       const midY=innerTop + padTop + midPx;
       sc.scrollTop=Math.max(0, Math.round(midY - sc.clientHeight/2));
-    });
+    };
+    requestAnimationFrame(()=>requestAnimationFrame(place));  // 等版面穩定後再量
+    setTimeout(place,160);                                    // 字體/網址列縮放後再校正一次
     return;
   }
   const visH=c.clientHeight||c.offsetHeight||400;

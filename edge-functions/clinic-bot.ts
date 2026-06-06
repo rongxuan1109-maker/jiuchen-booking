@@ -122,8 +122,10 @@ async function getTherapists() {
 }
 async function resolveTherapist(therapist?: string) {
   if (!therapist || therapist === "不指定") return { id: null as number | null, name: "不指定" };
+  const q = therapist.replace(/治療師|醫師|老師|先生|小姐/g, "").trim(); // 去掉稱謂,「江治療師」→「江」
   const ths = await getTherapists();
-  const t = ths.find((x: any) => therapist.includes(x.name) || x.name.includes(therapist));
+  let t = ths.find((x: any) => q.includes(x.name) || x.name.includes(q));
+  if (!t && q) t = ths.find((x: any) => x.name[0] === q[0]); // 退而用姓氏第一字(九辰治療師都不同姓,安全)
   return t ? { id: t.id as number, name: t.name as string } : { id: null, name: therapist };
 }
 
@@ -342,6 +344,41 @@ async function cancelBooking(input: any, lineUserId?: string, dryRun?: boolean, 
   return { ok: true, id: appt.id, name: appt.patient_name, dateText: prettyDate(appt.appointment_date), time: (appt.appointment_time || "").slice(0, 5) };
 }
 
+// (限管理者)列出某天全部病人的預約清單
+async function listAppointments(date?: string, therapist?: string) {
+  if (!date) return { ok: false, error: "缺少日期" };
+  let url = `${SB_URL}/rest/v1/appointments?select=appointment_time,patient_name,therapist_name,therapist_id,service,note&appointment_date=eq.${date}&status=eq.confirmed&order=therapist_id,appointment_time&limit=300`;
+  let thName = "全部治療師";
+  if (therapist && therapist !== "不指定" && therapist !== "全部") {
+    const th = await resolveTherapist(therapist);
+    if (th.id) { url += `&therapist_id=eq.${th.id}`; thName = th.name; }
+  }
+  let rows: any[] = [];
+  try { const r = await fetch(url, { headers: sbHeaders }); rows = (await r.json()) || []; } catch (_e) { /* */ }
+  rows = rows.filter((a) => !(typeof a.note === "string" && a.note.startsWith("event:")));
+  // 先依「治療師+病人」分組,再把連續時段合併(60分被存成兩列)→ 一筆,顯示起訖
+  const byKey = new Map<string, any>();
+  for (const a of rows) {
+    const t = (a.appointment_time || "").slice(0, 5);
+    const key = a.therapist_id + "|" + a.patient_name;
+    if (!byKey.has(key)) byKey.set(key, { therapist: a.therapist_name, name: a.patient_name, times: [] as string[] });
+    byKey.get(key).times.push(t);
+  }
+  const list: any[] = [];
+  for (const g of byKey.values()) {
+    const ts = [...new Set(g.times)].sort();
+    let i = 0;
+    while (i < ts.length) {
+      let j = i; while (j + 1 < ts.length && plus30(ts[j]) === ts[j + 1]) j++;
+      const start = ts[i], slots = j - i + 1, end = plus30(ts[j]);
+      list.push({ start, time: `${start}–${end}`, name: g.name, therapist: g.therapist, len: `${slots * 30}分` });
+      i = j + 1;
+    }
+  }
+  list.sort((a, b) => a.start.localeCompare(b.start));
+  return { ok: true, date: prettyDate(date), therapist: thName, count: list.length, appointments: list.map(({ start, ...r }) => r) };
+}
+
 const tp0 = taipeiParts();
 const SYSTEM = `你是「九辰物理治療所」的 LINE 客服小幫手。九辰非常重視「禮貌、溫馨」，回覆要像九辰真人櫃台。今天是 ${tp0.date}（台灣時間，星期 ${tp0.wdEn}）。
 【你的任務（核心）】用「聊天」幫病人把事情辦好：回答問題、查空檔、幫忙預約、改時間、取消。病人只要動嘴，你負責去後台處理並回報。能自己回答的（營業時間、收費、地點、交通、就診流程、掛號費、初診須知、服務項目）就大方明確回答，不要動不動推給電話。
@@ -440,6 +477,7 @@ const tools = [
   { name: "create_booking", description: "建立一筆複診預約。呼叫前務必已向病人複誦並取得確認。", input_schema: { type: "object", properties: { date: { type: "string" }, time: { type: "string" }, therapist: { type: "string" }, patient_name: { type: "string" }, patient_phone: { type: "string" }, service: { type: "string" }, note: { type: "string" } }, required: ["date", "time", "patient_name", "patient_phone"] } },
   { name: "reschedule_booking", description: "把病人某一天的預約改到新時間。系統會用 姓名+電話+原日期 自動鎖定那筆(你不用也不能給編號)。date=要改的那筆的原日期。", input_schema: { type: "object", properties: { name: { type: "string", description: "病人姓名" }, phone: { type: "string", description: "病人電話" }, date: { type: "string", description: "原預約日期 YYYY-MM-DD" }, time: { type: "string", description: "原預約時間 HH:MM(同一天有多筆時才需要)" }, new_date: { type: "string", description: "新日期 YYYY-MM-DD" }, new_time: { type: "string", description: "新時間 HH:MM" } }, required: ["name", "date", "new_date", "new_time"] } },
   { name: "cancel_booking", description: "取消病人某一天的預約。系統會用 姓名(+電話)+日期 自動鎖定那筆來取消(你不用也不能給編號，這樣才不會取消錯)。phone 盡量帶，但現場約可能沒存電話，沒有也能用姓名+日期找。", input_schema: { type: "object", properties: { name: { type: "string", description: "病人姓名(必填)" }, phone: { type: "string", description: "病人電話(盡量帶；現場約可能沒存)" }, date: { type: "string", description: "要取消的預約日期 YYYY-MM-DD" }, time: { type: "string", description: "預約時間 HH:MM(同一天有多筆時才需要)" } }, required: ["name", "date"] } },
+  { name: "list_appointments", description: "(限管理者)列出某一天全部病人的預約清單,可指定某治療師。管理者問『今天的預約表』『某治療師今天全部預約』時用。一般病人不能用。", input_schema: { type: "object", properties: { date: { type: "string", description: "日期 YYYY-MM-DD" }, therapist: { type: "string", description: "指定治療師姓名(如 江榮軒);不填=全部治療師" } }, required: ["date"] } },
 ];
 
 const cors = {
@@ -448,7 +486,7 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const ADMIN_NOTE = "\n\n【★管理者模式 已開啟★】現在跟你說話的是九辰的『管理者(院長/治療師本人)』。你可以幫他對『任何病人』查詢/預約/改時間/取消,不受『只能動自己預約』的限制。他說「取消 王小明 6/9」「幫陳先生改到明天3點」就照做:用 find_appointments(name=該病人)找出來→用 label 複誦那筆給管理者確認→確認後 cancel_booking/reschedule_booking。找到多筆同名就列出來請他指定。語氣可以更直接俐落(對自己人)。一樣:動手前複誦確認、相信工具回傳、不確定就說清楚。";
+const ADMIN_NOTE = "\n\n【★管理者模式 已開啟★】現在跟你說話的是九辰的『管理者(院長/治療師本人)』。你可以幫他對『任何病人』查詢/預約/改時間/取消,不受『只能動自己預約』的限制。他說「取消 王小明 6/9」「幫陳先生改到明天3點」就照做:用 find_appointments(name=該病人)找出來→用 label 複誦那筆給管理者確認→確認後 cancel_booking/reschedule_booking。找到多筆同名就列出來請他指定。語氣可以更直接俐落(對自己人)。一樣:動手前複誦確認、相信工具回傳、不確定就說清楚。 管理者要看「今天/某天的預約表、某治療師當天全部預約」→ 直接用 list_appointments(date, therapist?) 拉出來,整理成清單給他看,**一行一筆、格式「時間 姓名(時長)」**(例:14:30–15:30 陳先生(60分)),**不要用 markdown 表格**(LINE 顯示不出表格)。不要說隱私不能看(管理者本來就能看)。";
 
 async function callClaude(messages: any[], adminMode?: boolean) {
   const sys = SYSTEM + "\n\n【日期對照表（算任何日期一律照這張、禁止自己心算星期或日期；『這週X/下週X』也對照這張找）】\n" + dateRef() + (adminMode ? ADMIN_NOTE : "");
@@ -466,6 +504,7 @@ async function runTool(name: string, input: any, lineUserId?: string, testMode?:
   if (name === "create_booking") return await createBooking(input || {}, lineUserId, testMode, dryRun);
   if (name === "reschedule_booking") return await rescheduleBooking(input || {}, lineUserId, dryRun, adminMode);
   if (name === "cancel_booking") return await cancelBooking(input || {}, lineUserId, dryRun, adminMode);
+  if (name === "list_appointments") return adminMode ? await listAppointments(input?.date, input?.therapist) : { ok: false, error: "這是管理者專用功能,一般病人無法查看全部預約(隱私)。" };
   return { error: "unknown tool" };
 }
 

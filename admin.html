@@ -1529,11 +1529,19 @@ function getFiltered(dateStr){
 
 function renderStats(){
   const ds=curView==='day'?fmtDate(curDate):null;
-  const f=getFiltered(ds).filter(a=>a.status!=='cancelled');
+  const f=getFiltered(ds).filter(a=>a.status!=='cancelled'&&!isEvent(a));   // 只算預約訂單，排除活動/公休
+  // 先依「日期」分組，各自合併連續同病人時段，再加總 → 一筆訂單算一個（兩部位60分=1，不被當2格）；避免跨天誤併
+  const byDate={};
+  f.forEach(a=>{(byDate[a.appointment_date]=byDate[a.appointment_date]||[]).push(a);});
+  let groups=[];
+  Object.values(byDate).forEach(list=>{groups=groups.concat(groupConsecutiveAppts(list));});
+  const newCount=groups.filter(g=>g[0].type==='new').length;
+  const retCount=groups.filter(g=>g[0].type==='return').length;
+  const scope=curView==='day'?'今日':curView==='week'?'本週':'本月';
   document.getElementById('statsRow').innerHTML=`
-    <div class="stat"><div class="stat-n">${f.length}</div><div class="stat-l">${curView==='day'?'今日':'本週'}預約</div></div>
-    <div class="stat"><div class="stat-n" style="color:var(--new-color)">${f.filter(a=>a.type==='new').length}</div><div class="stat-l">初診</div></div>
-    <div class="stat"><div class="stat-n" style="color:var(--return-color)">${f.filter(a=>a.type==='return').length}</div><div class="stat-l">回診</div></div>`;
+    <div class="stat"><div class="stat-n">${groups.length}</div><div class="stat-l">${scope}預約</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--new-color)">${newCount}</div><div class="stat-l">初診</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--return-color)">${retCount}</div><div class="stat-l">回診</div></div>`;
 }
 
 // 代約：note 以 proxy:<代約者id> 記錄，回傳代約者治療師物件

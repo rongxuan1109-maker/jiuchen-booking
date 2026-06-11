@@ -67,7 +67,7 @@ body{
 body::before{
   content:'';position:fixed;inset:0;
   pointer-events:none;z-index:9999;opacity:.04;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
+  background-image:url("data:image/png;base64,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");background-size:72px 72px;
 }
 
 /* ── LOGIN SCREEN ── */
@@ -1802,7 +1802,6 @@ function renderDay(){
 
   // 背景行（拖拉與點擊目標）；半點分隔線變淡、整點線實
   const rowsHtml=TIMES.map(t=>`<div style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'var(--grid)':'transparent'};"
-    onclick="if(!event.target.closest('[data-id]'))openNewApptAt('${ds}','${t}')"
     ondragover="event.preventDefault();this.style.background='var(--glow)'"
     ondragleave="this.style.background=''"
     ondrop="this.style.background='';onCellDrop(event,'${ds}','${t}')"></div>`).join('');
@@ -1856,7 +1855,7 @@ function renderDay(){
       </div>
       <div id="day-scroll" class="cal-scroll" style="display:flex;max-height:calc(100vh - 165px);overflow-y:auto">
         <div style="width:56px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
-        <div style="flex:1;position:relative;">${rowsHtml}${blocksHtml}${nowLineHtml}</div>
+        <div style="flex:1;position:relative;" onmousedown="calSelStart(event,this,'${ds}')">${rowsHtml}${blocksHtml}${nowLineHtml}</div>
       </div>
     </div>
     <div id="day-sidebar" style="display:${window.innerWidth<=640?'none':'block'}">
@@ -2042,8 +2041,7 @@ function renderWeek(){
     // 背景行（半點分隔線變淡）
     const rowsHtml=TIMES.map(t=>`<div class="week-cell ${isToday?'today-col':''}" style="height:${CELL_H}px;border-bottom:1px solid ${t.endsWith(':30')?'var(--grid)':'transparent'};"
       ondragover="onCellDragOver(event)" ondragleave="onCellDragLeave(event)"
-      ondrop="onCellDrop(event,'${ds}','${t}')"
-      onclick="if(!event.target.closest('[data-id]'))openNewApptAt('${ds}','${t}')"></div>`).join('');
+      ondrop="onCellDrop(event,'${ds}','${t}')"></div>`).join('');
 
     // 跨列方塊（Google 風格重疊排版）
     const groups=groupConsecutiveAppts(colAppts);
@@ -2071,7 +2069,7 @@ function renderWeek(){
       </div>`;
     });
 
-    return `<div style="flex:1;border-left:1px solid var(--border);position:relative;min-width:0;">${rowsHtml}${blocksHtml}</div>`;
+    return `<div style="flex:1;border-left:1px solid var(--border);position:relative;min-width:0;" onmousedown="calSelStart(event,this,'${ds}')">${rowsHtml}${blocksHtml}</div>`;
   }).join('');
 
   document.getElementById('mainContent').innerHTML=`<div class="week-outer">
@@ -2154,6 +2152,49 @@ function renderKeepScroll(){
   render();
   const sc2=document.getElementById('day-scroll')||document.getElementById('week-scroll');
   if(sc2) sc2.scrollTop=top; else window.scrollTo(0,top);
+}
+
+// ── 主畫面（日／週）在空白時間軸上「按著拖出一段」→ 直接開新預約並帶入開始～結束（像 Google 日曆）──
+let _calSel=null;
+function calSelStart(e, container, date){
+  if(e.button!==0) return;
+  if(e.target.closest('.appt-block')) return;   // 點在預約上 → 交給拖移，不開新範圍
+  const i=Math.floor((e.clientY-container.getBoundingClientRect().top)/SLOT_H);
+  if(i<0||i>=TIMES.length) return;
+  _calSel={cont:container, date, a:i, b:i, moved:false};
+  _calDrawSel();
+  document.addEventListener('mousemove',_calSelMove);
+  document.addEventListener('mouseup',_calSelUp);
+  e.preventDefault();
+}
+function _calSelMove(e){
+  if(!_calSel)return;
+  let i=Math.floor((e.clientY-_calSel.cont.getBoundingClientRect().top)/SLOT_H);
+  i=Math.max(0,Math.min(TIMES.length-1,i));
+  if(i!==_calSel.a) _calSel.moved=true;
+  _calSel.b=i; _calDrawSel();
+}
+function _calDrawSel(){
+  if(!_calSel)return;
+  const lo=Math.min(_calSel.a,_calSel.b), hi=Math.max(_calSel.a,_calSel.b);
+  let el=document.getElementById('cal-selbox');
+  if(!el){ el=document.createElement('div'); el.id='cal-selbox'; el.style.cssText='position:absolute;left:1px;right:1px;border:1.5px solid var(--warm);background:rgba(192,138,82,.20);border-radius:6px;pointer-events:none;z-index:30'; }
+  if(el.parentElement!==_calSel.cont) _calSel.cont.appendChild(el);
+  el.style.top=(lo*SLOT_H)+'px'; el.style.height=((hi-lo+1)*SLOT_H)+'px';
+}
+function _calSelUp(){
+  document.removeEventListener('mousemove',_calSelMove);
+  document.removeEventListener('mouseup',_calSelUp);
+  const box=document.getElementById('cal-selbox'); if(box)box.remove();
+  if(!_calSel)return;
+  const sel=_calSel; _calSel=null;
+  const lo=Math.min(sel.a,sel.b), hi=Math.max(sel.a,sel.b);
+  openNewApptRange(sel.date, TIMES[lo], slotEnd(TIMES[hi]));   // 單點＝30分、拖曳＝整段
+}
+function openNewApptRange(date, startT, endT){
+  openNewApptAt(date, startT);
+  const eEl=document.getElementById('na-end'); if(eEl) eEl.value=endT;
+  if(typeof renderDayTimeline==='function') renderDayTimeline();
 }
 async function onCellDrop(e, newDate, newTime){
   e.preventDefault();e.currentTarget.classList.remove('drag-over');
@@ -2446,26 +2487,65 @@ async function renderDayTimeline(){
     allList=(data||[]).filter(a=>!isEvent(a));
     _dtlCache={ds,list:allList};
     if(getComputedStyle(panel).display==='none')return;   // 抓回來時若已關閉就不畫
+    const curDs=`${_naSelY}-${String(_naSelM+1).padStart(2,'0')}-${String(_naSelD).padStart(2,'0')}`;
+    if(curDs!==ds) return;   // 抓回來時日期已被換掉 → 這次作廢，交給新的渲染（避免競態蓋畫面）
   }
   let list = thId ? allList.filter(a=>String(a.therapist_id||'')===String(thId)) : allList;
   const groups=groupConsecutiveAppts(list);
   const H=15; let html='';
   for(let i=0;i<TIMES.length;i++){
     const t=TIMES[i], hour=t.endsWith(':00');
-    html+=`<div onclick="pickTimelineSlot('${t}')" title="${t} 點此填入" style="position:absolute;left:40px;right:0;top:${i*H}px;height:${H}px;border-top:1px solid ${hour?'var(--border)':'rgba(0,0,0,.045)'};cursor:pointer"></div>`;
+    html+=`<div style="position:absolute;left:40px;right:0;top:${i*H}px;height:${H}px;border-top:1px solid ${hour?'var(--border)':'rgba(0,0,0,.045)'}"></div>`;
     if(hour) html+=`<div style="position:absolute;left:0;top:${i*H-5}px;width:36px;text-align:right;font-size:9px;color:var(--muted)">${t}</div>`;
   }
   groups.forEach(g=>{
     const a=g[0], si=TIMES.indexOf(a.appointment_time.slice(0,5)); if(si<0)return;
-    html+=`<div style="position:absolute;left:42px;right:3px;top:${si*H}px;height:${g.length*H-1}px;background:${apptBg(a)};color:${apptColor(a)};border-radius:4px;font-size:9px;padding:0 4px;overflow:hidden;line-height:${H-1}px;box-shadow:inset 3px 0 0 #e53935;white-space:nowrap;text-overflow:ellipsis" title="${esc(a.patient_name)}">${esc((thCode(a)?thCode(a)+'-':'')+a.patient_name)}</div>`;
+    html+=`<div style="position:absolute;left:42px;right:3px;top:${si*H}px;height:${g.length*H-1}px;background:${apptBg(a)};color:${apptColor(a)};border-radius:4px;font-size:9px;padding:0 4px;overflow:hidden;line-height:${H-1}px;box-shadow:inset 3px 0 0 #e53935;white-space:nowrap;text-overflow:ellipsis;pointer-events:none" title="${esc(a.patient_name)}">${esc((thCode(a)?thCode(a)+'-':'')+a.patient_name)}</div>`;
   });
   if(startSel&&endSel){
     const si=TIMES.indexOf(startSel), n=slotRange(startSel,endSel).length;
     if(si>=0) html+=`<div style="position:absolute;left:40px;right:0;top:${si*H}px;height:${n*H}px;border:1.5px dashed var(--warm);background:rgba(192,138,82,.14);border-radius:4px;pointer-events:none"></div>`;
   }
-  wrap.style.cssText=`position:relative;height:${TIMES.length*H}px`;
+  wrap.style.cssText=`position:relative;height:${TIMES.length*H}px;cursor:ns-resize`;
   wrap.innerHTML=html;
+  wrap.onmousedown=tlMouseDown;   // 在時間軸上按著拖曳，選一段時間（開始→結束）
   const sc=document.getElementById('na-daytl-scroll'); if(sc){const ix=TIMES.indexOf('08:00'); sc.scrollTop=Math.max(0,ix*H-8);}
+}
+// 在時間軸上拖曳選時段：按住=起點，拖到=終點，放開→自動填開始/結束（單點=保留原時長）
+let _tlDrag=null;
+function _tlSlotAtY(y){
+  const wrap=document.getElementById('na-daytl-body'); if(!wrap)return -1;
+  const i=Math.floor((y-wrap.getBoundingClientRect().top)/15);
+  return (i>=0&&i<TIMES.length)?i:-1;
+}
+function _tlDrawSel(){
+  const wrap=document.getElementById('na-daytl-body'); if(!wrap||!_tlDrag)return;
+  const lo=Math.min(_tlDrag.a,_tlDrag.b), hi=Math.max(_tlDrag.a,_tlDrag.b);
+  let el=document.getElementById('na-tl-selbox');
+  if(!el){ el=document.createElement('div'); el.id='na-tl-selbox'; el.style.cssText='position:absolute;left:40px;right:0;border:1.5px solid var(--warm);background:rgba(192,138,82,.24);border-radius:4px;pointer-events:none;z-index:6'; wrap.appendChild(el); }
+  el.style.top=(lo*15)+'px'; el.style.height=((hi-lo+1)*15)+'px';
+}
+function tlMouseDown(e){
+  const i=_tlSlotAtY(e.clientY); if(i<0)return;
+  _tlDrag={a:i,b:i};
+  _tlDrawSel();
+  document.addEventListener('mousemove',_tlMove);
+  document.addEventListener('mouseup',_tlUp);
+  e.preventDefault();
+}
+function _tlMove(e){ if(!_tlDrag)return; const i=_tlSlotAtY(e.clientY); if(i>=0){_tlDrag.b=i;_tlDrawSel();} }
+function _tlUp(){
+  document.removeEventListener('mousemove',_tlMove);
+  document.removeEventListener('mouseup',_tlUp);
+  if(!_tlDrag)return;
+  const lo=Math.min(_tlDrag.a,_tlDrag.b), hi=Math.max(_tlDrag.a,_tlDrag.b);
+  const drag=_tlDrag; _tlDrag=null;
+  if(lo===hi){ pickTimelineSlot(TIMES[lo]); }   // 單點＝保留原本時長
+  else{                                          // 拖曳＝明確 開始→結束
+    const sEl=document.getElementById('na-time'), eEl=document.getElementById('na-end');
+    if(sEl)sEl.value=TIMES[lo]; if(eEl)eEl.value=slotEnd(TIMES[hi]);
+    renderDayTimeline();
+  }
 }
 function pickTimelineSlot(t){
   const sEl=document.getElementById('na-time'), eEl=document.getElementById('na-end'); if(!sEl)return;
@@ -2673,6 +2753,16 @@ function getNextTimeSlot(t){
   return null;
 }
 
+// 重疊檢查：同治療師、同日、時段相交 → 跳確認（後台允許重疊，只提醒一聲）。回 true=可繼續、false=使用者取消
+async function checkOverlapConfirm(date, thId, slots, excludeIds){
+  if(!thId) return true;
+  const{data}=await sb.from('appointments').select('id,patient_name,appointment_time,note,status').eq('appointment_date',date).eq('therapist_id',parseInt(thId)).neq('status','cancelled');
+  const ex=new Set(excludeIds||[]), slotSet=new Set(slots);
+  const clash=(data||[]).filter(x=>!ex.has(x.id)&&!isEvent(x)&&slotSet.has(x.appointment_time.slice(0,5)));
+  if(!clash.length) return true;
+  const names=[...new Set(clash.map(x=>x.patient_name))].join('、');
+  return confirm(`⚠️ 這個時段該治療師已經有預約：${names}\n\n此預約會與其他時段重疊，確定要繼續嗎？（現場自行分流）`);
+}
 async function submitNewAppt(){
   const name=document.getElementById('na-name').value.trim();
   const phone=document.getElementById('na-phone').value.trim();
@@ -2690,6 +2780,7 @@ async function submitNewAppt(){
   const service=window._naType==='new'?'初診評估':('複診'+durMin+'分鐘');
   const proxyId=document.getElementById('na-proxy')?document.getElementById('na-proxy').value:(window._naProxyId||'');
   window._naProxyId=proxyId?parseInt(proxyId):null;
+  if(!await checkOverlapConfirm(date, thId, slots, [])) return;   // 重疊提醒
   for(let i=0;i<slots.length;i++){
     const{error}=await sb.from('appointments').insert([{
       therapist_id:thId?parseInt(thId):null,
@@ -2738,6 +2829,7 @@ async function submitEditAppt(id){
     oldGroup=(groupConsecutiveAppts(_dl).find(g=>g.some(x=>x.id===id))||[a]).slice()
       .sort((x,y)=>x.appointment_time.localeCompare(y.appointment_time));
   }
+  if(!await checkOverlapConfirm(date, thId, slots, oldGroup.map(x=>x.id))) return;   // 重疊提醒（排除自己）
   // 對齊到新時段：能更新就更新、不夠就新增、多出來就軟刪
   for(let i=0;i<Math.max(oldGroup.length,slots.length);i++){
     if(i<slots.length){

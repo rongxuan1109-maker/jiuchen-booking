@@ -2408,6 +2408,73 @@ function toggleBodyPicker(){
   }
   const c=document.getElementById('na-body-caret'); if(c)c.textContent=open?'▴':'▾';
 }
+
+// ── 當天時間軸小卡：選時間時，浮出當天「該治療師」排了哪些、哪裡有空，點空檔可直接填時間 ──
+function toggleDayTimeline(){
+  const p=document.getElementById('na-daytl'); if(!p)return;
+  const open=getComputedStyle(p).display==='none';
+  const bp=document.getElementById('na-body-picker'); if(open&&bp)bp.style.display='none';   // 兩張卡不重疊
+  if(open){
+    _dtlCache=null;   // 每次打開都抓最新
+    const m=document.querySelector('#modalArea .modal'), mr=m?m.getBoundingClientRect():null;
+    const W=272, gap=12;
+    let left=mr?mr.right+gap:window.innerWidth-W-24, top=mr?mr.top:40;
+    if(left+W>window.innerWidth-8) left=mr?Math.max(8,mr.left-W-gap):window.innerWidth-W-8;
+    p.style.cssText=`display:flex;flex-direction:column;position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;width:${W}px;max-width:calc(100vw - 16px);max-height:84vh;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 44px rgba(28,22,17,.3);padding:13px 14px 12px;z-index:131`;
+    renderDayTimeline();
+  }else{ p.style.display='none'; }
+  const c=document.getElementById('na-daytl-caret'); if(c)c.textContent=open?'▴':'▾';
+}
+let _dtlCache=null;
+async function renderDayTimeline(){
+  const panel=document.getElementById('na-daytl'); if(!panel||getComputedStyle(panel).display==='none')return;
+  const wrap=document.getElementById('na-daytl-body'); if(!wrap)return;
+  const ds=`${_naSelY}-${String(_naSelM+1).padStart(2,'0')}-${String(_naSelD).padStart(2,'0')}`;
+  const thId=document.getElementById('na-th')?document.getElementById('na-th').value:'';
+  const startSel=document.getElementById('na-time')?document.getElementById('na-time').value:'';
+  const endSel=document.getElementById('na-end')?document.getElementById('na-end').value:'';
+  const d=new Date(ds+'T00:00:00');
+  const thName=thId?(((therapists.find(t=>String(t.id)===String(thId))||{}).name||'')+' 治療師'):'全部治療師';
+  const hd=document.getElementById('na-daytl-head'); if(hd)hd.textContent=`${d.getMonth()+1}/${d.getDate()}（週${_DRAG_WD[d.getDay()]}）· ${thName}`;
+  // ★直接去資料庫抓「那一天」的預約★（因為 appointments 只載目前檢視範圍，選到別天會抓不到）。同一天快取，換天才重抓。
+  let allList;
+  if(_dtlCache && _dtlCache.ds===ds){ allList=_dtlCache.list; }
+  else{
+    wrap.style.cssText='position:relative;min-height:60px';
+    wrap.innerHTML='<div style="padding:22px;text-align:center;color:var(--muted);font-size:11px">載入當天預約中…</div>';
+    const{data}=await sb.from('appointments').select('id,patient_name,therapist_id,appointment_date,appointment_time,status,note,type').eq('appointment_date',ds).neq('status','cancelled');
+    allList=(data||[]).filter(a=>!isEvent(a));
+    _dtlCache={ds,list:allList};
+    if(getComputedStyle(panel).display==='none')return;   // 抓回來時若已關閉就不畫
+  }
+  let list = thId ? allList.filter(a=>String(a.therapist_id||'')===String(thId)) : allList;
+  const groups=groupConsecutiveAppts(list);
+  const H=15; let html='';
+  for(let i=0;i<TIMES.length;i++){
+    const t=TIMES[i], hour=t.endsWith(':00');
+    html+=`<div onclick="pickTimelineSlot('${t}')" title="${t} 點此填入" style="position:absolute;left:40px;right:0;top:${i*H}px;height:${H}px;border-top:1px solid ${hour?'var(--border)':'rgba(0,0,0,.045)'};cursor:pointer"></div>`;
+    if(hour) html+=`<div style="position:absolute;left:0;top:${i*H-5}px;width:36px;text-align:right;font-size:9px;color:var(--muted)">${t}</div>`;
+  }
+  groups.forEach(g=>{
+    const a=g[0], si=TIMES.indexOf(a.appointment_time.slice(0,5)); if(si<0)return;
+    html+=`<div style="position:absolute;left:42px;right:3px;top:${si*H}px;height:${g.length*H-1}px;background:${apptBg(a)};color:${apptColor(a)};border-radius:4px;font-size:9px;padding:0 4px;overflow:hidden;line-height:${H-1}px;box-shadow:inset 3px 0 0 #e53935;white-space:nowrap;text-overflow:ellipsis" title="${esc(a.patient_name)}">${esc((thCode(a)?thCode(a)+'-':'')+a.patient_name)}</div>`;
+  });
+  if(startSel&&endSel){
+    const si=TIMES.indexOf(startSel), n=slotRange(startSel,endSel).length;
+    if(si>=0) html+=`<div style="position:absolute;left:40px;right:0;top:${si*H}px;height:${n*H}px;border:1.5px dashed var(--warm);background:rgba(192,138,82,.14);border-radius:4px;pointer-events:none"></div>`;
+  }
+  wrap.style.cssText=`position:relative;height:${TIMES.length*H}px`;
+  wrap.innerHTML=html;
+  const sc=document.getElementById('na-daytl-scroll'); if(sc){const ix=TIMES.indexOf('08:00'); sc.scrollTop=Math.max(0,ix*H-8);}
+}
+function pickTimelineSlot(t){
+  const sEl=document.getElementById('na-time'), eEl=document.getElementById('na-end'); if(!sEl)return;
+  const cur=slotRange(sEl.value, eEl?eEl.value:slotEnd(sEl.value)).length||1;   // 保留原本時長
+  sEl.value=t;
+  if(eEl){ const si=TIMES.indexOf(t), li=Math.min(TIMES.length-1, si+cur-1); eEl.value=slotEnd(TIMES[li]); }
+  renderDayTimeline();
+}
+
 // 更新「治療部位」那一行的摘要文字（已選的部位＋其他）
 function updateBodySummary(){
   const t=document.getElementById('na-body-summary-text'); if(!t)return;
@@ -2515,7 +2582,7 @@ function openNewApptAt(date, time, edit){
       </div>
       <div style="margin-bottom:13px">
         <label class="field-lbl">治療師 *</label>
-        <select id="na-th" style="${fieldBox().replace('border-bottom:1px','border-bottom:1px').replace('font-size:14px','font-size:13px')}appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239b8a74' stroke-width='1.2' fill='none'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 2px center;padding-right:18px">
+        <select id="na-th" onchange="renderDayTimeline()" style="${fieldBox().replace('border-bottom:1px','border-bottom:1px').replace('font-size:14px','font-size:13px')}appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239b8a74' stroke-width='1.2' fill='none'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 2px center;padding-right:18px">
           <option value="">不指定</option>
           ${therapists.map(t=>`<option value="${t.id}" ${t.id==preThId?'selected':''}>${t.name} 治療師</option>`).join('')}
         </select>
@@ -2534,16 +2601,25 @@ function openNewApptAt(date, time, edit){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px">
         <div>
           <label class="field-lbl">開始 *</label>
-          <select id="na-time" onchange="naSyncEnd()" style="${fieldBox()}cursor:pointer">
+          <select id="na-time" onchange="naSyncEnd();renderDayTimeline()" style="${fieldBox()}cursor:pointer">
             ${TIMES.map(t=>`<option value="${t}" ${t===time?'selected':''}>${t}</option>`).join('')}
           </select>
         </div>
         <div>
           <label class="field-lbl">結束 *</label>
-          <select id="na-end" style="${fieldBox()}cursor:pointer">
+          <select id="na-end" onchange="renderDayTimeline()" style="${fieldBox()}cursor:pointer">
             ${TIMES.map(t=>{const e=slotEnd(t);return `<option value="${e}" ${e===endTime?'selected':''}>${e}</option>`;}).join('')}
           </select>
         </div>
+      </div>
+      <div id="na-daytl" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+          <b id="na-daytl-head" style="font-size:13px;color:var(--ink);font-weight:400"></b>
+          <button onclick="toggleDayTimeline()" style="border:none;background:none;color:var(--muted);font-size:15px;cursor:pointer" title="收起">✕</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">點空白處可直接填入開始時間；色塊=已約</div>
+        <div id="na-daytl-scroll" style="flex:1;overflow-y:auto;position:relative;border:1px solid var(--border);border-radius:8px;padding:2px 4px"><div id="na-daytl-body"></div></div>
+        <button onclick="toggleDayTimeline()" class="mBtn primary" style="width:100%;margin-top:10px">完成</button>
       </div>
       <div style="margin-bottom:10px">
         <label class="field-lbl">治療部位（可多選・分左右）</label>
@@ -2567,6 +2643,8 @@ function openNewApptAt(date, time, edit){
   _renderNaCal();
   // 部位選取器預設藏起（點摘要列才浮出）；先把已選摘要更新出來
   updateBodySummary();
+  // 一開表單就自動帶出「當天時間軸」（看那天那位治療師排滿沒）
+  setTimeout(()=>{ const p=document.getElementById('na-daytl'); if(p&&getComputedStyle(p).display==='none') toggleDayTimeline(); },0);
 }
 
 // 開始→結束 之間要佔的 30 分鐘格子（含開始、不含結束）；end<=start 至少回傳 1 格
@@ -2872,7 +2950,13 @@ function _renderNaCal(){
 }
 function _naCalPrev(){_naCalM--;if(_naCalM<0){_naCalM=11;_naCalY--;}_renderNaCal();}
 function _naCalNext(){_naCalM++;if(_naCalM>11){_naCalM=0;_naCalY++;}_renderNaCal();}
-function naDayPick(y,m,d){_naSelY=y;_naSelM=m;_naSelD=d;_renderNaCal();}
+function naDayPick(y,m,d){
+  _naSelY=y;_naSelM=m;_naSelD=d;_renderNaCal();
+  // 點日期 → 自動跳出那天的時間軸（已開著就更新）
+  const p=document.getElementById('na-daytl');
+  if(p && getComputedStyle(p).display==='none') toggleDayTimeline();
+  else renderDayTimeline();
+}
 
 function openNewEventOn(dateStr){
   const d=new Date(dateStr+'T00:00:00');

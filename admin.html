@@ -2107,21 +2107,35 @@ function onDragStart(e, id){
   }
   document.addEventListener('dragover',updateGhostPos);
 }
+// 依游標位置算「拖到哪個時間」——日檢視只算時間；週檢視算「哪一天＋時間」
+const _DRAG_WD=['日','一','二','三','四','五','六'];
+function dragTargetAt(e){
+  if(curView==='day'){
+    const sc=document.getElementById('day-scroll'), ar=sc&&sc.children[1];   // 方塊區，頂端=TIMES[0]
+    if(!ar)return null;
+    const i=Math.floor((e.clientY-ar.getBoundingClientRect().top)/SLOT_H);
+    if(i<0||i>=TIMES.length)return null;
+    return {date:fmtDate(curDate), time:TIMES[i], wd:null};
+  }
+  if(curView==='week'){
+    const sc=document.getElementById('week-scroll'); if(!sc)return null;
+    const cols=Array.prototype.slice.call(sc.children,1);   // [0]=時間欄，其餘=7 天的欄
+    let ci=-1; for(let k=0;k<cols.length;k++){const r=cols[k].getBoundingClientRect(); if(e.clientX>=r.left&&e.clientX<r.right){ci=k;break;}}
+    if(ci<0)return null;
+    const r=cols[ci].getBoundingClientRect();
+    const i=Math.floor((e.clientY-r.top)/SLOT_H);
+    if(i<0||i>=TIMES.length)return null;
+    const ws=getWeekStart(curDate), d=new Date(ws); d.setDate(ws.getDate()+ci);
+    return {date:fmtDate(d), time:TIMES[i], wd:_DRAG_WD[d.getDay()]};
+  }
+  return null;
+}
 function updateGhostPos(e){
   if(!dragGhost)return;
   dragGhost.style.left=(e.clientX+12)+'px';
   dragGhost.style.top=(e.clientY-20)+'px';
-  // 拖到哪個時間（日檢視）：依游標 Y 對應時間軸格子
-  let tt=null;
-  if(curView==='day'){
-    const scroll=document.getElementById('day-scroll');
-    const area=scroll&&scroll.children[1];   // 時間欄之後的方塊區，頂端=TIMES[0]
-    if(area){
-      const idx=Math.floor((e.clientY-area.getBoundingClientRect().top)/SLOT_H);
-      if(idx>=0&&idx<TIMES.length) tt=TIMES[idx];
-    }
-  }
-  dragGhost.textContent=(window._dragName||'')+(tt?('　▸ '+tt):'');
+  const t=dragTargetAt(e);
+  dragGhost.textContent=(window._dragName||'')+(t?('　▸ '+(t.wd?('週'+t.wd+' '):'')+t.time):'');
 }
 function onDragEnd(e){
   document.querySelectorAll('.appt-block').forEach(el=>el.classList.remove('dragging'));
@@ -2146,11 +2160,9 @@ async function onCellDrop(e, newDate, newTime){
   if(!dragApptId)return;
   const a=appointments.find(x=>x.id===dragApptId);
   if(!a)return;
-  // 日檢視：用游標實際位置算落點，拖到哪放哪（即使該時段已有人也能精準落下，重疊會並排顯示）
-  if(curView==='day'){
-    const _sc=document.getElementById('day-scroll'), _ar=_sc&&_sc.children[1];
-    if(_ar){ const _i=Math.floor((e.clientY-_ar.getBoundingClientRect().top)/SLOT_H); if(_i>=0&&_i<TIMES.length) newTime=TIMES[_i]; }
-  }
+  // 用游標實際位置算落點（日＝時間；週＝哪天＋時間），拖到哪放哪（即使該時段已有人也能精準落下，重疊會並排顯示）
+  const _tgt=dragTargetAt(e);
+  if(_tgt){ newDate=_tgt.date; newTime=_tgt.time; }
   // 找出這張卡片代表的整組（連續同病人時段）→ 整組一起搬，保持相對位置
   const dayAppts=appointments.filter(x=>x.appointment_date===a.appointment_date&&x.status!=='cancelled');
   const grp=(groupConsecutiveAppts(dayAppts).find(g=>g.some(x=>x.id===dragApptId))||[a])

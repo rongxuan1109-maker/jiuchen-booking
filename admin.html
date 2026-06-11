@@ -43,6 +43,8 @@
   --surface:#ffffff;
   --deep:#2a1d12;
   --grid:rgba(0,0,0,.07);
+  /* 統計框底色（預設極淡粉，使用者可用色票覆蓋、存 localStorage） */
+  --stat-bg:#fef8fa; --stat-fg:#bf7889; --stat-bd:#f9edf0; --stat-num:#b06378;
 }
 /* 深色模式（仿 Google App 黑底）：只覆蓋變數值 */
 body.dark{
@@ -216,22 +218,35 @@ body::before{
 }
 .refresh-btn:hover{border-color:var(--warm);}
 
-/* ── STATS ── */
-.stats{
-  display:grid;grid-template-columns:repeat(3,1fr);
-  gap:8px;padding:10px 16px 10px;
-}
+/* ── STATS（橫的扁長條，跟按鈕同高，極淡粉底可換色）── */
+.stats{display:flex;gap:5px;align-items:center;flex-wrap:nowrap;}
 .stat{
-  background:var(--surface);
-  border:1px solid var(--border);border-radius:10px;
-  border-radius:12px;
-  padding:10px 12px;
+  display:inline-flex;align-items:center;gap:5px;height:26px;
+  padding:0 10px;box-sizing:border-box;
+  background:var(--stat-bg);
+  border:1px solid var(--stat-bd);border-radius:7px;
+  color:var(--stat-fg);font-size:11px;white-space:nowrap;
 }
 .stat-n{
   font-family:'Cormorant Garamond',serif;
-  font-size:24px;font-weight:400;
+  font-size:15px;font-weight:500;color:var(--stat-num);line-height:1;
 }
-.stat-l{font-size:11px;color:var(--muted);margin-top:2px;font-weight:300;}
+.stat-l{font-size:11px;color:var(--stat-fg);font-weight:300;}
+/* 統計框換色：縮成小點，不佔位 */
+.stat-swatch{width:11px;height:11px;border-radius:50%;border:1px solid var(--border);cursor:pointer;padding:0;flex-shrink:0;opacity:.7;}
+.stat-swatch:hover{opacity:1;}
+.stat-swatch.cur{outline:2px solid var(--warm);outline-offset:1px;border-radius:50%;}
+
+/* ── 第 2 行：工作列（治療師＋統計＋動作鍵 併一橫排，壓扁）── */
+.workbar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:5px 16px;display:flex;align-items:center;gap:9px;
+  flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+.workbar .wb-label{font-size:10px;color:var(--muted);font-weight:300;letter-spacing:.5px;flex-shrink:0;}
+.workbar .wb-spacer{flex:1;min-width:8px;}
+.workbar .wb-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.workbar .th-tabs{background:none;border:none;padding:0;flex-shrink:0;}
 
 /* ── DAY LIST ── */
 .appt-list{padding:0 16px;display:flex;flex-direction:column;gap:8px;padding-bottom:80px;}
@@ -273,7 +288,7 @@ input,select,textarea{border-radius:8px;}
 .empty-icon{font-size:38px;margin-bottom:12px;opacity:.5;}
 
 /* ── WEEK VIEW ── */
-.week-outer{padding:0 16px 80px;overflow-x:auto;}
+.week-outer{padding:0 12px 20px;overflow-x:auto;}
 .week-container{
   display:grid;
   grid-template-columns:46px repeat(7,1fr);
@@ -317,7 +332,7 @@ input,select,textarea{border-radius:8px;}
   touch-action:none;overflow:hidden;line-height:1.3;
   border:1px solid rgba(255,255,255,.35);box-shadow:inset 4px 0 0 #e53935,0 1px 3px rgba(28,22,17,.22);
 }
-.appt-block:hover{box-shadow:inset 4px 0 0 #e53935,0 4px 16px rgba(28,22,17,.45);z-index:999 !important;}
+.appt-block:hover{box-shadow:inset 4px 0 0 #e53935,0 4px 16px rgba(28,22,17,.45);}
 .appt-block.dragging{opacity:.4;cursor:grabbing;}
 .appt-block b{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}
 .appt-block>span{font-size:11px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
@@ -326,11 +341,20 @@ input,select,textarea{border-radius:8px;}
 .week-outer .appt-block b{font-size:11px;}
 .week-outer .appt-block>span{font-size:9px;}
 
-/* ── 左側小日曆 ── */
-.mini-panel{width:218px;flex-shrink:0;padding:0 4px 0 16px;}
+/* ── 左側小日曆（可收合：預設收起，點箭頭展開）── */
+.mini-panel{width:218px;flex-shrink:0;padding:0 4px 0 16px;transition:width .2s ease,padding .2s ease,opacity .15s;overflow:hidden;}
+#calGrid.mini-collapsed .mini-panel{width:0;padding:0;opacity:0;pointer-events:none;}
 .mini-day:hover{background:var(--glow);color:var(--accent)!important;}
 .cal-scroll{scrollbar-width:thin;}
-@media(max-width:880px){.mini-panel{display:none;}}
+/* 收合/展開把手：黏在時間軸左緣的小箭頭 */
+.mini-toggle{
+  flex-shrink:0;align-self:flex-start;margin-top:6px;
+  width:16px;height:42px;border:1px solid var(--border);border-radius:0 7px 7px 0;
+  background:var(--surface);color:var(--muted);cursor:pointer;
+  font-size:11px;line-height:40px;padding:0;text-align:center;transition:all .2s;
+}
+.mini-toggle:hover{color:var(--warm);border-color:var(--warm);}
+@media(max-width:880px){.mini-panel,.mini-toggle{display:none;}}
 
 /* ── DRAG GHOST ── */
 .drag-ghost{
@@ -392,6 +416,22 @@ input,select,textarea{border-radius:8px;}
 .mBtn.primary:hover{background:var(--accent);}
 .mBtn.danger{color:var(--new-color);border-color:rgba(217,110,40,.3);background:rgba(217,110,40,.05);}
 .mBtn.success{color:var(--accent);border-color:var(--glow);background:var(--glow);}
+
+/* ── 預約資訊小卡（點標籤先跳這個，Google 日曆風；不蓋標籤，放旁邊空白）── */
+.appt-pop{position:fixed;z-index:120;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 34px rgba(28,22,17,.22);width:268px;max-width:calc(100vw - 24px);padding:15px 16px 14px;font-size:13px;color:var(--ink);}
+.appt-pop .ap-x{position:absolute;top:9px;right:10px;border:none;background:none;color:var(--muted);font-size:15px;cursor:pointer;line-height:1;}
+.appt-pop .ap-x:hover{color:var(--ink);}
+.appt-pop .ap-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;margin:0 22px 9px 0;line-height:1.3;flex-wrap:wrap;}
+.appt-pop .ap-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+.appt-pop .ap-row{display:flex;align-items:flex-start;gap:9px;color:var(--text2);margin:6px 0;font-weight:300;line-height:1.5;}
+.appt-pop .ap-ic{width:15px;flex-shrink:0;text-align:center;color:var(--muted);font-size:13px;margin-top:1px;}
+.appt-pop .ap-btns{display:flex;gap:8px;margin-top:13px;}
+.appt-pop .ap-btn{flex:1;padding:9px;font-size:12px;border-radius:9px;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text2);font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;transition:all .15s;}
+.appt-pop .ap-btn:hover{border-color:var(--warm);}
+.appt-pop .ap-btn.primary{background:var(--warm);border-color:var(--warm);color:#f3ede1;}
+.appt-pop .ap-btn.primary:hover{background:var(--accent);}
+.appt-pop .ap-btn.danger{color:var(--new-color);border-color:rgba(217,110,40,.35);background:rgba(217,110,40,.05);}
+.appt-pop .ap-btn.danger:hover{background:var(--new-color);border-color:var(--new-color);color:#fff;}
 
 /* ── LOADING ── */
 .loading{text-align:center;padding:44px;color:var(--muted);}
@@ -469,7 +509,8 @@ input,select,textarea{border-radius:8px;}
   /* 手機：精簡工具列、時間軸填滿、整天接近一頁 */
   body::before{display:none;}              /* 關掉雜訊紋理，手機上較銳利乾淨 */
   .stats{display:none;}
-  .date-bar-right{display:none;}          /* 動作按鈕收掉，改用浮動＋鈕 */
+  .wb-actions{display:none;}              /* 動作按鈕收掉，改用浮動＋鈕 */
+  .workbar{padding:7px 12px;}            /* 手機工作列只剩治療師分頁，收緊一點 */
   #dayTLHeader{display:none!important;}    /* 「時間軸/隱藏清單」標題列隱藏（inline style 要用 !important 蓋過）*/
 
   /* ═══ 手機捲動：打掉重來（2026-06-05）═══
@@ -528,7 +569,8 @@ input,select,textarea{border-radius:8px;}
 <!-- ── 後台主體 ── -->
 <div id="appBody" style="display:none">
 
-<div class="header">
+<!-- ═══ 第 1 行：標題列（品牌＋日週月＋日期＋搜尋＋換頁）═══ -->
+<div class="header" style="flex-wrap:nowrap;gap:10px;overflow-x:auto">
   <div class="header-left">
     <div class="logo">
       <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -541,62 +583,60 @@ input,select,textarea{border-radius:8px;}
       <div class="header-title">治療師後台</div>
       <div class="header-sub">九辰物理治療所</div>
     </div>
-  </div>
-  <div style="display:flex;gap:7px;align-items:center">
-    <button onclick="setPage('calendar')" id="btnCalPage"
-      style="padding:5px 11px;border:1px solid rgba(192,138,82,.5);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
-      📅 日曆
-    </button>
-    <button onclick="setPage('patients')" id="btnPatientsPage"
-      style="padding:5px 11px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
-      👥 病人
-    </button>
-    <div class="view-toggle" id="viewToggle">
+    <div class="view-toggle" id="viewToggle" style="margin-left:6px">
       <button class="view-btn active" id="btnDay" onclick="setView('day')">日</button>
       <button class="view-btn" id="btnWeek" onclick="setView('week')">週</button>
       <button class="view-btn" id="btnMonth" onclick="setView('month')">月</button>
     </div>
+    <div class="date-bar-left" id="dateNav" style="margin-left:2px">
+      <button class="nav-btn" onclick="navigate(-1)">‹</button>
+      <button class="today-btn" onclick="goToday()">今天</button>
+      <button class="nav-btn" onclick="navigate(1)">›</button>
+      <span class="date-label" id="dateLabel" onclick="openDatePicker()" style="cursor:pointer;display:flex;align-items:center;gap:4px"></span>
+    </div>
   </div>
-</div>
-
-<div class="th-tabs" id="thTabs"></div>
-<div class="date-bar">
-  <div class="date-bar-left">
-    <button class="nav-btn" onclick="navigate(-1)">‹</button>
-    <button class="nav-btn" onclick="navigate(1)">›</button>
-    <button class="nav-btn" id="themeToggle" onclick="toggleTheme()" title="深色模式" style="font-size:15px">🌙</button>
-    <button class="today-btn" onclick="goToday()">今天</button>
-    <span class="date-label" id="dateLabel" onclick="openDatePicker()" style="cursor:pointer;display:flex;align-items:center;gap:4px"></span>
-  </div>
-  <div class="date-bar-center" id="dateBarCenter">
-    <div style="position:relative;width:100%;max-width:360px">
+  <div class="header-right" style="display:flex;gap:7px;align-items:center;flex:1;justify-content:flex-end;min-width:0">
+    <div id="dateBarCenter" style="position:relative;flex:1;max-width:300px;min-width:120px">
       <input id="toolbarSearch" autocomplete="off"
         oninput="toolbarSearchInput(this.value)"
         onfocus="if(this.value)toolbarSearchInput(this.value)"
         onblur="setTimeout(function(){var b=document.getElementById('toolbarSearchResults');if(b)b.style.display='none';},200)"
-        placeholder="🔍 搜尋病人姓名 / 電話"
+        placeholder="⌕ 搜尋病人姓名 / 電話"
         style="width:100%;padding:6px 14px;border:1px solid var(--border);border-radius:18px;font-size:13px;font-family:'Noto Sans TC',sans-serif;background:var(--bg);outline:none;color:var(--ink)">
       <div id="toolbarSearchResults" style="position:absolute;top:38px;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(28,22,17,.15);z-index:50;display:none;overflow-y:auto;max-height:340px"></div>
     </div>
+    <button onclick="setPage('calendar')" id="btnCalPage"
+      style="padding:5px 11px;border:1px solid rgba(192,138,82,.5);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
+      日曆
+    </button>
+    <button onclick="setPage('patients')" id="btnPatientsPage"
+      style="padding:5px 11px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px">
+      病人
+    </button>
+    <button class="nav-btn" id="themeToggle" onclick="toggleTheme()" title="深色模式" style="font-size:14px">◐</button>
   </div>
-  <div class="date-bar-right">
-    <button class="refresh-btn" onclick="loadData()">重新整理</button>
+</div>
+
+<!-- ═══ 第 2 行：工作列（治療師＋統計橫條＋動作鍵）═══ -->
+<div class="workbar" id="workbar">
+  <span class="wb-label">治療師</span>
+  <div class="th-tabs" id="thTabs"></div>
+  <div class="stats" id="statsRow"></div>
+  <div class="wb-spacer"></div>
+  <div class="wb-actions">
+    <button class="refresh-btn" onclick="loadData()" title="重新整理">↻</button>
     <button onclick="openNewAppt()"
-      style="padding:5px 13px;border:1px solid var(--warm);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;border-radius:8px">
+      style="padding:5px 13px;border:1px solid var(--warm);background:var(--warm);color:#f3ede1;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;border-radius:8px;white-space:nowrap">
       ＋ 新增預約
     </button>
     <button onclick="openNewEvent()"
       style="padding:5px 13px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;border-radius:8px">
       活動
     </button>
-    <button onclick="openProxyPicker()"
-      style="padding:5px 13px;border:1px solid #7986CB;background:transparent;color:#7986CB;font-size:11px;font-weight:400;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px;border-radius:8px">
-      代約
-    </button>
   </div>
 </div>
-<div class="stats" id="statsRow"></div>
-<div id="calGrid" style="display:flex;align-items:flex-start">
+<div id="calGrid" class="mini-collapsed" style="display:flex;align-items:flex-start">
+  <button class="mini-toggle" id="miniToggle" onclick="toggleMiniPanel()" title="展開/收起小日曆">▸</button>
   <div id="miniCalPanel" class="mini-panel"></div>
   <div id="mainContent" style="flex:1;min-width:0"></div>
 </div>
@@ -636,7 +676,7 @@ function applyTheme(){
   const dark=localStorage.getItem('admin_theme')==='dark';
   document.body.classList.toggle('dark',dark);
   document.documentElement.classList.toggle('dark',dark);
-  const b=document.getElementById('themeToggle'); if(b)b.textContent=dark?'☀️':'🌙';
+  const b=document.getElementById('themeToggle'); if(b)b.textContent=dark?'◑':'◐';
 }
 function toggleTheme(){
   const dark=localStorage.getItem('admin_theme')==='dark';
@@ -644,6 +684,14 @@ function toggleTheme(){
   applyTheme();
 }
 applyTheme();
+// 延後到整段程式都定義好再跑（STAT_PALETTES 等 const 在下方才宣告，避免 TDZ）
+setTimeout(function(){
+  loadStatColor();                                  // 統計框顏色記憶
+  if(localStorage.getItem('miniCollapsed')===''){   // 小日曆收合還原（沒設過＝預設收起；空字串＝展開）
+    const g=document.getElementById('calGrid');
+    if(g){g.classList.remove('mini-collapsed'); const b=document.getElementById('miniToggle'); if(b)b.textContent='◂';}
+  }
+},0);
 // 手機初次載入版面有時沒算準（滿版/無留白）→ 載入與旋轉後自動重排校正
 function relayoutSoon(){ if(window.innerWidth<=640 && typeof render==='function' && sessionStorage.getItem('admin_auth')==='1'){ setTimeout(()=>{try{render();}catch(e){}},120); setTimeout(()=>{try{render();}catch(e){}},450); } }
 window.addEventListener('load', relayoutSoon);
@@ -664,7 +712,9 @@ const TIMES = (function(){
   }
   return arr;
 })();
-const SLOT_H = window.innerWidth<=640 ? 34 : 44;  // 手機 34（原 19 太扁→名字被裁、難點）；整天改為可上下捲；電腦 44
+// 一格=30分鐘的高度。電腦版「依螢幕高度自動算」：讓可視範圍一次看得到 12 小時(=24 格)；
+// 公式 (可視高 / 24)，並夾在 26~44px 之間（太小字會擠、太大又看不到 12 小時）。手機維持 34。
+const SLOT_H = window.innerWidth<=640 ? 34 : Math.max(26, Math.min(44, Math.round((window.innerHeight - 170) / 24)));
 const DEFAULT_TIME = '09:00'; // 月檢視/新增預約的預設時段
 const isHourMark = t => t.endsWith(':00');
 // 時間軸標示：09:00→上午9時、15:00→下午3時、12:00→中午12時、00:00→凌晨12時
@@ -697,11 +747,12 @@ let dragApptId=null, dragGhost=null;
 let birthMonthMap={};      // phone -> birth_month
 let birthMonthNameMap={};  // name  -> birth_month（電話對不到時用姓名）
 
+// 回傳 true=有抓到新生日資料（需要重畫一次）；false=全都查過了（不必重畫，避免閃爍）
 async function loadBirthMonths(){
-  const phones=[...new Set(appointments.map(a=>a.patient_phone).filter(Boolean))];
-  const names=[...new Set(appointments.map(a=>a.patient_name).filter(Boolean))];
-  birthMonthMap={};birthMonthNameMap={};
-  if(!phones.length&&!names.length)return;
+  // ★只查「還沒查過」的病患★：已知的(含查無資料、值為 null 的佔位)就跳過，避免每次載入都重查＋重畫
+  const phones=[...new Set(appointments.map(a=>a.patient_phone).filter(Boolean))].filter(p=>!(p in birthMonthMap));
+  const names=[...new Set(appointments.map(a=>a.patient_name).filter(Boolean))].filter(n=>!(n in birthMonthNameMap));
+  if(!phones.length&&!names.length)return false;   // 這批病人全都查過了 → 不必重畫
   // 找這些病患的初診預約（分別用電話、姓名比對，再合併）
   let newAppts=[];
   if(phones.length){
@@ -712,19 +763,25 @@ async function loadBirthMonths(){
     const{data}=await sb.from('appointments').select('id,patient_phone,patient_name').eq('type','new').in('patient_name',names);
     if(data)newAppts=newAppts.concat(data);
   }
-  if(!newAppts.length)return;
-  const seen=new Set();
-  newAppts=newAppts.filter(a=>seen.has(a.id)?false:(seen.add(a.id),true));
-  const ids=newAppts.map(a=>a.id);
-  const metaById=Object.fromEntries(newAppts.map(a=>[a.id,{phone:a.patient_phone,name:a.patient_name}]));
-  const{data:forms}=await sb.from('intake_forms').select('appointment_id,birth_date').in('appointment_id',ids).not('birth_date','is',null);
-  (forms||[]).forEach(f=>{
-    const meta=metaById[f.appointment_id];
-    if(!meta||!f.birth_date)return;
-    const mo=parseInt(f.birth_date.split('-')[1]);
-    if(meta.phone&&!birthMonthMap[meta.phone]) birthMonthMap[meta.phone]=mo;
-    if(meta.name&&!birthMonthNameMap[meta.name]) birthMonthNameMap[meta.name]=mo;
-  });
+  let added=false;
+  if(newAppts.length){
+    const seen=new Set();
+    newAppts=newAppts.filter(a=>seen.has(a.id)?false:(seen.add(a.id),true));
+    const ids=newAppts.map(a=>a.id);
+    const metaById=Object.fromEntries(newAppts.map(a=>[a.id,{phone:a.patient_phone,name:a.patient_name}]));
+    const{data:forms}=await sb.from('intake_forms').select('appointment_id,birth_date').in('appointment_id',ids).not('birth_date','is',null);
+    (forms||[]).forEach(f=>{
+      const meta=metaById[f.appointment_id];
+      if(!meta||!f.birth_date)return;
+      const mo=parseInt(f.birth_date.split('-')[1]);
+      if(meta.phone&&!birthMonthMap[meta.phone]){birthMonthMap[meta.phone]=mo;added=true;}
+      if(meta.name&&!birthMonthNameMap[meta.name]){birthMonthNameMap[meta.name]=mo;added=true;}
+    });
+  }
+  // 查無生日的病患用 null 佔位，下次就不會再查、也不會再觸發重畫
+  phones.forEach(p=>{if(!(p in birthMonthMap))birthMonthMap[p]=null;});
+  names.forEach(n=>{if(!(n in birthMonthNameMap))birthMonthNameMap[n]=null;});
+  return added;
 }
 
 function bm(a){
@@ -842,11 +899,14 @@ function setPage(page){
   document.getElementById('btnCalPage').style.cssText=`padding:5px 11px;border:1px solid ${calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${calActive?'var(--warm)':'transparent'};color:${calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px`;
   document.getElementById('btnPatientsPage').style.cssText=`padding:5px 11px;border:1px solid ${!calActive?'rgba(192,138,82,.5)':'var(--border)'};background:${!calActive?'var(--warm)':'transparent'};color:${!calActive?'#f3ede1':'var(--muted)'};font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px`;
   document.getElementById('viewToggle').style.display=calActive?'flex':'none';
-  document.getElementById('thTabs').style.display=calActive?'flex':'none';
-  const dateBar=document.querySelector('.date-bar');
-  if(dateBar)dateBar.style.display=calActive?'flex':'none';
-  const statsRow=document.getElementById('statsRow');
-  if(statsRow)statsRow.style.display=calActive?'grid':'none';
+  const dateNav=document.getElementById('dateNav');
+  if(dateNav)dateNav.style.display=calActive?'flex':'none';
+  const dbc=document.getElementById('dateBarCenter');
+  if(dbc)dbc.style.display=calActive?'':'none';
+  const workbar=document.getElementById('workbar');
+  if(workbar)workbar.style.display=calActive?'flex':'none';
+  const miniToggle=document.getElementById('miniToggle');
+  if(miniToggle)miniToggle.style.display=calActive?'':'none';
   const miniPanel=document.getElementById('miniCalPanel');
   if(miniPanel)miniPanel.style.display=calActive?'':'none';
   if(page==='patients') renderPatients();
@@ -1277,7 +1337,7 @@ async function loadData(){
       if(ths)therapists=ths;
     }
     render();
-    loadBirthMonths().then(()=>render());
+    loadBirthMonths().then(ch=>{if(ch)render();});
     // 快取過期才背景刷新
     if(Date.now()-cached.ts>_CACHE_TTL){
       _fetchAppts(s,e,key).then(data=>{if(data){appointments=data;render();}});
@@ -1539,10 +1599,53 @@ function renderStats(){
   const retCount=groups.filter(g=>g[0].type==='return').length;
   const scope=curView==='day'?'今日':curView==='week'?'本週':'本月';
   document.getElementById('statsRow').innerHTML=`
-    <div class="stat"><div class="stat-n">${groups.length}</div><div class="stat-l">${scope}預約</div></div>
-    <div class="stat"><div class="stat-n" style="color:var(--new-color)">${newCount}</div><div class="stat-l">初診</div></div>
-    <div class="stat"><div class="stat-n" style="color:var(--return-color)">${retCount}</div><div class="stat-l">回診</div></div>`;
+    <div class="stat"><span class="stat-l">${scope}</span><span class="stat-n">${groups.length}</span></div>
+    <div class="stat"><span class="stat-l">初診</span><span class="stat-n">${newCount}</span></div>
+    <div class="stat"><span class="stat-l">回診</span><span class="stat-n">${retCount}</span></div>
+    <button class="stat-swatch" id="statSwatchBtn" onclick="toggleStatPalette(event)" title="換統計框顏色" style="background:var(--stat-bg)"></button>`;
 }
+
+/* ── 左側小日曆：收合 / 展開 ── */
+function toggleMiniPanel(){
+  const g=document.getElementById('calGrid');
+  const collapsed=g.classList.toggle('mini-collapsed');
+  const btn=document.getElementById('miniToggle');
+  if(btn)btn.textContent=collapsed?'▸':'◂';
+  localStorage.setItem('miniCollapsed',collapsed?'1':'');
+}
+
+/* ── 統計框換色（同色可挑，記 localStorage）── */
+const STAT_PALETTES={
+  pink :{bg:'#fef8fa',fg:'#bf7889',bd:'#f9edf0',num:'#b06378'},
+  beige:{bg:'#faf6ef',fg:'#9b8358',bd:'#efe6d4',num:'#7a5638'},
+  blue :{bg:'#f4f9fa',fg:'#5a8a93',bd:'#eaf2f3',num:'#3f7077'},
+  green:{bg:'#f4faf5',fg:'#5f9270',bd:'#e7f0e8',num:'#3f7050'},
+  grey :{bg:'#f7f7f8',fg:'#8a8580',bd:'#ededee',num:'#6b665f'},
+};
+function applyStatColor(key){
+  const p=STAT_PALETTES[key]||STAT_PALETTES.pink, r=document.documentElement.style;
+  r.setProperty('--stat-bg',p.bg);r.setProperty('--stat-fg',p.fg);
+  r.setProperty('--stat-bd',p.bd);r.setProperty('--stat-num',p.num);
+}
+function loadStatColor(){applyStatColor(localStorage.getItem('statColor')||'pink');}
+function setStatColor(key){
+  localStorage.setItem('statColor',key);
+  applyStatColor(key);
+  const sb=document.getElementById('statSwatchBtn');if(sb)sb.style.background=STAT_PALETTES[key].bg;
+  closeStatPalette();
+}
+function toggleStatPalette(e){
+  e.stopPropagation();
+  if(document.getElementById('statPalette')){closeStatPalette();return;}
+  const btn=document.getElementById('statSwatchBtn');const rc=btn.getBoundingClientRect();
+  const cur=localStorage.getItem('statColor')||'pink';
+  const pop=document.createElement('div');pop.id='statPalette';
+  pop.style.cssText=`position:fixed;top:${rc.bottom+6}px;left:${Math.max(8,rc.left-40)}px;z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 22px rgba(28,22,17,.18);padding:8px;display:flex;gap:7px`;
+  pop.innerHTML=Object.keys(STAT_PALETTES).map(k=>`<button onclick="setStatColor('${k}')" title="${k}" class="stat-swatch ${k===cur?'cur':''}" style="width:22px;height:22px;background:${STAT_PALETTES[k].bg};border-color:${STAT_PALETTES[k].bd}"></button>`).join('');
+  document.body.appendChild(pop);
+  setTimeout(()=>document.addEventListener('click',closeStatPalette,{once:true}),0);
+}
+function closeStatPalette(){const p=document.getElementById('statPalette');if(p)p.remove();}
 
 // 代約：note 以 proxy:<代約者id> 記錄，回傳代約者治療師物件
 function proxyOf(a){
@@ -1558,7 +1661,7 @@ function noteText(a){
   if(n.indexOf('event:')===0) return '';
   if(n.indexOf('proxy:')===0){ const i=n.indexOf('|'); n=(i>=0)?n.slice(i+1):''; }
   n=n.trim();
-  if(!n && a.symptoms) n=String(a.symptoms).trim();   // 舊後台備註存在 symptoms
+  if(!n && a.symptoms && String(a.symptoms).indexOf(PARTS_MARK)!==0) n=String(a.symptoms).trim();   // 舊後台備註存在 symptoms（但「部位:」開頭是治療部位，不算備註）
   return n;
 }
 // 組合 note 欄位：代約者id + 病人備註共存
@@ -1603,14 +1706,88 @@ function apptBorder(a){
 }
 function apptLabel(a){ return a.type==='new'?'初':''; }
 // 滑鼠移過去：浮到最上層 + 展開到完整寬度（解決最上層窄卡片看不全）
-function apptHover(el,on){
-  if(window.innerWidth<=640) return;   // 手機無滑鼠，不做浮起展開（避免撐爆寬度）
-  if(on){
-    el.dataset.ow=el.style.width||''; el.dataset.oz=el.style.zIndex||'';
-    el.style.zIndex='999'; el.style.width='auto'; el.style.minWidth='200px'; el.style.maxWidth='320px';
-  }else{
-    el.style.width=el.dataset.ow||''; el.style.zIndex=el.dataset.oz||''; el.style.minWidth=''; el.style.maxWidth='';
-  }
+/* 點擊某張預約卡 → 把它「浮到最上層」(重疊時被壓住的那張，點了就完整露出)，再開詳情。
+   不再用 hover 自動撐開（會閃），改成像 Google 日曆：排排站、點哪張哪張浮起。 */
+function apptClick(el,id,ev){
+  // 先把上次被點浮起的卡還原回它原本的層
+  document.querySelectorAll('.appt-block').forEach(b=>{ if(b!==el && b.dataset.bz){ b.style.zIndex=b.dataset.bz; delete b.dataset.bz; } });
+  if(!el.dataset.bz) el.dataset.bz=el.style.zIndex||'';   // 記住原本的層
+  el.style.zIndex='60';                                    // 浮起（高於其它卡、低於彈窗100）
+  const a=appointments.find(x=>x.id===id);
+  if(a&&isEvent(a)){ openModal(id); return; }   // 活動/公休直接開原本視窗
+  openApptPopover(el,id,ev);                     // 病人預約：先跳資訊小卡（貼著點擊位置）
+}
+function apptHover(){}  /* 保留空殼避免舊呼叫報錯；hover 不再做任何事 */
+
+/* 病人預約資訊小卡：放在標籤旁的空白處（不蓋標籤），按「修改」才開完整詳情 */
+function openApptPopover(el,id,ev){
+  closeApptPopover();
+  const a=appointments.find(x=>x.id===id); if(!a){ openModal(id); return; }
+  const d=new Date(a.appointment_date+'T00:00:00');
+  const wd=['日','一','二','三','四','五','六'][d.getDay()];
+  const dateStr=`${d.getMonth()+1}月${d.getDate()}日（週${wd}）`;
+  // 連續時段(如 60 分鐘=兩格)要顯示完整範圍，不只第一格
+  let endTime=slotEnd(a.appointment_time);
+  try{ const sameDay=appointments.filter(x=>x.appointment_date===a.appointment_date&&x.status!=='cancelled'); const grp=groupConsecutiveAppts(sameDay).find(g=>g.some(x=>x.id===id)); if(grp&&grp.length)endTime=slotEnd(grp[grp.length-1].appointment_time); }catch(e){}
+  const timeStr=`${a.appointment_time.slice(0,5)} – ${endTime}`;
+  const phone=a.patient_phone?esc(a.patient_phone):'';
+  const px=proxyOf(a); const note=noteText(a);
+  const isNew=a.type==='new';
+  const pop=document.createElement('div'); pop.className='appt-pop'; pop.id='apptPop';
+  pop.onclick=function(e){e.stopPropagation();};
+  pop.innerHTML=`
+    <button class="ap-x" onclick="closeApptPopover()" title="關閉">✕</button>
+    <div class="ap-title"><span class="ap-dot" style="background:${apptBg(a)}"></span>
+      <span>${thCode(a)?esc(thCode(a))+'—':''}${esc(a.patient_name)}${bm(a)}</span>
+      ${isNew?'<span style="font-size:10px;font-weight:600;background:var(--new-bg);color:var(--new-color);padding:1px 7px;border-radius:8px">初診</span>':''}
+    </div>
+    <div class="ap-row"><span class="ap-ic">◷</span><div>${dateStr}<br>${timeStr}</div></div>
+    <div class="ap-row"><span class="ap-ic">◍</span><div>${esc(getThName(a.therapist_id))}</div></div>
+    ${phone?`<div class="ap-row"><span class="ap-ic">☏</span><div>${phone}</div></div>`:''}
+    ${px?`<div class="ap-row"><span class="ap-ic">⇄</span><div>代約：${esc(px.name)} 治療師</div></div>`:''}
+    ${partsText(a)?`<div class="ap-row"><span class="ap-ic">⊕</span><div>${esc(partsText(a))}</div></div>`:''}
+    ${note?`<div class="ap-row"><span class="ap-ic">✎</span><div>${esc(note)}</div></div>`:''}
+    <div class="ap-btns">
+      <button class="ap-btn primary" onclick="bookNext(${id})">約下次</button>
+      <button class="ap-btn" onclick="closeApptPopover();openModal(${id})">修改</button>
+    </div>
+    <div class="ap-btns" style="margin-top:7px">
+      <button class="ap-btn danger" onclick="closeApptPopover();cancelAppt(${id})">取消預約</button>
+    </div>`;
+  document.body.appendChild(pop);
+  // 定位：貼著「點擊位置」出現在游標的右上方（離手最近）。沒有點擊座標時退回用方塊右上角。
+  const pw=pop.offsetWidth, ph=pop.offsetHeight, gap=6;
+  const r=el.getBoundingClientRect();
+  const ax=(ev&&ev.clientX!=null)?ev.clientX:r.right;
+  const ay=(ev&&ev.clientY!=null)?ev.clientY:r.top;
+  let left=ax+gap;                 // 游標右側
+  let top =ay-ph-gap;              // 游標上方 → 整體落在「右上方」
+  if(top<8) top=ay+gap+8;          // 上方空間不夠 → 改放右下方
+  if(left+pw>window.innerWidth-8) left=ax-pw-gap;   // 右邊放不下 → 改放左邊
+  if(left<8) left=8;
+  if(top+ph>window.innerHeight-8) top=window.innerHeight-ph-8;
+  if(top<8) top=8;
+  pop.style.left=Math.round(left)+'px'; pop.style.top=Math.round(top)+'px';
+  // 點小卡以外的地方就關閉（延後註冊，避免被開啟這次點擊立刻關掉）
+  setTimeout(function(){ document.addEventListener('click',closeApptPopover,{once:true}); },0);
+}
+function closeApptPopover(){ const p=document.getElementById('apptPop'); if(p)p.remove(); }
+
+/* 約下次：幫現場/不會用手機的病人快速約下一次回診。
+   開「新增預約」表單(不動原本那筆)，預帶 姓名/電話/同治療師/複診，日期預設下週同一天、同時段，只要點日期確認即可。 */
+function bookNext(id){
+  const a=appointments.find(x=>x.id===id); if(!a){ closeApptPopover(); return; }
+  closeApptPopover();
+  const d=new Date(a.appointment_date+'T00:00:00'); d.setDate(d.getDate()+7);   // 預設下週同一天
+  const nd=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const nt=a.appointment_time.slice(0,5);                                        // 預設同時段
+  window._pendingProxyTh=a.therapist_id||'';     // 預選同一位治療師
+  openNewApptAt(nd, nt);                          // 走「新增」流程（不會改到原本那筆）
+  window._naType='return'; naSelectType('return');// 約下次＝複診
+  const setv=(i,v)=>{const el=document.getElementById(i); if(el)el.value=v;};
+  setv('na-name', a.patient_name||'');
+  setv('na-phone', a.patient_phone||'');
+  const t=document.querySelector('#modalArea .modal-title'); if(t)t.textContent='約下次（複診）';
 }
 function getThName(id){if(!id)return'不指定';const t=therapists.find(x=>x.id===id);return t?t.name+' 治療師':'不指定';}
 
@@ -1644,13 +1821,13 @@ function renderDay(){
     blocksHtml+=`<div class="appt-block"
       draggable="true" data-id="${a.id}"
       ondragstart="onDragStart(event,${a.id})" ondragend="onDragEnd(event)"
-      onclick="event.stopPropagation();openModal(${a.id})"
-      onmouseenter="apptHover(this,1)" onmouseleave="apptHover(this,0)"
+      onclick="event.stopPropagation();apptClick(this,${a.id},event)"
       ondragover="event.preventDefault()"
       ondrop="onCellDrop(event,'${ds}','${TIMES[it.s]}')"
       style="position:absolute;left:${(left+0.4).toFixed(1)}%;width:${(width-1.2).toFixed(1)}%;top:${topPx}px;height:${heightPx}px;background:${apptBg(a)};color:${apptColor(a)};padding:4px 8px;overflow:hidden;z-index:${3+it.col};box-sizing:border-box;border-radius:7px;border:1px solid rgba(255,255,255,.35);box-shadow:inset 4px 0 0 #e53935,0 1px 3px rgba(28,22,17,.22);">
       <b style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${apptLabel(a)?` <span style="font-size:10px;font-weight:600;background:rgba(255,255,255,.32);color:#fff;padding:1px 5px;border-radius:7px">${apptLabel(a)}</span>`:''}</b>
       <span style="font-size:11px;opacity:.85;font-weight:400">${a.appointment_time.slice(0,5)} – ${slotEnd(group[slots-1].appointment_time)}</span>
+      ${partsText(a)?`<span style="font-size:10px;opacity:.82;font-weight:300;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${esc(partsText(a))}</span>`:''}
     </div>`;
   });
 
@@ -1672,13 +1849,12 @@ function renderDay(){
     </div>`).join('')
   :`<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px;font-weight:300">今日無預約</div>`;
 
-  el.innerHTML=`<div id="day-layout" style="display:grid;grid-template-columns:1fr 270px;gap:14px;padding:0 16px 80px;align-items:start">
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-      <div id="dayTLHeader" style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;background:var(--bg);display:flex;align-items:center;justify-content:space-between">
-        <span style="font-weight:400;letter-spacing:.5px">時間軸</span>
-        <button onclick="toggleDaySidebar()" id="sidebarToggle" style="border:none;background:var(--glow);color:var(--accent);padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">隱藏清單 ›</button>
+  el.innerHTML=`<div id="day-layout" style="display:grid;grid-template-columns:1fr 270px;gap:12px;padding:0 12px 20px;align-items:start">
+    <div style="background:var(--surface);overflow:hidden">
+      <div id="dayTLHeader" style="padding:5px 4px 5px 2px;font-size:12px;display:flex;align-items:center;justify-content:flex-end">
+        <button onclick="toggleDaySidebar()" id="sidebarToggle" style="border:none;background:var(--glow);color:var(--accent);padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;border-radius:7px">隱藏清單 ›</button>
       </div>
-      <div id="day-scroll" class="cal-scroll" style="display:flex;max-height:64vh;overflow-y:auto">
+      <div id="day-scroll" class="cal-scroll" style="display:flex;max-height:calc(100vh - 165px);overflow-y:auto">
         <div style="width:56px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
         <div style="flex:1;position:relative;">${rowsHtml}${blocksHtml}${nowLineHtml}</div>
       </div>
@@ -1687,7 +1863,7 @@ function renderDay(){
       <div style="font-size:12px;color:var(--muted);margin-bottom:9px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-weight:300;letter-spacing:.5px">
         今日預約 <span style="color:var(--warm);font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400">${dayAppts.length}</span> 筆
       </div>
-      <div class="cal-scroll" style="max-height:calc(64vh - 4px);overflow-y:auto;padding-right:2px">${listHtml}</div>
+      <div class="cal-scroll" style="max-height:calc(100vh - 200px);overflow-y:auto;padding-right:2px">${listHtml}</div>
     </div>
   </div>`;
   scrollCalToFirst('day-scroll', fmtDate(curDate));
@@ -1755,11 +1931,11 @@ function renderMonth(){
   const first=new Date(year,month,1).getDay();
   const daysInMonth=new Date(year,month+1,0).getDate();
   const todayStr=fmtDate(new Date());
-  let html=`<div style="padding:0 16px 80px"><div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+  let html=`<div style="padding:0 12px 20px"><div style="background:var(--surface);overflow:hidden;display:flex;flex-direction:column;min-height:calc(100vh - 165px)">
     <div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border)">
       ${DAYS.map(d=>`<div style="text-align:center;padding:7px 4px;font-size:11px;color:var(--muted);background:var(--bg);font-weight:300">${d}</div>`).join('')}
     </div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr)">`;
+    <div style="flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(96px,1fr)">`;
   let cells=first+daysInMonth;
   let total=Math.ceil(cells/7)*7;
   for(let i=0;i<total;i++){
@@ -1888,10 +2064,10 @@ function renderWeek(){
         ondragend="onDragEnd(event)"
         ondragover="event.preventDefault()"
         ondrop="onCellDrop(event,'${ds}','${TIMES[it.s]}')"
-        onmouseenter="apptHover(this,1)" onmouseleave="apptHover(this,0)"
-        onclick="event.stopPropagation();openModal(${a.id})">
+        onclick="event.stopPropagation();apptClick(this,${a.id},event)">
         <b>${thCode(a)?thCode(a)+'—':''} ${a.patient_name}${bm(a)}${!isEvent(a)&&a.type==='new'?' 初':''}</b>
         <span>${a.appointment_time.slice(0,5)} – ${slotEnd(group[slots-1].appointment_time)}</span>
+        ${partsText(a)?`<span style="font-size:9px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${esc(partsText(a))}</span>`:''}
       </div>`;
     });
 
@@ -1899,12 +2075,12 @@ function renderWeek(){
   }).join('');
 
   document.getElementById('mainContent').innerHTML=`<div class="week-outer">
-    <div style="min-width:520px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+    <div style="min-width:520px;background:var(--surface);overflow:hidden">
       <div style="display:flex;border-bottom:1px solid var(--border);background:var(--bg)">
         <div style="width:56px;flex-shrink:0"></div>
         ${headers}
       </div>
-      <div id="week-scroll" class="cal-scroll" style="display:flex;max-height:64vh;overflow-y:auto">
+      <div id="week-scroll" class="cal-scroll" style="display:flex;max-height:calc(100vh - 165px);overflow-y:auto">
         <div style="width:56px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
         ${dayColumns}
       </div>
@@ -1921,6 +2097,7 @@ function onDragStart(e, id){
   setTimeout(()=>{const el=e.target;if(el)el.classList.add('dragging');},0);
   const a=appointments.find(x=>x.id===id);
   if(a){
+    window._dragName=a.patient_name;
     dragGhost=document.createElement('div');
     dragGhost.className='drag-ghost';
     dragGhost.style.cssText=`background:${apptBg(a)};color:${apptColor(a)};border:1px solid ${apptBorder(a)};`;
@@ -1930,7 +2107,22 @@ function onDragStart(e, id){
   }
   document.addEventListener('dragover',updateGhostPos);
 }
-function updateGhostPos(e){if(dragGhost){dragGhost.style.left=(e.clientX+12)+'px';dragGhost.style.top=(e.clientY-20)+'px';}}
+function updateGhostPos(e){
+  if(!dragGhost)return;
+  dragGhost.style.left=(e.clientX+12)+'px';
+  dragGhost.style.top=(e.clientY-20)+'px';
+  // 拖到哪個時間（日檢視）：依游標 Y 對應時間軸格子
+  let tt=null;
+  if(curView==='day'){
+    const scroll=document.getElementById('day-scroll');
+    const area=scroll&&scroll.children[1];   // 時間欄之後的方塊區，頂端=TIMES[0]
+    if(area){
+      const idx=Math.floor((e.clientY-area.getBoundingClientRect().top)/SLOT_H);
+      if(idx>=0&&idx<TIMES.length) tt=TIMES[idx];
+    }
+  }
+  dragGhost.textContent=(window._dragName||'')+(tt?('　▸ '+tt):'');
+}
 function onDragEnd(e){
   document.querySelectorAll('.appt-block').forEach(el=>el.classList.remove('dragging'));
   document.querySelectorAll('.week-cell').forEach(el=>el.classList.remove('drag-over'));
@@ -1940,11 +2132,25 @@ function onDragEnd(e){
 }
 function onCellDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';e.currentTarget.classList.add('drag-over');}
 function onCellDragLeave(e){e.currentTarget.classList.remove('drag-over');}
+// 重畫但「保留目前捲動位置」，拖放/同步後畫面才不會跳回最上面
+function renderKeepScroll(){
+  const sc=document.getElementById('day-scroll')||document.getElementById('week-scroll');
+  const top=sc?sc.scrollTop:window.scrollY;
+  window._noAutoScroll=true;
+  render();
+  const sc2=document.getElementById('day-scroll')||document.getElementById('week-scroll');
+  if(sc2) sc2.scrollTop=top; else window.scrollTo(0,top);
+}
 async function onCellDrop(e, newDate, newTime){
   e.preventDefault();e.currentTarget.classList.remove('drag-over');
   if(!dragApptId)return;
   const a=appointments.find(x=>x.id===dragApptId);
   if(!a)return;
+  // 日檢視：用游標實際位置算落點，拖到哪放哪（即使該時段已有人也能精準落下，重疊會並排顯示）
+  if(curView==='day'){
+    const _sc=document.getElementById('day-scroll'), _ar=_sc&&_sc.children[1];
+    if(_ar){ const _i=Math.floor((e.clientY-_ar.getBoundingClientRect().top)/SLOT_H); if(_i>=0&&_i<TIMES.length) newTime=TIMES[_i]; }
+  }
   // 找出這張卡片代表的整組（連續同病人時段）→ 整組一起搬，保持相對位置
   const dayAppts=appointments.filter(x=>x.appointment_date===a.appointment_date&&x.status!=='cancelled');
   const grp=(groupConsecutiveAppts(dayAppts).find(g=>g.some(x=>x.id===dragApptId))||[a])
@@ -1962,12 +2168,11 @@ async function onCellDrop(e, newDate, newTime){
   if(moves.some(m=>m.nt===null)){showToast('超出時間範圍');return;}
   const backup=grp.map(x=>({x,d:x.appointment_date,t:x.appointment_time}));
   moves.forEach(m=>{m.row.appointment_date=newDate;m.row.appointment_time=m.nt;});
-  window._noAutoScroll=true;   // 拖放後重畫不自動捲，避免螢幕亂跳
-  render();
+  renderKeepScroll();   // 拖放後重畫，保留捲動位置，畫面不跳
   showToast(`已移至 ${newDate.slice(5)} ${newTime}`);
   for(const m of moves){
     const{error}=await sb.from('appointments').update({appointment_date:newDate,appointment_time:m.nt}).eq('id',m.row.id);
-    if(error){backup.forEach(b=>{b.x.appointment_date=b.d;b.x.appointment_time=b.t;});window._noAutoScroll=true;render();showToast('同步失敗，請重新整理');return;}
+    if(error){backup.forEach(b=>{b.x.appointment_date=b.d;b.x.appointment_time=b.t;});renderKeepScroll();showToast('同步失敗，請重新整理');return;}
   }
 }
 
@@ -2148,6 +2353,101 @@ function naTogglePart(p){
   const el=document.getElementById('na-p-'+p);
   if(el)el.style.cssText=partTagStyle(window._naParts.includes(p));
 }
+
+/* ════════ 治療部位選取器（正面/反面・每部位左右・可複選・其他自由打）════════ */
+const BODY_MAP = {
+  front: [
+    {g:'頭頸・軀幹', items:['顳顎關節','前胸','腹部']},
+    {g:'上肢',       items:['肩膀','手肘','前臂橈側','手腕','手掌','手指']},
+    {g:'下肢',       items:['髖關節','前大腿','膝蓋','小腿','腳踝','腳背','腳趾']},
+  ],
+  back: [
+    {g:'頭頸・軀幹', items:['頸椎','上背','下背','骨盆']},
+    {g:'上肢',       items:['肩膀','手肘','前臂尺側','手背','手指']},
+    {g:'下肢',       items:['薦髂關節','髖關節','臀部','後大腿','膝窩','小腿','足跟','足底','腳趾']},
+  ],
+};
+let _naBodyView='front';
+function setBodyView(v){ _naBodyView=v; renderBodyPicker(); }
+function bodyHas(side,name){ return (window._naParts||[]).includes(side+name); }
+function toggleBodyPart(side,name){
+  if(!window._naParts)window._naParts=[];
+  const k=side+name, i=window._naParts.indexOf(k);
+  if(i>=0)window._naParts.splice(i,1); else window._naParts.push(k);
+  renderBodyPicker();
+  updateBodySummary();
+}
+// 詳情裡的部位選取器：點摘要列 → 像小卡一樣浮在右側（不撐長表單）
+function toggleBodyPicker(){
+  const p=document.getElementById('na-body-picker'); if(!p)return;
+  const open=getComputedStyle(p).display==='none';
+  if(open){
+    // 緊貼預約詳情的右邊並排（不跑到螢幕最右）；右邊放不下就改放詳情左邊
+    const m=document.querySelector('#modalArea .modal');
+    const mr=m?m.getBoundingClientRect():null;
+    const W=298, gap=12;
+    let left = mr ? mr.right+gap : window.innerWidth-W-24;
+    let top  = mr ? mr.top : 40;
+    if(left+W > window.innerWidth-8) left = mr ? Math.max(8, mr.left-W-gap) : window.innerWidth-W-8;
+    p.style.cssText=`display:block;position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;width:${W}px;max-width:calc(100vw - 16px);max-height:84vh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 44px rgba(28,22,17,.3);padding:14px 16px;z-index:130`;
+    renderBodyPicker();
+  }else{
+    p.style.display='none';
+  }
+  const c=document.getElementById('na-body-caret'); if(c)c.textContent=open?'▴':'▾';
+}
+// 更新「治療部位」那一行的摘要文字（已選的部位＋其他）
+function updateBodySummary(){
+  const t=document.getElementById('na-body-summary-text'); if(!t)return;
+  let arr=(window._naParts||[]).slice();
+  const o=(document.getElementById('na-other')||{}).value;
+  if(o&&o.trim()) arr.push('其他:'+o.trim());
+  t.textContent=arr.length?arr.join('・'):'＋ 點此選擇部位';
+  t.style.color=arr.length?'var(--ink)':'var(--muted)';
+}
+function renderBodyPicker(){
+  const wrap=document.getElementById('na-body-picker'); if(!wrap)return;
+  const tab=(v,t)=>`<span onclick="setBodyView('${v}')" style="font-size:12px;padding:5px 16px;border:1px solid ${_naBodyView===v?'var(--warm)':'var(--border)'};border-radius:16px;cursor:pointer;background:${_naBodyView===v?'var(--warm)':'transparent'};color:${_naBodyView===v?'#fff':'var(--muted)'};font-weight:${_naBodyView===v?'500':'300'};letter-spacing:.5px">${t}</span>`;
+  const sb=(side,name)=>{const on=bodyHas(side,name);return `<span onclick="toggleBodyPart('${side}','${name}')" style="width:40px;text-align:center;font-size:12px;padding:5px 0;border:1px solid ${on?'var(--warm)':'var(--border)'};border-radius:7px;cursor:pointer;background:${on?'var(--warm)':'transparent'};color:${on?'#fff':'var(--muted)'};font-weight:${on?'500':'300'};transition:all .12s">${side}</span>`;};
+  const rows=BODY_MAP[_naBodyView].map(grp=>`
+    <div style="font-size:11px;color:var(--accent);background:rgba(192,138,82,.10);font-weight:500;letter-spacing:2px;padding:4px 11px;border-radius:6px;margin:11px 0 4px">${grp.g}</div>
+    ${grp.items.map(name=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 2px;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px;color:var(--text);font-weight:300">${name}</span>
+      <span style="display:flex;gap:6px">${sb('左',name)}${sb('右',name)}</span>
+    </div>`).join('')}`).join('');
+  wrap.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <b style="font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:400;color:var(--ink)">治療部位</b>
+      <button onclick="toggleBodyPicker()" style="border:none;background:none;color:var(--muted);font-size:15px;cursor:pointer" title="收起">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:4px">${tab('front','正面')}${tab('back','反面')}</div>
+    ${rows}
+    <button onclick="toggleBodyPicker()" class="mBtn primary" style="width:100%;margin-top:12px">完成</button>`;
+}
+/* 部位存進預約 symptoms：格式 "部位:左肩膀,右膝蓋｜其他:肋骨"（前綴避免跟舊備註混淆）*/
+const PARTS_MARK='部位:';
+function buildPartsSymptoms(parts, other){
+  parts=parts||[]; other=(other||'').trim();
+  if(!parts.length && !other) return '';
+  return PARTS_MARK + parts.join(',') + (other?('｜其他:'+other):'');
+}
+function parseParts(symptoms){
+  const s=String(symptoms||'');
+  if(s.indexOf(PARTS_MARK)!==0) return {parts:[], other:''};
+  const body=s.slice(PARTS_MARK.length);
+  const SEP='｜其他:';
+  const i=body.indexOf(SEP);
+  const partStr=i>=0?body.slice(0,i):body;
+  const other=i>=0?body.slice(i+SEP.length):'';
+  return {parts:partStr?partStr.split(',').filter(Boolean):[], other};
+}
+// 把某筆預約的治療部位組成可讀文字（標籤短顯示、小卡完整都用這個）
+function partsText(a){
+  const p=parseParts(a&&a.symptoms);
+  let arr=p.parts.slice();
+  if(p.other) arr.push('其他:'+p.other);
+  return arr.join('・');
+}
 function onCellClick(e, date, time){
   if(e.target.closest('.appt-block'))return;
   openNewApptAt(date, time);
@@ -2156,7 +2456,9 @@ function openNewAppt(){openNewApptAt(fmtDate(curDate),DEFAULT_TIME);}
 
 function openNewApptAt(date, time, edit){
   edit=edit||null;
-  window._naType=edit?(edit.type||'return'):'return';window._naParts=[];
+  window._naType=edit?(edit.type||'return'):'return';
+  window._naParts=edit?parseParts(edit.symptoms).parts.slice():[];   // 編輯時載入已存部位
+  _naBodyView='front';
   // 代約：_pendingProxyId=代約者；被代約者治療師預選 _pendingProxyTh
   window._naProxyId = edit ? (proxyOf(edit)?proxyOf(edit).id:null) : (window._pendingProxyId||null);
   window._pendingProxyId=null;
@@ -2167,6 +2469,14 @@ function openNewApptAt(date, time, edit){
   _naCalY=_d.getFullYear();_naCalM=_d.getMonth();
   _naSelY=_d.getFullYear();_naSelM=_d.getMonth();_naSelD=_d.getDate();
   const naTy=window._naType;
+  // 結束時間預設：編輯時=這筆連續時段的結尾；新增時=開始+30分
+  let endTime;
+  if(edit){
+    const _dl=appointments.filter(x=>x.appointment_date===edit.appointment_date&&x.status==='confirmed');
+    const _grp=groupConsecutiveAppts(_dl).find(g=>g.some(x=>x.id===edit.id));
+    const _last=(_grp&&_grp.length?_grp[_grp.length-1]:edit).appointment_time.slice(0,5);
+    endTime=slotEnd(_last);
+  }else{ endTime=slotEnd(time); }
   document.getElementById('modalArea').innerHTML=`
   <div class="modal-bg" onclick="closeModal()">
     <div class="modal" onclick="event.stopPropagation()">
@@ -2209,22 +2519,28 @@ function openNewApptAt(date, time, edit){
         <label class="field-lbl">日期 *</label>
         <div id="na-cal-wrap" style="border:1px solid var(--border);border-radius:10px;padding:10px"></div>
       </div>
-      <div style="margin-bottom:13px">
-        <label class="field-lbl">時段 *</label>
-        <select id="na-time" style="${fieldBox()}appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239b8a74' stroke-width='1.2' fill='none'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 2px center;padding-right:18px">
-          ${TIMES.map(t=>`<option value="${t}" ${t===time?'selected':''}>${t}</option>`).join('')}
-        </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px">
+        <div>
+          <label class="field-lbl">開始 *</label>
+          <select id="na-time" onchange="naSyncEnd()" style="${fieldBox()}cursor:pointer">
+            ${TIMES.map(t=>`<option value="${t}" ${t===time?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="field-lbl">結束 *</label>
+          <select id="na-end" style="${fieldBox()}cursor:pointer">
+            ${TIMES.map(t=>{const e=slotEnd(t);return `<option value="${e}" ${e===endTime?'selected':''}>${e}</option>`;}).join('')}
+          </select>
+        </div>
       </div>
       <div style="margin-bottom:10px">
-        <label class="field-lbl">治療部位（初診適用）</label>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px" id="na-parts-wrap">
-          ${['頸部','肩部','腰部','膝蓋','上肢','下肢','其他'].map(p=>`<div onclick="naTogglePart('${p}')" id="na-p-${p}" style="${partTagStyle(false)}">${p}</div>`).join('')}
+        <label class="field-lbl">治療部位（可多選・分左右）</label>
+        <div id="na-body-summary" onclick="toggleBodyPicker()" style="display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:13px;font-weight:300">
+          <span id="na-body-summary-text" style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">＋ 點此選擇部位</span>
+          <span id="na-body-caret" style="color:var(--muted);flex-shrink:0">▾</span>
         </div>
-        <label class="field-lbl">服務項目（複診適用）</label>
-        <select id="na-service" style="${fieldBox()}appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239b8a74' stroke-width='1.2' fill='none'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 2px center;padding-right:18px;margin-bottom:9px">
-          <option value="複診一個部位" ${edit&&edit.service==='複診一個部位'?'selected':''}>複診一個部位（30 分鐘）</option>
-          <option value="複診兩個部位／親友一起約" ${edit&&edit.service&&edit.service.includes('兩個部位')?'selected':''}>複診兩個部位／親友一起約（60 分鐘）</option>
-        </select>
+        <div id="na-body-picker" style="display:none;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:7px"></div>
+        <input id="na-other" oninput="updateBodySummary()" style="${fieldBox()}margin-top:8px;margin-bottom:8px" placeholder="其他部位（沒列到的自己打，例：肋骨）" value="${edit?String(parseParts(edit.symptoms).other||'').replace(/"/g,'&quot;'):''}">
         <label class="field-lbl">備註</label>
         <input id="na-note" style="${fieldBox()}" placeholder="代約人姓名/關係/電話、特殊需求…" value="${edit?String(noteText(edit)||'').replace(/"/g,'&quot;'):''}">
       </div>
@@ -2237,6 +2553,22 @@ function openNewApptAt(date, time, edit){
   </div>`;
   // 渲染行事曆
   _renderNaCal();
+  // 部位選取器預設藏起（點摘要列才浮出）；先把已選摘要更新出來
+  updateBodySummary();
+}
+
+// 開始→結束 之間要佔的 30 分鐘格子（含開始、不含結束）；end<=start 至少回傳 1 格
+function slotRange(start, end){
+  const out=[]; let t=start, guard=0;
+  while(t<end && guard<60){ out.push(t); t=slotEnd(t); guard++; }
+  if(!out.length) out.push(start);
+  return out;
+}
+// 改開始時間時，結束自動不早於「開始+30」
+function naSyncEnd(){
+  const sEl=document.getElementById('na-time'), eEl=document.getElementById('na-end');
+  if(!sEl||!eEl)return;
+  if(eEl.value<=sEl.value) eEl.value=slotEnd(sEl.value);
 }
 
 function naSelectType(t){
@@ -2260,31 +2592,23 @@ async function submitNewAppt(){
   const note=document.getElementById('na-note').value.trim();
   if(!name||!time){showToast('請填寫姓名與時段');return;}
   if(window._naType==='new'&&!phone){showToast('初診請填寫電話');return;}
-  const service=window._naType==='new'?'初診評估':(document.getElementById('na-service')?.value||'複診一個部位');
-  const is60=service.includes('兩個部位');
-  const nextTime=is60?getNextTimeSlot(time):null;
+  const partsSym=buildPartsSymptoms(window._naParts,(document.getElementById('na-other')||{}).value);   // 治療部位存進 symptoms
+  // 依「開始→結束」建出連續 30 分鐘格子（每格一筆，前台才會把整段封鎖）
+  const endV=document.getElementById('na-end')?document.getElementById('na-end').value:slotEnd(time);
+  const slots=slotRange(time, endV);
+  const durMin=slots.length*30;
+  const service=window._naType==='new'?'初診評估':('複診'+durMin+'分鐘');
   const proxyId=document.getElementById('na-proxy')?document.getElementById('na-proxy').value:(window._naProxyId||'');
-  const proxyNote=proxyId?('proxy:'+proxyId):'';   // 代約標記（讀表單代約者下拉）
   window._naProxyId=proxyId?parseInt(proxyId):null;
-  const{data:appt,error}=await sb.from('appointments').insert([{
-    therapist_id:thId?parseInt(thId):null,
-    patient_name:name,patient_phone:phone,
-    appointment_date:date,appointment_time:time+':00',
-    type:window._naType||'return',service,
-    symptoms:'',note:buildNote(proxyId,note),status:'confirmed'
-  }]).select().single();
-  if(error){showToast('新增失敗：'+error.message);return;}
-  if(is60&&nextTime){
-    const{error:err2}=await sb.from('appointments').insert([{
+  for(let i=0;i<slots.length;i++){
+    const{error}=await sb.from('appointments').insert([{
       therapist_id:thId?parseInt(thId):null,
       patient_name:name,patient_phone:phone,
-      appointment_date:date,appointment_time:nextTime+':00',
-      type:window._naType||'return',service:service+'（續）',
-      symptoms:'',note:buildNote(proxyId,note),status:'confirmed'
+      appointment_date:date,appointment_time:slots[i]+':00',
+      type:window._naType||'return',service:i===0?service:service+'（續）',
+      symptoms:partsSym,note:buildNote(proxyId,note),status:'confirmed'
     }]).select();
-    if(err2){showToast('第二時段建立失敗：'+err2.message);}
-  } else if(is60&&!nextTime){
-    showToast('已是最後時段，無法建立 60 分鐘第二格');
+    if(error){showToast((i===0?'新增失敗：':'第'+(i+1)+'格失敗：')+error.message); if(i===0)return;}
   }
   window._naProxyId=null;
   // 每次預約都整合病患（初診＋複診），用電話/姓名比對，找不到才建立
@@ -2309,39 +2633,36 @@ async function submitEditAppt(id){
   const note=document.getElementById('na-note').value.trim();
   if(!name||!time){showToast('請填寫姓名與時段');return;}
   if(window._naType==='new'&&!phone){showToast('初診請填寫電話');return;}
-  const service=window._naType==='new'?'初診評估':(document.getElementById('na-service')?.value||'複診一個部位');
+  const partsSym=buildPartsSymptoms(window._naParts,(document.getElementById('na-other')||{}).value);   // 治療部位存進 symptoms
+  const endV=document.getElementById('na-end')?document.getElementById('na-end').value:slotEnd(time);
+  const slots=slotRange(time, endV);
+  const durMin=slots.length*30;
+  const service=window._naType==='new'?'初診評估':('複診'+durMin+'分鐘');
   const proxyId=document.getElementById('na-proxy')?document.getElementById('na-proxy').value:'';
-  const newIs60=service.includes('兩個部位');
   const thVal=thId?parseInt(thId):null;
-  // 找原本的「第二格（續）」：同病人、同治療師、原日期、時間=原時間的下一格
-  let sibling=null;
+  const noteVal=buildNote(proxyId,note);
+  // 找出這筆原本的整組連續格子（含本身），由早到晚排序
+  let oldGroup=[a].filter(Boolean);
   if(a){
-    const origNext=getNextTimeSlot(a.appointment_time.slice(0,5));
-    sibling=appointments.find(x=>x.id!==id&&x.status==='confirmed'
-      &&x.appointment_date===a.appointment_date
-      &&x.patient_name===a.patient_name
-      &&(x.therapist_id||null)===(a.therapist_id||null)
-      &&origNext&&x.appointment_time.slice(0,5)===origNext)||null;
+    const _dl=appointments.filter(x=>x.appointment_date===a.appointment_date&&x.status==='confirmed');
+    oldGroup=(groupConsecutiveAppts(_dl).find(g=>g.some(x=>x.id===id))||[a]).slice()
+      .sort((x,y)=>x.appointment_time.localeCompare(y.appointment_time));
   }
-  const{error}=await sb.from('appointments').update({
-    therapist_id:thVal,
-    patient_name:name,patient_phone:phone,
-    appointment_date:date,appointment_time:time+':00',
-    type:window._naType||'return',service,symptoms:'',
-    note:buildNote(proxyId,note)
-  }).eq('id',id);
-  if(error){showToast('儲存失敗：'+error.message);return;}
-  // 處理第二格：60分→補/同步；30分→收掉
-  const nextTime=getNextTimeSlot(time);
-  if(newIs60){
-    const row={therapist_id:thVal,patient_name:name,patient_phone:phone,
-      appointment_date:date,appointment_time:(nextTime||time)+':00',
-      type:window._naType||'return',service:service+'（續）',symptoms:'',note:buildNote(proxyId,note)};
-    if(sibling){ await sb.from('appointments').update(row).eq('id',sibling.id); }
-    else if(nextTime){ await sb.from('appointments').insert([{...row,status:'confirmed'}]); }
-    else showToast('已是最後時段，無法建立第二格');
-  } else if(sibling){
-    await sb.from('appointments').update({status:'cancelled'}).eq('id',sibling.id);  // 改回一部位→收掉第二格
+  // 對齊到新時段：能更新就更新、不夠就新增、多出來就軟刪
+  for(let i=0;i<Math.max(oldGroup.length,slots.length);i++){
+    if(i<slots.length){
+      const row={therapist_id:thVal,patient_name:name,patient_phone:phone,
+        appointment_date:date,appointment_time:slots[i]+':00',
+        type:window._naType||'return',service:i===0?service:service+'（續）',symptoms:partsSym,note:noteVal};
+      if(i<oldGroup.length){
+        const{error:e}=await sb.from('appointments').update(row).eq('id',oldGroup[i].id);
+        if(e&&i===0){showToast('儲存失敗：'+e.message);return;}
+      }else{
+        await sb.from('appointments').insert([{...row,status:'confirmed'}]);
+      }
+    }else{
+      await sb.from('appointments').update({status:'cancelled'}).eq('id',oldGroup[i].id);
+    }
   }
   await upsertPatient(name, phone, date, [], note);   // 編輯也整合病患
   closeModal();showToast('預約已更新');_invalidateCache();await loadData();

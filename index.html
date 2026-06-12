@@ -777,16 +777,18 @@ function selectTherapist(id, name, el) {
 }
 
 async function renderDatetime(el) {
-  el.innerHTML = '<div class="loading"><div class="spinner"></div><p>載入可用時段中</p></div>';
+  if (state.date) {
+    await loadBookedSlots(fmtDate(state.date), state.therapistId || null);
+  }
+  renderDatetimeInner(el);
+}
+// 同步重畫日期時段區(不轉圈圈、不重播淡入)，給選日期/換月直接呼叫＝不跳動
+function renderDatetimeInner(el) {
   const m = state.calMonth;
   const year = m.getFullYear(), month = m.getMonth();
   const first = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const today = new Date(); today.setHours(0,0,0,0);
-
-  if (state.date) {
-    await loadBookedSlots(fmtDate(state.date), state.therapistId || null);
-  }
 
   const bookedTimes = state.bookedSlots.map(s => s.appointment_time.slice(0,5));
 
@@ -846,7 +848,7 @@ async function renderDatetime(el) {
           return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= min);
         })();
         const disabled = taken || isPastTime;
-        return `<div class="time-slot ${disabled?'taken':''} ${state.time===t?'selected':''}" onclick="${disabled?'':'selectTime(\''+t+'\')'}">${t}</div>`;
+        return `<div class="time-slot ${disabled?'taken':''} ${state.time===t?'selected':''}" onclick="${disabled?'':'selectTime(\''+t+'\',this)'}">${t}</div>`;
       }).join('')}
     </div>
     <p class="notice">已劃線時段不可預約</p>`
@@ -866,9 +868,13 @@ async function selectDate(y,m,d) {
   state.date = new Date(y,m,d); state.time = null;
   await renderDatetime(document.getElementById('mainContent'));
 }
-function selectTime(t) { state.time = t; render(); }
-function prevMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()-1,1); render(); }
-function nextMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()+1,1); render(); }
+function selectTime(t, el) {
+  state.time = t;
+  if(el){ el.parentElement.querySelectorAll('.time-slot').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); }
+  enableStepNext();
+}
+function prevMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()-1,1); renderDatetimeInner(document.getElementById('mainContent')); }
+function nextMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()+1,1); renderDatetimeInner(document.getElementById('mainContent')); }
 
 function renderForm(el) {
   const isNew = state.type === 'new';

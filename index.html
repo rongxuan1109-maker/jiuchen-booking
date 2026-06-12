@@ -734,12 +734,35 @@ async function renderDatetime(el) {
   </div>`;
 
   const slots = availableTimes(state.date, state.therapistId);
+  const isAny = !state.therapistId || state.therapistId===0;
+  const totalTh = state.therapists.length || 1;
+  // 時段 → 班別(am/pm/eve)對照
+  const blockOfSlot = {};
+  Object.entries(SHIFT_SLOTS).forEach(([b,arr]) => arr.forEach(s => blockOfSlot[s] = b));
+  // 不指定客滿判定：該時段「有排這個班、且還沒被約」的治療師=0 → 客滿(劃線)。也扣掉其他不指定預約佔用、全院活動全擋。
+  const slotFull = (t) => {
+    const wd = String(state.date.getDay());
+    const block = blockOfSlot[t];
+    const scheduled = state.therapists.filter(th => {
+      const sh = state.schedules[th.id]; return sh && sh[wd] && sh[wd].includes(block);
+    }).map(th => th.id);
+    if(!scheduled.length) return true;            // 這個班別沒人上 → 不能約
+    let bookedTh = new Set(), unassigned = 0, ev = false;
+    state.bookedSlots.forEach(s => {
+      if(s.appointment_time.slice(0,5) !== t) return;
+      if(typeof s.note==='string' && s.note.startsWith('event:') && s.therapist_id==null){ ev = true; return; }
+      if(s.therapist_id==null) unassigned++; else bookedTh.add(s.therapist_id);
+    });
+    if(ev) return true;
+    const freeCount = scheduled.filter(id => !bookedTh.has(id)).length - unassigned;
+    return freeCount <= 0;
+  };
   const timeHtml = state.date ? `
   <div class="card" style="margin-top:0">
     <p class="card-title">${state.date.getMonth()+1} 月 ${state.date.getDate()} 日 可用時段</p>
     ${slots.length ? `<div class="time-grid">
       ${slots.map(t=>{
-        const taken = bookedTimes.includes(t);
+        const taken = isAny ? slotFull(t) : bookedTimes.includes(t);
         const isToday = state.date && fmtDate(state.date) === fmtDate(new Date());
         const isPastTime = isToday && (() => {
           const now = new Date();

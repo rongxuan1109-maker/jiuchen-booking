@@ -487,6 +487,49 @@ function availableTimes(date, therapistId){
   return [...slots].sort();
 }
 
+// ===== 出生日期：民國三格(年→月→日)、自動跳格、即時換算西元＋生肖 =====
+const ZODIAC = ['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'];
+function birthBox(){
+  let by='', bm='', bd='', hint='';
+  if(state.birthDate && /^\d{4}-\d{2}-\d{2}$/.test(state.birthDate)){
+    const [Y,M,D] = state.birthDate.split('-').map(Number);
+    by = Y-1911; bm = M; bd = D;
+    hint = `西元 ${Y} 年 ${M} 月 ${D} 日　生肖屬${ZODIAC[((Y-4)%12+12)%12]}`;
+  }
+  const ist = 'text-align:center;padding-left:6px;padding-right:6px';
+  return `
+    <div style="display:flex;align-items:center;gap:6px">
+      <input class="form-input" id="f-by" inputmode="numeric" maxlength="3" placeholder="民國年" style="${ist}" value="${by}" oninput="onBirthInput(this,'f-bm')"><span style="color:var(--muted);flex-shrink:0">年</span>
+      <input class="form-input" id="f-bm" inputmode="numeric" maxlength="2" placeholder="月" style="${ist}" value="${bm}" oninput="onBirthInput(this,'f-bd')"><span style="color:var(--muted);flex-shrink:0">月</span>
+      <input class="form-input" id="f-bd" inputmode="numeric" maxlength="2" placeholder="日" style="${ist}" value="${bd}" oninput="onBirthInput(this,null)"><span style="color:var(--muted);flex-shrink:0">日</span>
+    </div>
+    <p id="f-birth-hint" style="margin:6px 0 0;font-size:13px;color:#2e7d32">${hint}</p>`;
+}
+function onBirthInput(el, nextId){
+  const hadSep = /[^0-9]/.test(el.value);              // 打了 / 或空格等分隔 → 直接跳下一格
+  el.value = el.value.replace(/[^0-9]/g,'');
+  if(nextId && (el.value.length >= el.maxLength || (hadSep && el.value.length >= 1))){
+    const n = document.getElementById(nextId); if(n) n.focus();
+  }
+  updateBirth();
+}
+function updateBirth(){
+  const yEl=document.getElementById('f-by'), mEl=document.getElementById('f-bm'), dEl=document.getElementById('f-bd');
+  const hint=document.getElementById('f-birth-hint'); if(!yEl||!hint) return;
+  const y=+yEl.value, m=+mEl.value, d=+dEl.value;
+  if(y>0 && m>=1 && m<=12 && d>=1 && d<=31){
+    const Y=y+1911;
+    state.birthDate=`${Y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    hint.style.color='#2e7d32';
+    hint.textContent=`西元 ${Y} 年 ${m} 月 ${d} 日　生肖屬${ZODIAC[((Y-4)%12+12)%12]}`;
+  }else{
+    state.birthDate='';
+    hint.style.color='#c0392b';
+    hint.textContent=(yEl.value||mEl.value||dEl.value)?'請輸入完整的民國年 / 月 / 日':'';
+  }
+  if(typeof updateBtn==='function') updateBtn();
+}
+
 const LIFF_ID = '2010100504-7lHo8M0R';
 let lineUserId = null;
 
@@ -812,21 +855,12 @@ function renderForm(el) {
     ${state.savedInfo?`<p class="notice" style="margin-top:-6px;margin-bottom:12px;color:var(--warm)">✓ 已帶入您上次的資料，如有變動可直接修改</p>`:''}
     ${isNew?`
     <div class="form-group">
-      <label class="form-label">出生年月日<span>*</span></label>
-      <input class="form-input" id="f-birth" type="date" value="${state.birthDate}" oninput="state.birthDate=this.value;updateBtn()">
+      <label class="form-label">出生年月日（民國）<span>*</span></label>
+      ${birthBox()}
     </div>
     <div class="form-group">
       <label class="form-label">主要不適部位<span>*</span></label>
-      <select class="form-select" id="f-area" onchange="state.discomfortArea=this.value;updateBtn()">
-        <option value="">請選擇...</option>
-        <option ${state.discomfortArea==='頸部'?'selected':''}>頸部</option>
-        <option ${state.discomfortArea==='肩部'?'selected':''}>肩部</option>
-        <option ${state.discomfortArea==='腰部'?'selected':''}>腰部</option>
-        <option ${state.discomfortArea==='膝蓋'?'selected':''}>膝蓋</option>
-        <option ${state.discomfortArea==='上肢'?'selected':''}>上肢</option>
-        <option ${state.discomfortArea==='下肢'?'selected':''}>下肢</option>
-        <option ${state.discomfortArea==='其他'?'selected':''}>其他</option>
-      </select>
+      <input class="form-input" id="f-area" placeholder="例：右肩、下背、左膝…（直接打字）" value="${String(state.discomfortArea||'').replace(/"/g,'&quot;')}" oninput="state.discomfortArea=this.value;updateBtn()">
     </div>
     <div class="form-group">
       <label class="form-label">不適時間多久了？<span>*</span></label>

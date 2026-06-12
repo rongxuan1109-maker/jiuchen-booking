@@ -708,8 +708,8 @@ const TIMES = (function(){
   return arr;
 })();
 // 一格=30分鐘的高度。電腦版「依螢幕高度自動算」：讓可視範圍一次看得到 12 小時(=24 格)；
-// 公式 (可視高 / 24)，並夾在 26~44px 之間（太小字會擠、太大又看不到 12 小時）。手機維持 34。
-const SLOT_H = window.innerWidth<=640 ? 34 : Math.max(26, Math.min(44, Math.round((window.innerHeight - 170) / 24)));
+// 公式 (可視高 / 24)，並夾在 26~44px 之間（太小字會擠、太大又看不到 12 小時）。手機也用公式(下限22)讓一次看到 12 小時。
+const SLOT_H = window.innerWidth<=640 ? Math.max(22, Math.round((window.innerHeight - 168) / 24)) : Math.max(26, Math.min(44, Math.round((window.innerHeight - 170) / 24)));
 const DEFAULT_TIME = '09:00'; // 月檢視/新增預約的預設時段
 const isHourMark = t => t.endsWith(':00');
 // 時間軸標示：09:00→上午9時、15:00→下午3時、12:00→中午12時、00:00→凌晨12時
@@ -2758,14 +2758,21 @@ async function loadHxCount(lineUserId){
 async function toggleHxPicker(lineUserId){
   const p=document.getElementById('na-hx-picker'); if(!p)return;
   const open=getComputedStyle(p).display==='none';
-  const bp=document.getElementById('na-body-picker'); if(open&&bp)bp.style.display='none';
-  const dt=document.getElementById('na-daytl'); if(open&&dt)dt.style.display='none';
   if(open){
-    const m=document.querySelector('#modalArea .modal'), mr=m?m.getBoundingClientRect():null;
-    const W=300, gap=12;
-    let left=mr?mr.right+gap:window.innerWidth-W-24, top=mr?mr.top:40;
-    if(left+W>window.innerWidth-8) left=mr?Math.max(8,mr.left-W-gap):window.innerWidth-W-8;
-    p.style.cssText=`display:block;position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;width:${W}px;max-width:calc(100vw - 16px);max-height:84vh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 44px rgba(28,22,17,.3);padding:14px 16px;z-index:132`;
+    const isMobile=window.innerWidth<=640;
+    if(isMobile){
+      // 手機：就地往下展開（在抽屜式視窗內跟著捲動），不浮到旁邊
+      p.style.cssText='display:block;margin-top:8px;border:1px solid var(--border);border-radius:12px;padding:13px 14px;background:var(--bg)';
+    }else{
+      // 桌機：浮到預約詳情右邊
+      const bp=document.getElementById('na-body-picker'); if(bp)bp.style.display='none';
+      const dt=document.getElementById('na-daytl'); if(dt)dt.style.display='none';
+      const m=document.querySelector('#modalArea .modal'), mr=m?m.getBoundingClientRect():null;
+      const W=300, gap=12;
+      let left=mr?mr.right+gap:window.innerWidth-W-24, top=mr?mr.top:40;
+      if(left+W>window.innerWidth-8) left=mr?Math.max(8,mr.left-W-gap):window.innerWidth-W-8;
+      p.style.cssText=`display:block;position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;width:${W}px;max-width:calc(100vw - 16px);max-height:84vh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 44px rgba(28,22,17,.3);padding:14px 16px;z-index:132`;
+    }
     await renderHxPicker(lineUserId);
   }else{ p.style.display='none'; }
   const c=document.getElementById('na-hx-caret'); if(c)c.textContent=open?'▴':'▾';

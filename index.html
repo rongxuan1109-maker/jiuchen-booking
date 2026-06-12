@@ -383,6 +383,17 @@ body::before{
 .btn.primary:hover:not(:disabled){border-color:var(--accent);color:#f3ede1;}
 .btn:disabled{opacity:.35;cursor:default;}
 
+/* ── 圓潤化：少一點四四方方、柔和有質感 ── */
+.card{border-radius:18px;box-shadow:0 8px 26px rgba(120,88,48,.07);}
+.type-card{border-radius:16px;}
+.service-item{border-radius:14px;}
+.th-card{border-radius:15px;}
+.time-slot{border-radius:12px;}
+.radio-item{border-radius:13px;}
+.btn{border-radius:14px;}
+.form-textarea{border-radius:14px;}
+.type-card.selected,.service-item.selected,.th-card.selected,.radio-item.selected{box-shadow:0 4px 14px rgba(192,138,82,.18);}
+
 /* ── SUCCESS ── */
 .success-wrap{text-align:center;padding:24px 0 8px;}
 .success-icon{
@@ -651,12 +662,12 @@ function renderTypeSelect(el) {
   <div class="card">
     <p class="card-title">請選擇就診類型</p>
     <div class="type-grid">
-      <div class="type-card ${state.type==='new'?'selected':''}" onclick="selectType('new')">
+      <div class="type-card ${state.type==='new'?'selected':''}" onclick="selectType('new',this)">
         <div class="type-icon">🌱</div>
         <div class="type-name">初診</div>
         <div class="type-desc">首次到診・需填問卷</div>
       </div>
-      <div class="type-card ${state.type==='return'?'selected':''}" onclick="selectType('return')">
+      <div class="type-card ${state.type==='return'?'selected':''}" onclick="selectType('return',this)">
         <div class="type-icon">🔄</div>
         <div class="type-name">複診</div>
         <div class="type-desc">回診治療・快速預約</div>
@@ -670,7 +681,20 @@ function renderTypeSelect(el) {
   </div>`;
 }
 
-function selectType(t) { state.type = t; render(); }
+function selectType(t, el) {
+  state.type = t;
+  if(el){ el.parentElement.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); }
+  enableStepNext();
+}
+// 只啟用當前步驟的「下一步」鈕，不整頁重畫(避免淡入動畫重播=畫面跳動)
+function enableStepNext(){
+  document.querySelectorAll('#mainContent .btn.primary').forEach(b=>{ if((b.getAttribute('onclick')||'').includes('nextStep')) b.disabled=false; });
+}
+function pickRadio(el, field, val){
+  state[field]=val;
+  if(el){ el.parentElement.querySelectorAll('.radio-item').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); }
+  if(typeof updateBtn==='function') updateBtn();
+}
 
 function renderServiceSelect(el) {
   const services = [
@@ -683,7 +707,7 @@ function renderServiceSelect(el) {
     <p class="section-sub">複診・請選擇治療部位數量</p>
     <div class="service-list">
       ${services.map(s=>`
-        <div class="service-item ${state.service?.id===s.id?'selected':''}" onclick="selectService(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+        <div class="service-item ${state.service?.id===s.id?'selected':''}" onclick="selectService(${JSON.stringify(s).replace(/"/g,'&quot;')},this)">
           <div class="service-dot" style="background:${s.color}"></div>
           <div class="service-info">
             <div class="service-name">${s.name}</div>
@@ -698,7 +722,11 @@ function renderServiceSelect(el) {
   </div>`;
 }
 
-function selectService(s) { state.service = s; render(); }
+function selectService(s, el) {
+  state.service = s;
+  if(el){ el.parentElement.querySelectorAll('.service-item').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); }
+  enableStepNext();
+}
 
 function renderTherapistSelect(el) {
   if (!state.therapists.length) {
@@ -716,7 +744,7 @@ function renderTherapistSelect(el) {
   <div class="card">
     <p class="card-title">選擇治療師</p>
     <div class="therapist-grid">
-      <div class="th-card ${state.therapistId===0?'selected':''}" onclick="selectTherapist(0,'不指定')">
+      <div class="th-card ${state.therapistId===0?'selected':''}" onclick="selectTherapist(0,'不指定',this)">
         <div class="th-avatar" style="background:rgba(155,138,116,.12);color:var(--muted)">任</div>
         <div>
           <div class="th-name">不指定</div>
@@ -726,7 +754,7 @@ function renderTherapistSelect(el) {
       ${state.therapists.map((t,i)=>{
         const p = warmPalette[i % warmPalette.length];
         return `
-        <div class="th-card ${state.therapistId===t.id?'selected':''}" onclick="selectTherapist(${t.id},'${t.name}')">
+        <div class="th-card ${state.therapistId===t.id?'selected':''}" onclick="selectTherapist(${t.id},'${t.name}',this)">
           <div class="th-avatar" style="background:${p.bg};color:${p.color}">${t.name[0]}</div>
           <div>
             <div class="th-name">${t.name} 治療師</div>
@@ -742,7 +770,11 @@ function renderTherapistSelect(el) {
   </div>`;
 }
 
-function selectTherapist(id, name) { state.therapistId = id; state.therapistName = name; render(); }
+function selectTherapist(id, name, el) {
+  state.therapistId = id; state.therapistName = name;
+  if(el){ el.parentElement.querySelectorAll('.th-card').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); }
+  enableStepNext();
+}
 
 async function renderDatetime(el) {
   el.innerHTML = '<div class="loading"><div class="spinner"></div><p>載入可用時段中</p></div>';
@@ -876,15 +908,15 @@ function renderForm(el) {
     <div class="form-group">
       <label class="form-label">曾接受過物理治療？<span>*</span></label>
       <div class="radio-group">
-        <div class="radio-item ${state.previousPT==='是'?'selected':''}" onclick="state.previousPT='是';updateBtn();render()"><span>是</span></div>
-        <div class="radio-item ${state.previousPT==='否'?'selected':''}" onclick="state.previousPT='否';updateBtn();render()"><span>否</span></div>
+        <div class="radio-item ${state.previousPT==='是'?'selected':''}" onclick="pickRadio(this,'previousPT','是')"><span>是</span></div>
+        <div class="radio-item ${state.previousPT==='否'?'selected':''}" onclick="pickRadio(this,'previousPT','否')"><span>否</span></div>
       </div>
     </div>
     <div class="form-group">
       <label class="form-label">是否有手術史？</label>
       <div class="radio-group">
-        <div class="radio-item ${state.surgeryHistory==='是'?'selected':''}" onclick="state.surgeryHistory='是';render()"><span>是</span></div>
-        <div class="radio-item ${state.surgeryHistory==='否'?'selected':''}" onclick="state.surgeryHistory='否';render()"><span>否</span></div>
+        <div class="radio-item ${state.surgeryHistory==='是'?'selected':''}" onclick="pickRadio(this,'surgeryHistory','是')"><span>是</span></div>
+        <div class="radio-item ${state.surgeryHistory==='否'?'selected':''}" onclick="pickRadio(this,'surgeryHistory','否')"><span>否</span></div>
       </div>
     </div>
     <div class="form-group">

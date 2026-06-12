@@ -393,6 +393,8 @@ body::before{
 .btn{border-radius:14px;}
 .form-textarea{border-radius:14px;}
 .type-card.selected,.service-item.selected,.th-card.selected,.radio-item.selected{box-shadow:0 4px 14px rgba(192,138,82,.18);}
+/* 欄位上方的金色註解(取代格子裡的提示字) */
+.form-hint{font-size:11.5px;color:var(--warm);margin:-2px 0 8px;letter-spacing:.3px;font-weight:300;line-height:1.5;}
 
 /* ── SUCCESS ── */
 .success-wrap{text-align:center;padding:24px 0 8px;}
@@ -510,9 +512,9 @@ function birthBox(){
   const ist = 'text-align:center;padding-left:6px;padding-right:6px';
   return `
     <div style="display:flex;align-items:center;gap:6px">
-      <input class="form-input" id="f-by" inputmode="numeric" maxlength="3" data-jump="2" placeholder="民國年" style="${ist}" value="${by}" oninput="onBirthInput(this,'f-bm')"><span style="color:var(--muted);flex-shrink:0">年</span>
-      <input class="form-input" id="f-bm" inputmode="numeric" maxlength="2" placeholder="月" style="${ist}" value="${bm}" oninput="onBirthInput(this,'f-bd')"><span style="color:var(--muted);flex-shrink:0">月</span>
-      <input class="form-input" id="f-bd" inputmode="numeric" maxlength="2" placeholder="日" style="${ist}" value="${bd}" oninput="onBirthInput(this,null)"><span style="color:var(--muted);flex-shrink:0">日</span>
+      <input class="form-input" id="f-by" inputmode="numeric" maxlength="3" data-jump="2" style="${ist}" value="${by}" oninput="onBirthInput(this,'f-bm')"><span style="color:var(--muted);flex-shrink:0">年</span>
+      <input class="form-input" id="f-bm" inputmode="numeric" maxlength="2" style="${ist}" value="${bm}" oninput="onBirthInput(this,'f-bd')"><span style="color:var(--muted);flex-shrink:0">月</span>
+      <input class="form-input" id="f-bd" inputmode="numeric" maxlength="2" style="${ist}" value="${bd}" oninput="onBirthInput(this,null)"><span style="color:var(--muted);flex-shrink:0">日</span>
     </div>
     <p id="f-birth-hint" style="margin:6px 0 0;font-size:13px;color:#2e7d32">${hint}</p>`;
 }
@@ -884,22 +886,26 @@ function renderForm(el) {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">姓名<span>*</span></label>
-        <input class="form-input" id="f-name" placeholder="王小明" value="${state.name}" oninput="state.name=this.value;updateBtn()">
+        <p class="form-hint">例：王小明</p>
+        <input class="form-input" id="f-name" value="${state.name}" oninput="state.name=this.value;updateBtn()">
       </div>
       <div class="form-group">
         <label class="form-label">聯絡電話<span>*</span></label>
-        <input class="form-input" id="f-phone" type="tel" placeholder="0912-345-678" value="${state.phone}" oninput="state.phone=this.value;updateBtn()">
+        <p class="form-hint">例：0912-345-678</p>
+        <input class="form-input" id="f-phone" type="tel" value="${state.phone}" oninput="state.phone=this.value;updateBtn()">
       </div>
     </div>
     ${state.savedInfo?`<p class="notice" style="margin-top:-6px;margin-bottom:12px;color:var(--warm)">✓ 已帶入您上次的資料，如有變動可直接修改</p>`:''}
     ${isNew?`
     <div class="form-group">
       <label class="form-label">出生年月日（民國）<span>*</span></label>
+      <p class="form-hint">填民國年 / 月 / 日（例：民國 54 年 8 月 15 日）</p>
       ${birthBox()}
     </div>
     <div class="form-group">
       <label class="form-label">主要不適部位<span>*</span></label>
-      <input class="form-input" id="f-area" placeholder="例：右肩、下背、左膝…（直接打字）" value="${String(state.discomfortArea||'').replace(/"/g,'&quot;')}" oninput="state.discomfortArea=this.value;updateBtn()">
+      <p class="form-hint">例：右肩、下背、左膝（直接打字）</p>
+      <input class="form-input" id="f-area" value="${String(state.discomfortArea||'').replace(/"/g,'&quot;')}" oninput="state.discomfortArea=this.value;updateBtn()">
     </div>
     <div class="form-group">
       <label class="form-label">不適時間多久了？<span>*</span></label>
@@ -928,7 +934,8 @@ function renderForm(el) {
     <div class="form-group">
       <p class="notice" style="margin-bottom:8px;color:var(--warm)">如是幫年長者或親友預約，請在備註欄註明代約人的姓名、關係、電話，謝謝 🙏</p>
       <label class="form-label">其他說明（選填）</label>
-      <textarea class="form-textarea" placeholder="其他症狀或特殊需求..." oninput="state.otherNotes=this.value">${state.otherNotes}</textarea>
+      <p class="form-hint">其他症狀、特殊需求或代約人資訊</p>
+      <textarea class="form-textarea" oninput="state.otherNotes=this.value">${state.otherNotes}</textarea>
     </div>`:`
     <div class="form-group">
       <p class="notice" style="margin-bottom:8px;color:var(--warm)">如是幫年長者或親友預約，請在備註欄註明代約人的姓名、關係、電話，謝謝 🙏</p>

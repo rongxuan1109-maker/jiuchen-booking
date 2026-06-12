@@ -499,7 +499,7 @@ function birthBox(){
   const ist = 'text-align:center;padding-left:6px;padding-right:6px';
   return `
     <div style="display:flex;align-items:center;gap:6px">
-      <input class="form-input" id="f-by" inputmode="numeric" maxlength="3" placeholder="民國年" style="${ist}" value="${by}" oninput="onBirthInput(this,'f-bm')"><span style="color:var(--muted);flex-shrink:0">年</span>
+      <input class="form-input" id="f-by" inputmode="numeric" maxlength="3" data-jump="2" placeholder="民國年" style="${ist}" value="${by}" oninput="onBirthInput(this,'f-bm')"><span style="color:var(--muted);flex-shrink:0">年</span>
       <input class="form-input" id="f-bm" inputmode="numeric" maxlength="2" placeholder="月" style="${ist}" value="${bm}" oninput="onBirthInput(this,'f-bd')"><span style="color:var(--muted);flex-shrink:0">月</span>
       <input class="form-input" id="f-bd" inputmode="numeric" maxlength="2" placeholder="日" style="${ist}" value="${bd}" oninput="onBirthInput(this,null)"><span style="color:var(--muted);flex-shrink:0">日</span>
     </div>
@@ -508,7 +508,8 @@ function birthBox(){
 function onBirthInput(el, nextId){
   const hadSep = /[^0-9]/.test(el.value);              // 打了 / 或空格等分隔 → 直接跳下一格
   el.value = el.value.replace(/[^0-9]/g,'');
-  if(nextId && (el.value.length >= el.maxLength || (hadSep && el.value.length >= 1))){
+  const jump = parseInt(el.dataset.jump || el.maxLength, 10);
+  if(nextId && (el.value.length >= jump || (hadSep && el.value.length >= 1))){
     const n = document.getElementById(nextId); if(n) n.focus();
   }
   updateBirth();

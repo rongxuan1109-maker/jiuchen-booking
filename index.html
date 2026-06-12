@@ -468,7 +468,24 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const STEPS = ['選擇類型','服務項目','選治療師','選時間','填寫資料','確認送出'];
 const DAYS = ['日','一','二','三','四','五','六'];
-const TIMES = ['09:00','09:30','10:00','10:30','11:00','11:30','13:30','14:00','14:30','15:00','15:30','16:00'];
+// 班表時段區塊 → 可預約的 30 分鐘起始時段（早診09–11、下午診15–17、晚診18–20）
+const SHIFT_SLOTS = {
+  am:  ['09:00','09:30','10:00','10:30'],
+  pm:  ['15:00','15:30','16:00','16:30'],
+  eve: ['18:00','18:30','19:00','19:30']
+};
+// 不指定治療師＝開放全部標準時段（早診＋下午診＋晚診）；指定治療師＝只開他那天有排班的時段
+function availableTimes(date, therapistId){
+  if(!date) return [];
+  if(!therapistId || therapistId===0){
+    return [...SHIFT_SLOTS.am, ...SHIFT_SLOTS.pm, ...SHIFT_SLOTS.eve];
+  }
+  const wd = String(date.getDay());            // 0=日 … 6=六
+  const blocks = (state.schedules[therapistId] && state.schedules[therapistId][wd]) || [];
+  const slots = new Set();
+  blocks.forEach(b => (SHIFT_SLOTS[b]||[]).forEach(s => slots.add(s)));
+  return [...slots].sort();
+}
 
 const LIFF_ID = '2010100504-7lHo8M0R';
 let lineUserId = null;
@@ -499,6 +516,7 @@ let state = {
   discomfortDuration: '', previousPT: '', surgeryHistory: '', otherNotes: '',
   calMonth: new Date(),
   therapists: [],
+  schedules: {},
   bookedSlots: [],
   savedInfo: false
 };
@@ -506,6 +524,10 @@ let state = {
 async function loadTherapists() {
   const { data, error } = await sb.from('therapists').select('*').order('id');
   if (data) state.therapists = data;
+  // 載入治療師班表（每週固定），用來決定可預約時段
+  const { data: scheds } = await sb.from('therapist_schedules').select('therapist_id, shifts');
+  state.schedules = {};
+  (scheds||[]).forEach(s => { state.schedules[s.therapist_id] = s.shifts || {}; });
 }
 
 // 用 LINE ID 找出病人上次填寫的資料，自動帶入（病人仍可修改）
@@ -711,11 +733,12 @@ async function renderDatetime(el) {
     }).join('')}
   </div>`;
 
+  const slots = availableTimes(state.date, state.therapistId);
   const timeHtml = state.date ? `
   <div class="card" style="margin-top:0">
     <p class="card-title">${state.date.getMonth()+1} 月 ${state.date.getDate()} 日 可用時段</p>
-    <div class="time-grid">
-      ${TIMES.map(t=>{
+    ${slots.length ? `<div class="time-grid">
+      ${slots.map(t=>{
         const taken = bookedTimes.includes(t);
         const isToday = state.date && fmtDate(state.date) === fmtDate(new Date());
         const isPastTime = isToday && (() => {
@@ -727,7 +750,8 @@ async function renderDatetime(el) {
         return `<div class="time-slot ${disabled?'taken':''} ${state.time===t?'selected':''}" onclick="${disabled?'':'selectTime(\''+t+'\')'}">${t}</div>`;
       }).join('')}
     </div>
-    <p class="notice">已劃線時段不可預約</p>
+    <p class="notice">已劃線時段不可預約</p>`
+    : `<p class="notice" style="text-align:center;padding:18px 4px;line-height:1.7">這天${state.therapistId&&state.therapistId!==0?'這位治療師沒有排班':'目前沒有治療師排班'}<br>請改選其他日期或治療師 🙏</p>`}
   </div>` : '';
 
   el.innerHTML = `

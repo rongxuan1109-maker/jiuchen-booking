@@ -2712,6 +2712,17 @@ function openNewApptAt(date, time, edit){
         <label class="field-lbl">備註</label>
         <input id="na-note" style="${fieldBox()}" placeholder="代約人姓名/關係/電話、特殊需求…" value="${edit?String(noteText(edit)||'').replace(/"/g,'&quot;'):''}">
       </div>
+      ${edit?`
+      <div style="margin:8px 0 4px;padding-top:13px;border-top:1px dashed var(--border)">
+        <label class="field-lbl">🏃 居家運動處方（指派給病人）</label>
+        ${edit.line_user_id?'':`<div style="font-size:11px;color:var(--new-color);background:var(--new-bg);padding:6px 10px;border-radius:8px;margin:4px 0 8px">⚠️ 這位病人還沒綁定 LINE（只有用 LINE 線上預約過的才有），可先指派，但機器人暫時推不到他</div>`}
+        <div id="hx-list" style="display:flex;flex-direction:column;gap:6px">
+          ${EX_LIB.flatMap(g=>g.items.map(it=>`<label style="display:flex;align-items:center;gap:9px;padding:7px 10px;border:1px solid var(--border);border-radius:9px;cursor:pointer;font-size:13px;font-weight:300"><input type="checkbox" class="hx-cb" data-url="${it.url}" data-title="${esc(it.title)}" data-tag="${g.tag}" data-color="${g.color}"><span style="background:${g.color};color:#fff;padding:1px 8px;border-radius:9px;font-size:11px;flex-shrink:0">${g.tag}</span><span>${esc(it.title)}</span></label>`)).join('')}
+        </div>
+        <input id="hx-note" style="${fieldBox()}margin-top:8px" placeholder="叮嚀（例：每天2回，會痛就停）">
+        <button class="mBtn primary" style="width:100%;margin-top:9px" onclick="saveHomeExercise('${edit.line_user_id||''}')">儲存指派並推送</button>
+        <div id="hx-msg" style="font-size:12px;text-align:center;margin-top:6px;color:var(--muted)"></div>
+      </div>`:''}
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">取消</button>
         <button class="mBtn primary" onclick="${edit?`submitEditAppt(${edit.id})`:'submitNewAppt()'}">${edit?'確認修改':'確認新增'}</button>
@@ -2725,6 +2736,46 @@ function openNewApptAt(date, time, edit){
   updateBodySummary();
   // 一開表單就自動帶出「當天時間軸」（看那天那位治療師排滿沒）
   setTimeout(()=>{ const p=document.getElementById('na-daytl'); if(p&&getComputedStyle(p).display==='none') toggleDayTimeline(); },0);
+  if(edit) loadHomeExercise(edit.line_user_id);
+}
+
+// ===== 居家運動指派（後台勾選 → 寫 home_exercises；瓦力查得到就推給病人）=====
+const EX_LIB=[
+  { tag:'肩頸', color:'#7AA095', items:[
+    { title:'肩頸放鬆運動', url:'https://www.youtube.com/watch?v=Utmh8WTKObc' },
+  ]},
+  { tag:'下背', color:'#C18A5E', items:[
+    { title:'5分鐘脊椎伸展', url:'https://www.youtube.com/watch?v=cborst0Nai8' },
+    { title:'貓牛式伸展', url:'https://www.youtube.com/watch?v=cborst0Nai8' },
+  ]},
+  { tag:'膝蓋', color:'#6E94A6', items:[
+    { title:'膝關節保養運動', url:'https://www.youtube.com/watch?v=hBkbEDyjXpo' },
+  ]},
+  { tag:'銀髮', color:'#A6896E', items:[
+    { title:'下肢肌力訓練', url:'https://www.youtube.com/watch?v=JBlgmgeTJbg' },
+  ]},
+];
+async function loadHomeExercise(lineUserId){
+  if(!lineUserId) return;
+  try{
+    const {data}=await sb.from('home_exercises').select('items,note').eq('line_user_id',lineUserId).maybeSingle();
+    if(!data) return;
+    (data.items||[]).forEach(it=>{ const cb=document.querySelector('.hx-cb[data-url="'+it.url+'"]'); if(cb) cb.checked=true; });
+    const nEl=document.getElementById('hx-note'); if(nEl&&data.note) nEl.value=data.note;
+  }catch(e){}
+}
+async function saveHomeExercise(lineUserId){
+  const msg=document.getElementById('hx-msg');
+  const items=[...document.querySelectorAll('.hx-cb:checked')].map(cb=>({title:cb.dataset.title,url:cb.dataset.url,tag:cb.dataset.tag,color:cb.dataset.color}));
+  const note=(document.getElementById('hx-note').value||'').trim();
+  if(!items.length){ msg.style.color='var(--new-color)'; msg.textContent='請至少勾選一項運動'; return; }
+  if(!lineUserId){ msg.style.color='var(--new-color)'; msg.textContent='這位病人沒有 LINE 綁定，無法推送（請他用 LINE 線上預約一次）'; return; }
+  msg.style.color='var(--muted)'; msg.textContent='儲存中…';
+  try{
+    const {error}=await sb.from('home_exercises').upsert({line_user_id:lineUserId,items,note,updated_at:new Date().toISOString()},{onConflict:'line_user_id'});
+    if(error) throw error;
+    msg.style.color='var(--accent)'; msg.textContent='✅ 已儲存指派（'+items.length+' 支），病人打「我的運動」就收得到';
+  }catch(e){ msg.style.color='var(--new-color)'; msg.textContent='儲存失敗：'+(e.message||e); }
 }
 
 // 開始→結束 之間要佔的 30 分鐘格子（含開始、不含結束）；end<=start 至少回傳 1 格
@@ -2901,9 +2952,20 @@ async function toggleType(id){
   showToast('已更新類型');_invalidateCache();await loadData();
 }
 async function cancelAppt(id){
-  if(!confirm('確定要取消這個預約嗎？'))return;
-  await sb.from('appointments').update({status:'cancelled'}).eq('id',id);
-  showToast('已取消預約');_invalidateCache();await loadData();
+  const a=appointments.find(x=>x.id===id);
+  // 一小時=兩格(兩筆)；找出「同一筆預約的所有連續格子」一起取消，不用按兩次
+  let ids=[id];
+  if(a){
+    try{
+      const sameDay=appointments.filter(x=>x.appointment_date===a.appointment_date&&x.status!=='cancelled');
+      const grp=groupConsecutiveAppts(sameDay).find(g=>g.some(x=>x.id===id));
+      if(grp&&grp.length) ids=grp.map(x=>x.id);
+    }catch(e){}
+  }
+  const n=ids.length;
+  if(!confirm(n>1?`這筆預約共 ${n} 個時段（${a?a.appointment_time.slice(0,5):''} 起），確定要全部取消嗎？`:'確定要取消這個預約嗎？'))return;
+  await sb.from('appointments').update({status:'cancelled'}).in('id',ids);
+  showToast(n>1?`已取消預約（${n} 個時段）`:'已取消預約');_invalidateCache();await loadData();
 }
 async function restoreAppt(id){
   await sb.from('appointments').update({status:'confirmed'}).eq('id',id);

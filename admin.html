@@ -470,17 +470,21 @@ input,select,textarea{border-radius:8px;}
   .header-left{flex:1 1 100%;flex-wrap:wrap;gap:6px;align-items:center;}
   .header-right{flex:1 1 100% !important;justify-content:flex-start !important;min-width:0;}
   #dateBarCenter{flex:1 1 auto !important;max-width:none !important;}
-  .header-title{font-size:13px;}
-  .header-sub{font-size:10px;}
-  #btnCalPage,#btnPatientsPage{font-size:10px;padding:5px 9px;}
-  .view-btn{padding:4px 9px;font-size:11px;}
-  .th-tabs{padding:7px 12px;gap:5px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;}
-  .th-tab{font-size:10px;padding:4px 9px;flex-shrink:0;}
+  /* 手機：所有控制項放大到好點、加大間距，不再硬縮成 10px */
+  .header-title{font-size:16px;}
+  .header-sub{font-size:11px;}
+  #btnCalPage,#btnPatientsPage{font-size:13px;padding:8px 15px;}
+  .view-btn{padding:8px 16px;font-size:14px;}
+  #toolbarSearch{font-size:15px !important;padding:10px 16px !important;}
+  .nav-btn{font-size:17px;padding:6px 11px;}
+  #themeToggle{font-size:18px;}
+  .th-tabs{padding:10px 12px;gap:8px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;}
+  .th-tab{font-size:13px;padding:8px 16px;flex-shrink:0;}
   .date-bar{flex-wrap:nowrap;overflow:hidden;}
   .date-bar-center{min-width:0;}
   .date-bar{padding:7px 12px;gap:5px;}
-  .date-label{font-size:13px;}
-  .today-btn,.refresh-btn{font-size:10px;padding:3px 7px;}
+  .date-label{font-size:15px;}
+  .today-btn,.refresh-btn{font-size:13px;padding:7px 14px;}
   .stats{padding:0 12px 8px;gap:5px;}
   .stat-n{font-size:20px;}
   .stat-l{font-size:10px;}
@@ -504,7 +508,9 @@ input,select,textarea{border-radius:8px;}
     padding:12px 14px calc(4px + env(safe-area-inset-bottom));
     border-top:1px solid var(--border);
   }
-  .mBtn{font-size:12px;padding:12px 6px;}
+  .mBtn{font-size:15px;padding:14px 8px;}
+  .field-lbl{font-size:12px;}
+  #na-name,#na-phone,#na-note,#na-other,#na-time,#na-end,#na-th,#na-proxy{font-size:15px!important;}
   /* 手機：精簡工具列、時間軸填滿、整天接近一頁 */
   body::before{display:none;}              /* 關掉雜訊紋理，手機上較銳利乾淨 */
   .stats{display:none;}

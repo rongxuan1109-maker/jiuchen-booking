@@ -64,11 +64,6 @@ body{
   min-height:100vh;user-select:none;
   overflow-x:clip;max-width:100vw;   /* clip 比 hidden 更徹底防水平溢出/橫向飄 */
 }
-body::before{
-  content:'';position:fixed;inset:0;
-  pointer-events:none;z-index:9999;opacity:.04;
-  background-image:url("data:image/png;base64,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");background-size:72px 72px;
-}
 
 /* ── LOGIN SCREEN ── */
 #loginScreen{
@@ -2713,15 +2708,12 @@ function openNewApptAt(date, time, edit){
         <input id="na-note" style="${fieldBox()}" placeholder="代約人姓名/關係/電話、特殊需求…" value="${edit?String(noteText(edit)||'').replace(/"/g,'&quot;'):''}">
       </div>
       ${edit?`
-      <div style="margin:8px 0 4px;padding-top:13px;border-top:1px dashed var(--border)">
-        <label class="field-lbl">🏃 居家運動處方（指派給病人）</label>
-        ${edit.line_user_id?'':`<div style="font-size:11px;color:var(--new-color);background:var(--new-bg);padding:6px 10px;border-radius:8px;margin:4px 0 8px">⚠️ 這位病人還沒綁定 LINE（只有用 LINE 線上預約過的才有），可先指派，但機器人暫時推不到他</div>`}
-        <div id="hx-list" style="display:flex;flex-direction:column;gap:6px">
-          ${EX_LIB.flatMap(g=>g.items.map(it=>`<label style="display:flex;align-items:center;gap:9px;padding:7px 10px;border:1px solid var(--border);border-radius:9px;cursor:pointer;font-size:13px;font-weight:300"><input type="checkbox" class="hx-cb" data-url="${it.url}" data-title="${esc(it.title)}" data-tag="${g.tag}" data-color="${g.color}"><span style="background:${g.color};color:#fff;padding:1px 8px;border-radius:9px;font-size:11px;flex-shrink:0">${g.tag}</span><span>${esc(it.title)}</span></label>`)).join('')}
+      <div style="margin:8px 0 4px;padding-top:12px;border-top:1px dashed var(--border)">
+        <div id="na-hx-summary" onclick="toggleHxPicker('${edit.line_user_id||''}')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;font-size:13px;font-weight:300">
+          <span style="color:var(--text2)">🏃 居家運動處方<span id="na-hx-count" style="color:var(--muted);font-size:12px"></span></span>
+          <span id="na-hx-caret" style="color:var(--muted)">▾</span>
         </div>
-        <input id="hx-note" style="${fieldBox()}margin-top:8px" placeholder="叮嚀（例：每天2回，會痛就停）">
-        <button class="mBtn primary" style="width:100%;margin-top:9px" onclick="saveHomeExercise('${edit.line_user_id||''}')">儲存指派並推送</button>
-        <div id="hx-msg" style="font-size:12px;text-align:center;margin-top:6px;color:var(--muted)"></div>
+        <div id="na-hx-picker" style="display:none"></div>
       </div>`:''}
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">取消</button>
@@ -2735,8 +2727,7 @@ function openNewApptAt(date, time, edit){
   // 部位選取器預設藏起（點摘要列才浮出）；先把已選摘要更新出來
   updateBodySummary();
   // 一開表單就自動帶出「當天時間軸」（看那天那位治療師排滿沒）
-  setTimeout(()=>{ const p=document.getElementById('na-daytl'); if(p&&getComputedStyle(p).display==='none') toggleDayTimeline(); },0);
-  if(edit) loadHomeExercise(edit.line_user_id);
+  if(edit) loadHxCount(edit.line_user_id);
 }
 
 // ===== 居家運動指派（後台勾選 → 寫 home_exercises；瓦力查得到就推給病人）=====
@@ -2755,14 +2746,50 @@ const EX_LIB=[
     { title:'下肢肌力訓練', url:'https://www.youtube.com/watch?v=JBlgmgeTJbg' },
   ]},
 ];
-async function loadHomeExercise(lineUserId){
+// 開窗時只抓「已指派幾支」顯示在按鈕上
+async function loadHxCount(lineUserId){
   if(!lineUserId) return;
   try{
-    const {data}=await sb.from('home_exercises').select('items,note').eq('line_user_id',lineUserId).maybeSingle();
-    if(!data) return;
-    (data.items||[]).forEach(it=>{ const cb=document.querySelector('.hx-cb[data-url="'+it.url+'"]'); if(cb) cb.checked=true; });
-    const nEl=document.getElementById('hx-note'); if(nEl&&data.note) nEl.value=data.note;
+    const {data}=await sb.from('home_exercises').select('items').eq('line_user_id',lineUserId).maybeSingle();
+    const el=document.getElementById('na-hx-count'); if(el&&data&&(data.items||[]).length) el.textContent=`（已指派 ${data.items.length} 支）`;
   }catch(e){}
+}
+// 點按鈕 → 浮出右邊小卡（像部位選擇器）
+async function toggleHxPicker(lineUserId){
+  const p=document.getElementById('na-hx-picker'); if(!p)return;
+  const open=getComputedStyle(p).display==='none';
+  const bp=document.getElementById('na-body-picker'); if(open&&bp)bp.style.display='none';
+  const dt=document.getElementById('na-daytl'); if(open&&dt)dt.style.display='none';
+  if(open){
+    const m=document.querySelector('#modalArea .modal'), mr=m?m.getBoundingClientRect():null;
+    const W=300, gap=12;
+    let left=mr?mr.right+gap:window.innerWidth-W-24, top=mr?mr.top:40;
+    if(left+W>window.innerWidth-8) left=mr?Math.max(8,mr.left-W-gap):window.innerWidth-W-8;
+    p.style.cssText=`display:block;position:fixed;left:${Math.round(left)}px;top:${Math.round(top)}px;width:${W}px;max-width:calc(100vw - 16px);max-height:84vh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 44px rgba(28,22,17,.3);padding:14px 16px;z-index:132`;
+    await renderHxPicker(lineUserId);
+  }else{ p.style.display='none'; }
+  const c=document.getElementById('na-hx-caret'); if(c)c.textContent=open?'▴':'▾';
+}
+async function renderHxPicker(lineUserId){
+  const wrap=document.getElementById('na-hx-picker'); if(!wrap)return;
+  wrap.innerHTML=`
+    <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:9px">🏃 居家運動處方</div>
+    ${lineUserId?'':`<div style="font-size:11px;color:var(--new-color);background:var(--new-bg);padding:6px 10px;border-radius:8px;margin-bottom:8px">⚠️ 這位病人還沒綁定 LINE，可先指派，但機器人暫時推不到他</div>`}
+    <div id="hx-list" style="display:flex;flex-direction:column;gap:6px">
+      ${EX_LIB.flatMap(g=>g.items.map(it=>`<label style="display:flex;align-items:center;gap:9px;padding:7px 10px;border:1px solid var(--border);border-radius:9px;cursor:pointer;font-size:13px;font-weight:300"><input type="checkbox" class="hx-cb" data-url="${it.url}" data-title="${esc(it.title)}" data-tag="${g.tag}" data-color="${g.color}"><span style="background:${g.color};color:#fff;padding:1px 8px;border-radius:9px;font-size:11px;flex-shrink:0">${g.tag}</span><span>${esc(it.title)}</span></label>`)).join('')}
+    </div>
+    <input id="hx-note" style="${fieldBox()}margin-top:8px" placeholder="叮嚀（例：每天2回，會痛就停）">
+    <button class="mBtn primary" style="width:100%;margin-top:9px" onclick="saveHomeExercise('${lineUserId||''}')">儲存指派並推送</button>
+    <div id="hx-msg" style="font-size:12px;text-align:center;margin-top:6px;color:var(--muted)"></div>`;
+  if(lineUserId){
+    try{
+      const {data}=await sb.from('home_exercises').select('items,note').eq('line_user_id',lineUserId).maybeSingle();
+      if(data){
+        (data.items||[]).forEach(it=>{ const cb=wrap.querySelector('.hx-cb[data-url="'+it.url+'"]'); if(cb) cb.checked=true; });
+        const nEl=wrap.querySelector('#hx-note'); if(nEl&&data.note) nEl.value=data.note;
+      }
+    }catch(e){}
+  }
 }
 async function saveHomeExercise(lineUserId){
   const msg=document.getElementById('hx-msg');

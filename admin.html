@@ -465,7 +465,11 @@ input,select,textarea{border-radius:8px;}
 
 /* ── MOBILE ── */
 @media (max-width:640px){
-  .header{padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top));}
+  /* 手機：工具列自動折成兩行，不橫切 */
+  .header{padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top));flex-wrap:wrap !important;overflow-x:visible !important;row-gap:8px;align-items:center;}
+  .header-left{flex:1 1 100%;flex-wrap:wrap;gap:6px;align-items:center;}
+  .header-right{flex:1 1 100% !important;justify-content:flex-start !important;min-width:0;}
+  #dateBarCenter{flex:1 1 auto !important;max-width:none !important;}
   .header-title{font-size:13px;}
   .header-sub{font-size:10px;}
   #btnCalPage,#btnPatientsPage{font-size:10px;padding:5px 9px;}

@@ -719,7 +719,7 @@ const TIMES = (function(){
 })();
 // 一格=30分鐘的高度。電腦版「依螢幕高度自動算」：讓可視範圍一次看得到 12 小時(=24 格)；
 // 公式 (可視高 / 24)，並夾在 26~44px 之間（太小字會擠、太大又看不到 12 小時）。手機也用公式(下限22)讓一次看到 12 小時。
-const SLOT_H = window.innerWidth<=640 ? Math.max(22, Math.round((window.innerHeight - 168) / 24)) : Math.max(26, Math.min(44, Math.round((window.innerHeight - 170) / 24)));
+const SLOT_H = window.innerWidth<=640 ? Math.max(15, Math.round((window.innerHeight - 95) / 42)) : Math.max(26, Math.min(44, Math.round((window.innerHeight - 170) / 24)));
 const DEFAULT_TIME = '09:00'; // 月檢視/新增預約的預設時段
 const isHourMark = t => t.endsWith(':00');
 // 時間軸標示：09:00→上午9時、15:00→下午3時、12:00→中午12時、00:00→凌晨12時

@@ -886,12 +886,10 @@ function renderForm(el) {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">姓名<span>*</span></label>
-        <p class="form-hint">例：王小明</p>
         <input class="form-input" id="f-name" value="${state.name}" oninput="state.name=this.value;updateBtn()">
       </div>
       <div class="form-group">
         <label class="form-label">聯絡電話<span>*</span></label>
-        <p class="form-hint">例：0912-345-678</p>
         <input class="form-input" id="f-phone" type="tel" value="${state.phone}" oninput="state.phone=this.value;updateBtn()">
       </div>
     </div>

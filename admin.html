@@ -1783,6 +1783,13 @@ function closeApptPopover(){ const p=document.getElementById('apptPop'); if(p)p.
 function bookNext(id){
   const a=appointments.find(x=>x.id===id); if(!a){ closeApptPopover(); return; }
   closeApptPopover();
+  // 算出「這次」的完整時長（連續幾格→結束時間），約下次時自動沿用同樣長度（na-end 仍可手動再調）
+  let endT='';
+  try{
+    const sameDay=appointments.filter(x=>x.appointment_date===a.appointment_date&&x.status!=='cancelled');
+    const grp=groupConsecutiveAppts(sameDay).find(g=>g.some(x=>x.id===id));
+    if(grp&&grp.length>1) endT=slotEnd(grp[grp.length-1].appointment_time);   // 例：60分=2格→帶+60分結束
+  }catch(e){}
   const d=new Date(a.appointment_date+'T00:00:00'); d.setDate(d.getDate()+7);   // 預設下週同一天
   const nd=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const nt=a.appointment_time.slice(0,5);                                        // 預設同時段
@@ -1792,6 +1799,8 @@ function bookNext(id){
   const setv=(i,v)=>{const el=document.getElementById(i); if(el)el.value=v;};
   setv('na-name', a.patient_name||'');
   setv('na-phone', a.patient_phone||'');
+  // ★ 下次自動沿用這次時長（在 naSelectType 之後設，避免被重置）
+  if(endT){ const eEl=document.getElementById('na-end'); if(eEl){ eEl.value=endT; if(typeof renderDayTimeline==='function') renderDayTimeline(); } }
   const t=document.querySelector('#modalArea .modal-title'); if(t)t.textContent='約下次（複診）';
 }
 function getThName(id){if(!id)return'不指定';const t=therapists.find(x=>x.id===id);return t?t.name+' 治療師':'不指定';}

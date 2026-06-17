@@ -1128,7 +1128,7 @@ function fieldBox(){ return `width:100%;border:none;border-bottom:1px solid var(
 
 function openNewPatient(){
   document.getElementById('modalArea').innerHTML=`
-  <div class="modal-bg" onclick="closeModal()">
+  <div class="modal-bg" onclick="guardedCloseModal()">
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
       <p class="modal-title">新增病人資料</p>
@@ -1190,7 +1190,7 @@ function openPatientDetail(id){
   if(!p)return;
   window._editParts=[...(p.body_parts||[])];
   document.getElementById('modalArea').innerHTML=`
-  <div class="modal-bg" onclick="closeModal()">
+  <div class="modal-bg" onclick="guardedCloseModal()">
     <div class="modal" onclick="event.stopPropagation()" style="max-height:85vh;overflow-y:auto">
       <div class="modal-handle"></div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
@@ -1514,7 +1514,7 @@ function renderShiftScheduler(){
     ${SHIFT_WDAYS.map(d=>{const on=_shiftOn(tid,d.w,b.code);return `<div onclick="toggleShift(${d.w},'${b.code}')" style="height:36px;border-radius:8px;border:1px solid ${on?'var(--warm)':'var(--border)'};background:${on?'var(--warm)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:15px">${on?'✓':''}</div>`;}).join('')}
   </div>`).join('');
   document.getElementById('modalArea').innerHTML=`
-  <div class="modal-bg" onclick="closeModal()">
+  <div class="modal-bg" onclick="guardedCloseModal()">
     <div class="modal" onclick="event.stopPropagation()" style="max-width:540px">
       <div class="modal-handle"></div>
       <p class="modal-title">🗓️ 治療師排班</p>
@@ -2270,7 +2270,7 @@ function renderDatePicker(){
   }).join('');
 
   document.getElementById('modalArea').innerHTML=`
-  <div class="modal-bg" onclick="closeModal()">
+  <div class="modal-bg" onclick="guardedCloseModal()">
     <div class="modal" onclick="event.stopPropagation()" style="max-height:85vh;overflow-y:auto">
       <div class="modal-handle"></div>
       <p class="modal-title">選擇日期</p>
@@ -2312,7 +2312,7 @@ function openModal(id){
   // 活動類型
   if(isEvent(a)){
     document.getElementById('modalArea').innerHTML=`
-    <div class="modal-bg" onclick="closeModal()">
+    <div class="modal-bg" onclick="guardedCloseModal()">
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-handle"></div>
         <p class="modal-title">📅 活動詳情</p>
@@ -2331,7 +2331,7 @@ function openModal(id){
   // 已取消的預約：顯示恢復選項
   if(a.status==='cancelled'){
     document.getElementById('modalArea').innerHTML=`
-    <div class="modal-bg" onclick="closeModal()">
+    <div class="modal-bg" onclick="guardedCloseModal()">
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-handle"></div>
         <p class="modal-title">預約詳情（已取消）</p>
@@ -2349,6 +2349,18 @@ function openModal(id){
   openEditAppt(id);
 }
 function closeModal(){document.getElementById('modalArea').innerHTML='';}
+/* 點視窗外的背景要關閉時：表單若已填了東西，先問一聲，避免一個誤觸就把填到一半的資料全部清掉 */
+function guardedCloseModal(){
+  const card=document.querySelector('#modalArea .modal');
+  if(card){
+    const filled=[...card.querySelectorAll('input,textarea')].some(el=>{
+      if(el.type==='checkbox'||el.type==='radio'||el.type==='hidden') return false;
+      return (el.value||'').trim()!=='';
+    });
+    if(filled && !confirm('這個視窗還沒儲存，確定要關閉並放棄已填的內容嗎？')) return;
+  }
+  closeModal();
+}
 
 let reschedApptId=null,reschedDate=null,reschedTime=null,reschedCalMonth=new Date();
 
@@ -2386,7 +2398,7 @@ function renderReschedule(){
     </div>
   </div>`;
   document.getElementById('modalArea').innerHTML=`
-  <div class="modal-bg" onclick="closeModal()">
+  <div class="modal-bg" onclick="guardedCloseModal()">
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
       <p class="modal-title">修改預約時間</p>
@@ -2651,7 +2663,7 @@ function openNewApptAt(date, time, edit){
     endTime=slotEnd(_last);
   }else{ endTime=slotEnd(time); }
   document.getElementById('modalArea').innerHTML=`
-  <div class="modal-bg" onclick="closeModal()">
+  <div class="modal-bg" onclick="guardedCloseModal()">
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
       <p class="modal-title">${edit?'預約詳情':'新增預約'}</p>
@@ -2969,7 +2981,7 @@ function renderProxyPicker(){
   }).join('');
   const ready=_proxyAgent&&_proxyTarget;
   document.getElementById('modalArea').innerHTML=`
-  <div class="modal-bg" onclick="closeModal()">
+  <div class="modal-bg" onclick="guardedCloseModal()">
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
       <p class="modal-title">代約</p>
@@ -3068,7 +3080,7 @@ function _renderEventModal(){
   const noteVal=document.getElementById('ev-note')?.value||'';
 
   document.getElementById('modalArea').innerHTML=`
-  <div class="modal-bg" onclick="closeModal()">
+  <div class="modal-bg" onclick="guardedCloseModal()">
     <div class="modal" onclick="event.stopPropagation()" style="max-height:90vh;overflow-y:auto">
       <div class="modal-handle"></div>
       <p class="modal-title">新增活動</p>

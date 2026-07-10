@@ -88,6 +88,19 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
 .free-slot:active{background:var(--glow)}
 .free-slot .add{color:var(--warm);font-size:20px}
 
+/* ===== 日檢視時間軸（Google 日曆式） ===== */
+.tl{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.tl-lab{position:absolute;left:8px;transform:translateY(-50%);font-size:10px;color:var(--sub);font-variant-numeric:tabular-nums}
+.tl-line{position:absolute;left:46px;right:0;border-top:1px solid var(--line);opacity:.55}
+.tl-canvas{position:absolute;left:50px;right:6px}
+.tl-blk{position:absolute;border-radius:8px;padding:2px 7px;overflow:hidden;color:#fff;box-shadow:0 1px 3px rgba(42,29,18,.14)}
+.tl-blk:active{filter:brightness(.94)}
+.tl-blk .b1{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.tl-blk .b2{font-size:10px;opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-blk.ev{background:rgba(138,127,176,.16);color:var(--event);border:1px dashed var(--event);box-shadow:none}
+.tl-now{position:absolute;left:0;right:0;height:2px;background:var(--danger);z-index:5;pointer-events:none}
+.tl-now::before{content:'';position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--danger)}
+
 /* ===== FAB ===== */
 .fab{position:fixed;right:18px;bottom:calc(var(--tab-h) + var(--safe-b) + 16px);width:58px;height:58px;border-radius:20px;background:var(--warm);color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(192,138,82,.42);z-index:25}
 .fab:active{background:var(--warm-d);transform:scale(.95)}
@@ -350,42 +363,69 @@ async function renderToday(){
 function shiftDay(n){ curDate.setDate(curDate.getDate()+n); renderToday(); }
 function goToday(){ curDate=new Date(); renderToday(); }
 
+/* Google 日曆式時間軸：08:00–22:00 一屏看到大部分，其餘往下捲 */
+const TL_HOUR=42, TL_PAD=12;           // 每小時高度(px)、上下留白
+let TL_START=480, TL_PXM=TL_HOUR/60;   // 起點分鐘數、每分鐘幾px（點空白新增時要用）
+function tMin(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
+function minT(x){return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');}
 function renderTodayList(rows){
   const list=$('todayList'); if(!list)return;
+  const ds=fmtDate(curDate);
   const groups=groupAppts(rows);
-  const events=rows.filter(a=>isEvent(a));
-  const evByTime={}; events.forEach(e=>{const t=hm(e.appointment_time);(evByTime[t]=evByTime[t]||[]).push(e);});
-  const grpByStart={}; groups.forEach(g=>{grpByStart[hm(g[0].appointment_time)]=g;});
-  // 第二格(60分後半)的時間，畫清單時要跳過
-  const secondSet=new Set(); groups.forEach(g=>{ if(g.length>1) secondSet.add(hm(g[1].appointment_time)); });
-  // 要顯示的時間＝標準時段 ∪ 實際有預約/活動的時間（含非標準如 11:00），排序後逐一畫
-  const timeSet=new Set(ALL_SLOTS);
-  groups.forEach(g=>timeSet.add(hm(g[0].appointment_time)));
-  events.forEach(e=>timeSet.add(hm(e.appointment_time)));
-  const times=[...timeSet].filter(t=>!secondSet.has(t)).sort();
-  let html='';
-  times.forEach(t=>{
-    const g=grpByStart[t]; const evs=evByTime[t]||[]; const standard=ALL_SLOTS.includes(t);
-    let inner='';
-    if(g){
-      const dur=g.length*30; const a=g[0]; const span=g.length>1;
-      inner+=`<div class="appt" onclick="openApptDetail(${a.id})" style="border-left-color:${esc(thColor(a.therapist_id))}">
-        <div class="r1"><div class="nm">${esc(a.patient_name||'（無名）')}</div><div class="dur">${dur}分</div></div>
-        <div class="r2">
-          <span class="tag ${a.type==='new'?'new':''}">${a.type==='new'?'初診':'複診'}</span>
-          <span>${esc(thName(a.therapist_id))}</span>
-          ${a.patient_phone?`<span>· ${esc(a.patient_phone)}</span>`:''}
-        </div>${span?`<div class="r2"><span>🕐 ${t}–${addMin(t,dur)}</span></div>`:''}
-      </div>`;
-    }
-    evs.forEach(e=>{ inner+=`<div class="appt event" onclick="openEventDetail(${e.id})"><div class="r1"><div class="nm">🚫 ${esc(e.patient_name||'公休/活動')}</div></div><div class="r2"><span>${e.therapist_id==null?'全院':esc(thName(e.therapist_id))}</span></div></div>`; });
-    if(!g&&!evs.length&&standard){
-      inner+=`<div class="free-slot" onclick="openNew('${fmtDate(curDate)}','${t}')"><span>空</span><span class="add">＋</span></div>`;
-    }
-    if(inner) html+=`<div class="slot-row"><div class="slot-time">${t}</div><div class="slot-body">${inner}</div></div>`;
+  // 活動：同一活動的相鄰時段合併成一整塊
+  const evs=rows.filter(isEvent).slice().sort((a,b)=>a.appointment_time.localeCompare(b.appointment_time));
+  const evUsed=new Set(); const evBlocks=[];
+  evs.forEach(e=>{
+    if(evUsed.has(e.id))return;
+    let start=tMin(hm(e.appointment_time)), end=start+30; evUsed.add(e.id);
+    let grow=true;
+    while(grow){ grow=false; for(const x of evs){ if(evUsed.has(x.id))continue;
+      if(x.note===e.note&&x.therapist_id===e.therapist_id&&tMin(hm(x.appointment_time))===end){ end+=30; evUsed.add(x.id); grow=true; } } }
+    evBlocks.push({kind:'ev',id:e.id,start,dur:end-start,name:e.patient_name||'公休/活動',who:e.therapist_id==null?'全院':thName(e.therapist_id)});
   });
-  list.innerHTML=html||`<div class="empty"><div class="ic">🌿</div>今天沒有可約時段</div>`;
+  const blocks=groups.map(g=>({kind:'appt',id:g[0].id,start:tMin(hm(g[0].appointment_time)),dur:g.length*30,name:g[0].patient_name||'（無名）',who:thName(g[0].therapist_id),type:g[0].type,color:thColor(g[0].therapist_id)})).concat(evBlocks);
+  // 範圍預設 08:00–22:00，有更早/更晚的預約會自動延伸
+  let S=8*60, E=22*60;
+  blocks.forEach(b=>{ S=Math.min(S,Math.floor(b.start/60)*60); E=Math.max(E,Math.ceil((b.start+b.dur)/60)*60); });
+  TL_START=S; TL_PXM=TL_HOUR/60;
+  const totH=(E-S)/60*TL_HOUR;
+  // 重疊的預約（不同治療師同時段）自動並排分欄
+  const sorted=blocks.slice().sort((a,b)=>a.start-b.start||b.dur-a.dur);
+  let i=0;
+  while(i<sorted.length){
+    let j=i, clusterEnd=sorted[i].start+sorted[i].dur;
+    while(j+1<sorted.length&&sorted[j+1].start<clusterEnd){ j++; clusterEnd=Math.max(clusterEnd,sorted[j].start+sorted[j].dur); }
+    const cluster=sorted.slice(i,j+1); const colEnd=[];
+    cluster.forEach(b=>{ let c=0; while((colEnd[c]||0)>b.start)c++; b.col=c; colEnd[c]=b.start+b.dur; });
+    cluster.forEach(b=>b.cols=colEnd.length);
+    i=j+1;
+  }
+  let grid='';
+  for(let m=S;m<=E;m+=60){ const y=(m-S)*TL_PXM+TL_PAD; grid+=`<div class="tl-line" style="top:${y}px"></div><div class="tl-lab" style="top:${y}px">${minT(m)}</div>`; }
+  let inner='';
+  sorted.forEach(b=>{
+    const top=(b.start-S)*TL_PXM, h=Math.max(b.dur*TL_PXM-2,17);
+    const w=100/b.cols, l=b.col*w;
+    const two=h>=34; // 高度夠才顯示第二行
+    if(b.kind==='ev'){
+      inner+=`<div class="tl-blk ev" style="top:${top}px;height:${h}px;left:${l}%;width:calc(${w}% - 3px)" onclick="event.stopPropagation();openEventDetail(${b.id})"><div class="b1">🚫 ${esc(b.name)}</div>${two?`<div class="b2">${esc(b.who)}</div>`:''}</div>`;
+    }else{
+      inner+=`<div class="tl-blk" style="top:${top}px;height:${h}px;left:${l}%;width:calc(${w}% - 3px);background:${esc(b.color)}" onclick="event.stopPropagation();openApptDetail(${b.id})"><div class="b1">${esc(b.name)}${b.type==='new'?'（初診）':''}</div>${two?`<div class="b2">${minT(b.start)}–${minT(b.start+b.dur)} · ${esc(b.who)}</div>`:''}</div>`;
+    }
+  });
+  // 現在時刻紅線（只在看「今天」時顯示）
+  const now=new Date(); const nowMin=now.getHours()*60+now.getMinutes();
+  const nowLine=(ds===todayStr()&&nowMin>=S&&nowMin<=E)?`<div class="tl-now" style="top:${(nowMin-S)*TL_PXM}px"></div>`:'';
+  list.innerHTML=`<div class="tl" style="height:${totH+TL_PAD*2}px">${grid}<div class="tl-canvas" style="top:${TL_PAD}px;height:${totH}px" onclick="tlTap(event)">${inner}${nowLine}</div></div>`;
   $('topSub').textContent=groups.length?`${groups.length} 筆預約`:'';
+}
+/* 點時間軸空白處 → 直接開新增表單（帶入點到的時段） */
+function tlTap(ev){
+  if(ev.target!==ev.currentTarget)return;
+  const rect=ev.currentTarget.getBoundingClientRect();
+  const m=TL_START+Math.floor(((ev.clientY-rect.top)/TL_PXM)/30)*30;
+  const t=minT(m);
+  openNew(fmtDate(curDate), ALL_SLOTS.includes(t)?t:'');
 }
 
 /* ============ 週檢視 ============ */
@@ -663,7 +703,7 @@ async function saveEvent(){
   const thId=evf.therapist_id===''?null:parseInt(evf.therapist_id);
   const times=evf.whole?ALL_SLOTS:[...evf.slots];
   if(!times.length){ toast('請選至少一個時段'); return; }
-  const rows=times.map(t=>({therapist_id:thId,patient_name:name,appointment_date:evf.date,appointment_time:t+':00',type:'return',service:name,note:'event:'+eid,status:'cancelled',therapist_name:thId==null?'全部':thName(thId)}));
+  const rows=times.map(t=>({therapist_id:thId,patient_name:name,patient_phone:'',appointment_date:evf.date,appointment_time:t+':00',type:'return',service:name,note:'event:'+eid,status:'cancelled',therapist_name:thId==null?'全部':thName(thId)}));
   const {error}=await sb.from('appointments').insert(rows);
   if(error){ toast('標記失敗：'+error.message); return; }
   invalidate(evf.date); closeSheet(); toast('已標記公休/活動'); curDate=parseDate(evf.date); if(curTab==='today')renderToday(); else if(curTab==='week')renderWeek();

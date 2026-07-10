@@ -495,7 +495,9 @@ async function callClaude(messages: any[], adminMode?: boolean) {
     headers: { "x-api-key": Deno.env.get("ANTHROPIC_API_KEY") ?? "", "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 700, system: sys, tools, messages }),
   });
-  return await r.json();
+  const d = await r.json();
+  if (d && d.type === "error") console.error("claude api error:", JSON.stringify(d).slice(0, 300));
+  return d;
 }
 
 async function runTool(name: string, input: any, lineUserId?: string, testMode?: boolean, dryRun?: boolean, adminMode?: boolean) {
@@ -559,6 +561,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ reply: final, cards }), { headers: { ...cors, "content-type": "application/json" } });
   } catch (_e) {
+    console.error("clinic-bot error:", _e && (_e as Error).message, (_e as Error).stack?.slice(0, 300));
     return new Response(JSON.stringify({ reply: "不好意思，連線出了點問題，麻煩您稍後再試 🙏" }), { headers: { ...cors, "content-type": "application/json" } });
   }
 });

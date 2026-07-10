@@ -55,10 +55,9 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
 
 /* ===== Tab Bar ===== */
 .tabbar{position:fixed;bottom:0;left:0;right:0;height:calc(var(--tab-h) + var(--safe-b));padding-bottom:var(--safe-b);background:var(--card);border-top:1px solid var(--line);display:flex;z-index:30}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--sub);font-size:11px;padding-top:6px}
-.tab .ic{font-size:21px;line-height:1}
-.tab.on{color:var(--warm)}
-.tab.on .ic{transform:translateY(-1px)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--sub);font-size:11px;padding-top:6px;letter-spacing:.5px}
+.tab svg{width:22px;height:22px;display:block}
+.tab.on{color:var(--warm-d);font-weight:600}
 
 /* ===== 日期切換列 ===== */
 .datebar{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 10px;margin-bottom:14px}
@@ -172,6 +171,16 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
 .mc-nav .m{font-size:16px;font-weight:600}
 .mc-nav button{width:36px;height:36px;border-radius:10px;background:var(--card);color:var(--warm);font-size:18px}
 
+/* ===== 大螢幕（電腦/平板）：置中成手機寬度 ===== */
+@media (min-width:520px){
+  body{background:#ece5d8}
+  #app{max-width:430px;margin:0 auto;border-left:1px solid var(--line);border-right:1px solid var(--line);box-shadow:0 0 44px rgba(42,29,18,.10)}
+  .tabbar{left:50%;transform:translateX(-50%);width:430px}
+  .fab{right:calc(50% - 215px + 16px)}
+  .sheet-bg{justify-content:center}
+  .sheet{max-width:430px}
+}
+
 /* ===== Toast ===== */
 #toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + var(--safe-b) + 20px);transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;z-index:90;opacity:0;transition:.25s;pointer-events:none;max-width:86%;text-align:center}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -215,10 +224,18 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
   <button class="fab" id="fab">＋</button>
 
   <div class="tabbar">
-    <button class="tab on" data-tab="today"><span class="ic">📅</span>今日</button>
-    <button class="tab" data-tab="week"><span class="ic">🗓️</span>週</button>
-    <button class="tab" data-tab="patients"><span class="ic">👤</span>病人</button>
-    <button class="tab" data-tab="more"><span class="ic">☰</span>更多</button>
+    <button class="tab on" data-tab="today">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><circle cx="12" cy="15.2" r="1.7" fill="currentColor" stroke="none"/></svg>今日
+    </button>
+    <button class="tab" data-tab="week">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M8 3v4M16 3v4M3.5 10h17M9.2 10v10.5M14.8 10v10.5"/></svg>週
+    </button>
+    <button class="tab" data-tab="patients">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.2" r="3.6"/><path d="M5.2 20.2c.7-3.5 3.5-5.4 6.8-5.4s6.1 1.9 6.8 5.4"/></svg>病人
+    </button>
+    <button class="tab" data-tab="more">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7.2h15M4.5 12h15M4.5 16.8h15"/></svg>更多
+    </button>
   </div>
 </div>
 

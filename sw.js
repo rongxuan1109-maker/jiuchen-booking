@@ -1,5 +1,5 @@
 // 九辰後台 App — Service Worker（外殼快取，讓 App 秒開；有網路時背景更新）
-const CACHE='jiuchen-app-v2';
+const CACHE='jiuchen-app-v3';
 const SHELL=['app.html','manifest.webmanifest'];
 
 self.addEventListener('install',e=>{

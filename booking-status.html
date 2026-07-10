@@ -140,11 +140,8 @@ async function loadAppointments() {
     return;
   }
 
-  const { data, error } = await sb.from('appointments')
-    .select('*')
-    .eq('line_user_id', lineUserId)
-    .order('appointment_date', { ascending: false })
-    .order('appointment_time', { ascending: false });
+  // 走安全窗口 my_appointments：只能用自己的 LINE ID 查回自己的預約（他人資料拿不到）
+  const { data, error } = await sb.rpc('my_appointments', { p_line_user_id: lineUserId });
 
   if (error || !data) {
     document.getElementById('mainContent').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p class="empty-text">載入失敗，請稍後再試</p></div>`;
@@ -162,8 +159,10 @@ function switchTab(tab) {
   renderTab();
 }
 
+// 用本地時間組今天日期（toISOString 是 UTC，台灣凌晨 0-8 點會把今天算成昨天）
+function localToday(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function renderTab() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = localToday();
   const upcoming = appointments.filter(a => a.appointment_date >= today && a.status === 'confirmed');
   const past = appointments.filter(a => a.appointment_date < today || a.status === 'cancelled');
 
@@ -182,7 +181,7 @@ function renderCard(a) {
   const d = new Date(a.appointment_date);
   const dateStr = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DAYS[d.getDay()]}）`;
   const timeStr = a.appointment_time ? a.appointment_time.slice(0,5) : '';
-  const today = new Date().toISOString().split('T')[0];
+  const today = localToday();
   const isPast = a.appointment_date < today;
   const isCancelled = a.status === 'cancelled';
 
@@ -245,9 +244,8 @@ async function confirmCancel() {
   btn.disabled = true;
   btn.textContent = '取消中...';
 
-  const { error } = await sb.from('appointments')
-    .update({ status: 'cancelled' })
-    .eq('id', cancelTarget.id);
+  // 走安全窗口 cancel_my_appointment：資料庫會核對這筆預約的 LINE ID 是本人才取消
+  const { error } = await sb.rpc('cancel_my_appointment', { p_id: cancelTarget.id, p_line_user_id: lineUserId });
 
   btn.disabled = false;
   btn.textContent = '確認取消';

@@ -1,8 +1,8 @@
 // 九辰 AI 客服機器人 — Supabase Edge Function
 // 全聊天版：查空檔 / 幫忙約 / 改時間 / 取消，皆用對話完成，動到資料前一律 2 次確認。
 const SB_URL = Deno.env.get("SUPABASE_URL") ?? "https://vmkdawpukwpsifqguljy.supabase.co";
-// 前端公開的 anon key（與預約頁/後台同一把，可讀寫改 appointments）
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZta2Rhd3B1a3dwc2lmcWd1bGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjE2MDUsImV4cCI6MjA5NTQzNzYwNX0.hq8rbjKe3NOUhV1sbViBtuQLSzQuWCnK1_4QSrCy2xM";
+// 改用 service_role（Edge Function 環境自動注入）：資料庫已開 RLS 鎖門，公開 anon key 只剩最小權限，機器人要用員工鑰匙才讀寫得到
+const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const sbHeaders = { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "content-type": "application/json" };
 const LINE_TOKEN = Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN") ?? "";
 const GROUP_ID = "Ced4d474900327f2cdedbc6ec7bd3adea"; // 治療師群組

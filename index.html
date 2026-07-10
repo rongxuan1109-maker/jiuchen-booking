@@ -653,12 +653,8 @@ async function loadTherapists() {
 async function loadSavedInfo() {
   if (!lineUserId) return;
   try {
-    const { data } = await sb.from('appointments')
-      .select('patient_name, patient_phone, created_at')
-      .eq('line_user_id', lineUserId)
-      .not('patient_name', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(1);
+    // 走安全窗口 my_saved_info：只能用自己的 LINE ID 查回自己上次填的姓名電話
+    const { data } = await sb.rpc('my_saved_info', { p_line_user_id: lineUserId });
     if (data && data.length) {
       if (!state.name)  state.name  = data[0].patient_name  || '';
       if (!state.phone) state.phone = data[0].patient_phone || '';
@@ -1032,44 +1028,31 @@ async function submitBooking() {
         service: state.service?.name || (state.type==='new'?'初診評估':'複診'),
         symptoms: state.discomfortArea || '',
         note: state.otherNotes || '',
-        status: 'confirmed',
         line_user_id: lineUserId || null,
         therapist_name: state.therapistId === 0 ? '不指定' : (state.therapistName || null)
       });
     }
-    const { data: appts, error } = await sb.from('appointments').insert(rows).select();
+    // 走資料庫的交易式窗口 submit_booking：預約單＋初診問卷＋病歷一次寫入，
+    // 全部成功才算數；資料庫端也會再擋一次「同治療師同時段已有人」（回 SLOT_TAKEN）
+    const intake = state.type === 'new' ? {
+      birth_date: state.birthDate || null,
+      discomfort_area: state.discomfortArea,
+      discomfort_duration: state.discomfortDuration,
+      previous_pt: state.previousPT,
+      surgery_history: state.surgeryHistory,
+      other_notes: state.otherNotes
+    } : null;
+    const { error } = await sb.rpc('submit_booking', { p_rows: rows, p_intake: intake });
 
-    if (error) throw error;
-    const appt = appts && appts[0];
-
-    if (state.type === 'new' && appt) {
-      // 初診問卷／病歷若寫入失敗，不能默默吞掉——預約已成立，但要提醒病人到診補填
-      const { error: intakeErr } = await sb.from('intake_forms').insert([{
-        appointment_id: appt.id,
-        birth_date: state.birthDate || null,
-        discomfort_area: state.discomfortArea,
-        discomfort_duration: state.discomfortDuration,
-        previous_pt: state.previousPT,
-        surgery_history: state.surgeryHistory,
-        other_notes: state.otherNotes
-      }]);
-
-      const { data: existing } = await sb.from('patients')
-        .select('id').eq('phone', state.phone).maybeSingle();
-      let patientErr = null;
-      if (!existing) {
-        const r = await sb.from('patients').insert([{
-          name: state.name,
-          phone: state.phone,
-          body_parts: state.discomfortArea ? [state.discomfortArea] : [],
-          first_visit: fmtDate(state.date),
-          note: state.otherNotes || null
-        }]);
-        patientErr = r.error;
+    if (error) {
+      if ((error.message||'').includes('SLOT_TAKEN')) {
+        alert('抱歉，這個時段剛剛被約走了 🙏\n請重新選擇其他時段。');
+        state.time = null;
+        state.step = state.type === 'new' ? 2 : 3;
+        render();
+        return;
       }
-      if (intakeErr || patientErr) {
-        alert('您的預約已成立 ✅\n但初診資料儲存時有點狀況，麻煩您到診時再協助補填一次，謝謝 🙏');
-      }
+      throw error;
     }
 
     state.step = 99;

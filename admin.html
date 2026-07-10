@@ -619,6 +619,7 @@ input,select,textarea{border-radius:8px;}
       病人
     </button>
     <button class="nav-btn" id="themeToggle" onclick="toggleTheme()" title="深色模式" style="font-size:14px">◐</button>
+    <button class="nav-btn" id="logoutBtn" onclick="doLogout()" title="登出" style="font-size:14px">⎋</button>
   </div>
 </div>
 
@@ -652,29 +653,38 @@ input,select,textarea{border-radius:8px;}
 </div><!-- #appBody -->
 
 <script>
-/* ── 密碼驗證 ── */
-const ADMIN_PASSWORD = '0000';
+/* ── 登入（改用 Supabase Auth 真帳號；帳號固定內建，治療師只需輸入密碼）── */
+const ADMIN_EMAIL = 'admin@ninechen2020.com';
 
-function doLogin(){
+async function doLogin(){
   const pwd = document.getElementById('loginPwd').value;
-  if(pwd === ADMIN_PASSWORD){
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '登入中…';
+  try{
+    const { error } = await sb.auth.signInWithPassword({ email: ADMIN_EMAIL, password: pwd });
+    if(error){
+      errEl.textContent = '密碼錯誤，請再試一次';
+      document.getElementById('loginPwd').value = '';
+      document.getElementById('loginPwd').focus();
+      return;
+    }
     sessionStorage.setItem('admin_auth','1');
+    errEl.textContent = '';
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('appBody').style.display='block';
     document.getElementById('mainContent').innerHTML='<div class="loading"><div class="spinner"></div><p>載入中</p></div>';
     loadData();
-  } else {
-    document.getElementById('loginErr').textContent='密碼錯誤，請再試一次';
-    document.getElementById('loginPwd').value='';
-    document.getElementById('loginPwd').focus();
+  }catch(e){
+    errEl.textContent = '連線異常，請稍後再試';
   }
 }
 
-// 已登入就直接進入
-if(sessionStorage.getItem('admin_auth')==='1'){
-  document.getElementById('loginScreen').style.display='none';
-  document.getElementById('appBody').style.display='block';
+async function doLogout(){
+  try{ await sb.auth.signOut(); }catch(e){}
+  sessionStorage.removeItem('admin_auth');
+  location.reload();
 }
+// 進入畫面時預設顯示登入頁；真正是否已登入，由本檔最後的 session 檢查決定
 
 /* ── 深色模式 ── */
 function applyTheme(){
@@ -3285,11 +3295,26 @@ async function deleteEvent(id){
   closeModal();showToast('活動已刪除');_invalidateCache();await loadData();
 }
 
-// 若已登入就載入資料
-if(sessionStorage.getItem('admin_auth')==='1'){
-  document.getElementById('mainContent').innerHTML='<div class="loading"><div class="spinner"></div><p>載入中</p></div>';
-  loadData();
-}
+// 重新整理／重開後：檢查是否有有效的登入 session，有才進後台，否則回到登入畫面
+(async ()=>{
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session){
+      sessionStorage.setItem('admin_auth','1');
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('appBody').style.display='block';
+      document.getElementById('mainContent').innerHTML='<div class="loading"><div class="spinner"></div><p>載入中</p></div>';
+      loadData();
+    }else{
+      sessionStorage.removeItem('admin_auth');
+      document.getElementById('loginScreen').style.display='';
+      document.getElementById('appBody').style.display='none';
+    }
+  }catch(e){
+    document.getElementById('loginScreen').style.display='';
+    document.getElementById('appBody').style.display='none';
+  }
+})();
 </script>
 <!-- iOS 加入主畫面提示 -->
 <div id="a2hsBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;

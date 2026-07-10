@@ -500,6 +500,60 @@ function availableTimes(date, therapistId){
   return [...slots].sort();
 }
 
+// 時段 → 班別(am/pm/eve)對照（模組層，畫面與送出重驗共用）
+const blockOfSlot = {};
+Object.entries(SHIFT_SLOTS).forEach(([b,arr]) => arr.forEach(s => blockOfSlot[s] = b));
+// 這個服務要佔幾個 30 分鐘格：60 分鐘服務(s60)＝2 格，其餘＝1 格
+function slotsNeeded(){ return state.service && state.service.id==='s60' ? 2 : 1; }
+// 時間字串加減分鐘，回傳 HH:MM
+function addMin(t, mins){
+  const [h,m] = t.split(':').map(Number);
+  const total = h*60+m+mins;
+  return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+}
+// 這個起始格是否已過（只在「今天」才擋）
+function isPastStart(t){
+  if(!state.date) return false;
+  if(fmtDate(state.date) !== fmtDate(new Date())) return false;
+  const now = new Date();
+  const [h,min] = t.split(':').map(Number);
+  return now.getHours() > h || (now.getHours()===h && now.getMinutes() >= min);
+}
+// 不指定治療師時：這個 30 分鐘格是否客滿（有排這個班、且還沒被約的治療師＝0 → 客滿）
+function slotFull(t){
+  const wd = String(state.date.getDay());
+  const block = blockOfSlot[t];
+  const scheduled = state.therapists.filter(th => {
+    const sh = state.schedules[th.id]; return sh && sh[wd] && sh[wd].includes(block);
+  }).map(th => th.id);
+  if(!scheduled.length) return true;                 // 這個班別沒人上 → 不能約
+  let bookedTh = new Set(), unassigned = 0;
+  state.bookedSlots.forEach(s => {
+    if(s.appointment_time.slice(0,5) !== t) return;
+    if(s.therapist_id==null) unassigned++; else bookedTh.add(s.therapist_id);
+  });
+  const freeCount = scheduled.filter(id => !bookedTh.has(id)).length - unassigned;
+  return freeCount <= 0;
+}
+// 單一 30 分鐘格是否已被佔用（依目前治療師選擇）
+function singleSlotTaken(t){
+  const isAny = !state.therapistId || state.therapistId===0;
+  if(isAny) return slotFull(t);
+  return state.bookedSlots.some(s => s.appointment_time.slice(0,5) === t);  // 指定治療師：只看他自己的預約
+}
+// 這個「起始時段」能不能約：要把服務需要的每一格(60分＝連兩格)都檢查（存在、未滿、未過期）
+function startBookable(t){
+  const slots = availableTimes(state.date, state.therapistId);
+  const need = slotsNeeded();
+  for(let i=0;i<need;i++){
+    const tt = addMin(t, i*30);
+    if(!slots.includes(tt)) return false;   // 下一格必須也是可約時段（不能跨班別或超出下班時間）
+    if(singleSlotTaken(tt)) return false;
+    if(isPastStart(tt)) return false;
+  }
+  return true;
+}
+
 // ===== 出生日期：民國三格(年→月→日)、自動跳格、即時換算西元＋生肖 =====
 const ZODIAC = ['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'];
 function birthBox(){
@@ -531,15 +585,21 @@ function updateBirth(){
   const yEl=document.getElementById('f-by'), mEl=document.getElementById('f-bm'), dEl=document.getElementById('f-bd');
   const hint=document.getElementById('f-birth-hint'); if(!yEl||!hint) return;
   const y=+yEl.value, m=+mEl.value, d=+dEl.value;
-  if(y>0 && m>=1 && m<=12 && d>=1 && d<=31){
-    const Y=y+1911;
+  const Y=y+1911;
+  // 用 new Date 反查，確認這是真實存在的日期（擋掉 2/31、4/31…）
+  const realDate = (y>0 && m>=1 && m<=12 && d>=1 && d<=31)
+    ? (() => { const dt=new Date(Y, m-1, d); return dt.getFullYear()===Y && dt.getMonth()===m-1 && dt.getDate()===d; })()
+    : false;
+  if(realDate){
     state.birthDate=`${Y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     hint.style.color='#2e7d32';
     hint.textContent=`西元 ${Y} 年 ${m} 月 ${d} 日　生肖屬${ZODIAC[((Y-4)%12+12)%12]}`;
   }else{
     state.birthDate='';
     hint.style.color='#c0392b';
-    hint.textContent=(yEl.value||mEl.value||dEl.value)?'請輸入完整的民國年 / 月 / 日':'';
+    hint.textContent=(yEl.value||mEl.value||dEl.value)
+      ?((y>0&&m>=1&&m<=12&&d>=1&&d<=31)?'這個日期不存在，請確認生日':'請輸入完整的民國年 / 月 / 日')
+      :'';
   }
   if(typeof updateBtn==='function') updateBtn();
 }
@@ -553,7 +613,9 @@ async function initLiff() {
     if (liff.isLoggedIn()) {
       const profile = await liff.getProfile();
       lineUserId = profile.userId;
-    } else {
+    } else if (liff.isInClient()) {
+      // 只有在 LINE App 內開啟時才自動登入（才能綁 line_user_id 收推播）；
+      // 一般瀏覽器(Google 搜到、朋友轉貼) 直接匿名預約，不強迫登入 LINE
       liff.login();
     }
   } catch(e) {
@@ -606,28 +668,15 @@ async function loadSavedInfo() {
 }
 
 async function loadBookedSlots(dateStr, therapistId) {
-  const base = sb.from('appointments')
-    .select('appointment_time, therapist_id, note')
+  // 只取「時段 + 治療師」兩個欄位，不再撈 note（備註含其他病人個資，不可外洩到前端）。
+  // 註：活動/公休在資料庫存為 status='cancelled'，本查詢只看 confirmed，本來就不會撈到。
+  let q = sb.from('appointments')
+    .select('appointment_time, therapist_id')
     .eq('appointment_date', dateStr)
     .eq('status', 'confirmed');
-
-  if (!therapistId) {
-    // 不指定：抓所有已確認時段
-    const { data } = await base;
-    state.bookedSlots = data || [];
-  } else {
-    // 指定治療師：抓該治療師時段 + 全體治療師活動（note starts with 'event:', therapist_id=null）
-    const [{ data: own }, { data: events }] = await Promise.all([
-      base.eq('therapist_id', therapistId),
-      sb.from('appointments')
-        .select('appointment_time, therapist_id, note')
-        .eq('appointment_date', dateStr)
-        .eq('status', 'confirmed')
-        .like('note', 'event:%')
-        .is('therapist_id', null)
-    ]);
-    state.bookedSlots = [...(own || []), ...(events || [])];
-  }
+  if (therapistId) q = q.eq('therapist_id', therapistId);
+  const { data } = await q;
+  state.bookedSlots = data || [];
 }
 
 function fmtDate(d) {
@@ -792,8 +841,6 @@ function renderDatetimeInner(el) {
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const today = new Date(); today.setHours(0,0,0,0);
 
-  const bookedTimes = state.bookedSlots.map(s => s.appointment_time.slice(0,5));
-
   let calHtml = `
   <div class="cal-header">
     <button class="cal-nav" onclick="prevMonth()">‹</button>
@@ -814,46 +861,17 @@ function renderDatetimeInner(el) {
   </div>`;
 
   const slots = availableTimes(state.date, state.therapistId);
-  const isAny = !state.therapistId || state.therapistId===0;
-  const totalTh = state.therapists.length || 1;
-  // 時段 → 班別(am/pm/eve)對照
-  const blockOfSlot = {};
-  Object.entries(SHIFT_SLOTS).forEach(([b,arr]) => arr.forEach(s => blockOfSlot[s] = b));
-  // 不指定客滿判定：該時段「有排這個班、且還沒被約」的治療師=0 → 客滿(劃線)。也扣掉其他不指定預約佔用、全院活動全擋。
-  const slotFull = (t) => {
-    const wd = String(state.date.getDay());
-    const block = blockOfSlot[t];
-    const scheduled = state.therapists.filter(th => {
-      const sh = state.schedules[th.id]; return sh && sh[wd] && sh[wd].includes(block);
-    }).map(th => th.id);
-    if(!scheduled.length) return true;            // 這個班別沒人上 → 不能約
-    let bookedTh = new Set(), unassigned = 0, ev = false;
-    state.bookedSlots.forEach(s => {
-      if(s.appointment_time.slice(0,5) !== t) return;
-      if(typeof s.note==='string' && s.note.startsWith('event:') && s.therapist_id==null){ ev = true; return; }
-      if(s.therapist_id==null) unassigned++; else bookedTh.add(s.therapist_id);
-    });
-    if(ev) return true;
-    const freeCount = scheduled.filter(id => !bookedTh.has(id)).length - unassigned;
-    return freeCount <= 0;
-  };
+  const is60 = slotsNeeded() === 2;
   const timeHtml = state.date ? `
   <div class="card" style="margin-top:0">
     <p class="card-title">${state.date.getMonth()+1} 月 ${state.date.getDate()} 日 可用時段</p>
     ${slots.length ? `<div class="time-grid">
       ${slots.map(t=>{
-        const taken = isAny ? slotFull(t) : bookedTimes.includes(t);
-        const isToday = state.date && fmtDate(state.date) === fmtDate(new Date());
-        const isPastTime = isToday && (() => {
-          const now = new Date();
-          const [h, min] = t.split(':').map(Number);
-          return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= min);
-        })();
-        const disabled = taken || isPastTime;
-        return `<div class="time-slot ${disabled?'taken':''} ${state.time===t?'selected':''}" onclick="${disabled?'':'selectTime(\''+t+'\',this)'}">${t}</div>`;
+        const ok = startBookable(t);   // 60 分鐘服務會自動要求連兩格皆空、且排除各班最後一格
+        return `<div class="time-slot ${ok?'':'taken'} ${state.time===t?'selected':''}" onclick="${ok?'selectTime(\''+t+'\',this)':''}">${t}</div>`;
       }).join('')}
     </div>
-    <p class="notice">已劃線時段不可預約</p>`
+    <p class="notice">已劃線時段不可預約${is60?'（60 分鐘服務需連續兩個時段皆空）':''}</p>`
     : `<p class="notice" style="text-align:center;padding:18px 4px;line-height:1.7">這天${state.therapistId&&state.therapistId!==0?'這位治療師沒有排班':'目前沒有治療師排班'}<br>請改選其他日期或治療師 🙏</p>`}
   </div>` : '';
 
@@ -989,26 +1007,44 @@ async function submitBooking() {
   btn.innerHTML = '<span>送出中…</span>';
 
   try {
+    // 送出前重新抓一次最新佔用，避免停在確認頁太久，時段已被別人約走或已過期
+    await loadBookedSlots(fmtDate(state.date), state.therapistId || null);
+    if (!startBookable(state.time)) {
+      alert('抱歉，這個時段剛剛被約走或已經過了 🙏\n請重新選擇其他時段。');
+      state.time = null;
+      state.step = state.type === 'new' ? 2 : 3;   // 帶回「選時間」步驟
+      render();
+      return;
+    }
+
     const therapistId = state.therapistId === 0 ? null : state.therapistId;
-    const { data: appt, error } = await sb.from('appointments').insert([{
-      therapist_id: therapistId,
-      patient_name: state.name,
-      patient_phone: state.phone,
-      appointment_date: fmtDate(state.date),
-      appointment_time: state.time + ':00',
-      type: state.type,
-      service: state.service?.name || (state.type==='new'?'初診評估':'複診'),
-      symptoms: state.discomfortArea || '',
-      note: state.otherNotes || '',
-      status: 'confirmed',
-      line_user_id: lineUserId || null,
-      therapist_name: state.therapistId === 0 ? '不指定' : (state.therapistName || null)
-    }]).select().single();
+    // 60 分鐘服務佔連續兩個 30 分鐘格，各寫一列（與後台「連續格＝同一筆」的表示法一致）
+    const need = slotsNeeded();
+    const rows = [];
+    for (let i = 0; i < need; i++) {
+      rows.push({
+        therapist_id: therapistId,
+        patient_name: state.name,
+        patient_phone: state.phone,
+        appointment_date: fmtDate(state.date),
+        appointment_time: addMin(state.time, i*30) + ':00',
+        type: state.type,
+        service: state.service?.name || (state.type==='new'?'初診評估':'複診'),
+        symptoms: state.discomfortArea || '',
+        note: state.otherNotes || '',
+        status: 'confirmed',
+        line_user_id: lineUserId || null,
+        therapist_name: state.therapistId === 0 ? '不指定' : (state.therapistName || null)
+      });
+    }
+    const { data: appts, error } = await sb.from('appointments').insert(rows).select();
 
     if (error) throw error;
+    const appt = appts && appts[0];
 
     if (state.type === 'new' && appt) {
-      await sb.from('intake_forms').insert([{
+      // 初診問卷／病歷若寫入失敗，不能默默吞掉——預約已成立，但要提醒病人到診補填
+      const { error: intakeErr } = await sb.from('intake_forms').insert([{
         appointment_id: appt.id,
         birth_date: state.birthDate || null,
         discomfort_area: state.discomfortArea,
@@ -1019,15 +1055,20 @@ async function submitBooking() {
       }]);
 
       const { data: existing } = await sb.from('patients')
-        .select('id').eq('phone', state.phone).single();
+        .select('id').eq('phone', state.phone).maybeSingle();
+      let patientErr = null;
       if (!existing) {
-        await sb.from('patients').insert([{
+        const r = await sb.from('patients').insert([{
           name: state.name,
           phone: state.phone,
           body_parts: state.discomfortArea ? [state.discomfortArea] : [],
           first_visit: fmtDate(state.date),
           note: state.otherNotes || null
         }]);
+        patientErr = r.error;
+      }
+      if (intakeErr || patientErr) {
+        alert('您的預約已成立 ✅\n但初診資料儲存時有點狀況，麻煩您到診時再協助補填一次，謝謝 🙏');
       }
     }
 
@@ -1071,7 +1112,7 @@ async function resetBooking() {
   state = { step:0, type:null, service:null, therapistId:null, therapistName:null,
     date:null, time:null, name:'', phone:'', birthDate:'', discomfortArea:'',
     discomfortDuration:'', previousPT:'', surgeryHistory:'', otherNotes:'',
-    calMonth:new Date(), therapists:state.therapists, bookedSlots:[], savedInfo:false };
+    calMonth:new Date(), therapists:state.therapists, schedules:state.schedules, bookedSlots:[], savedInfo:false };
   await loadSavedInfo();
   render();
 }

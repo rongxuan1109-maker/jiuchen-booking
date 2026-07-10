@@ -1356,7 +1356,9 @@ async function loadData(){
     _fetchAppts(s,e,key)
   ]);
   if(thRes.data)therapists=thRes.data;
+  // apptData 為 null 代表讀取失敗（成功但沒資料會是空陣列）→ 出提示，別讓治療師誤以為「今天沒人約」
   if(apptData)appointments=apptData;
+  else showToast('讀取預約失敗，請檢查網路後重新整理');
   render();
   loadBirthMonths().then(()=>render());
   _prefetchAdjacent();
@@ -2233,14 +2235,25 @@ async function onCellDrop(e, newDate, newTime){
     return {row:x, nt:(ni>=0&&ni<TIMES.length)?TIMES[ni]+':00':null};
   });
   if(moves.some(m=>m.nt===null)){showToast('超出時間範圍');return;}
-  const backup=grp.map(x=>({x,d:x.appointment_date,t:x.appointment_time}));
+  const backup=grp.map(x=>({x,id:x.id,d:x.appointment_date,t:x.appointment_time}));
   moves.forEach(m=>{m.row.appointment_date=newDate;m.row.appointment_time=m.nt;});
-  renderKeepScroll();   // 拖放後重畫，保留捲動位置，畫面不跳
-  showToast(`已移至 ${newDate.slice(5)} ${newTime}`);
+  renderKeepScroll();   // 拖放後先樂觀重畫，保留捲動位置，畫面不跳
+  const done=[];        // 記錄已成功寫入資料庫的格子，萬一中途失敗要一起回滾
   for(const m of moves){
     const{error}=await sb.from('appointments').update({appointment_date:newDate,appointment_time:m.nt}).eq('id',m.row.id);
-    if(error){backup.forEach(b=>{b.x.appointment_date=b.d;b.x.appointment_time=b.t;});renderKeepScroll();showToast('同步失敗，請重新整理');return;}
+    if(error){
+      // 半套寫入救援：把「已經寫進資料庫」的幾格也改回原位，避免一筆預約被拆散在兩個時段
+      for(const d of done){ await sb.from('appointments').update({appointment_date:d.d,appointment_time:d.t}).eq('id',d.id); }
+      backup.forEach(b=>{b.x.appointment_date=b.d;b.x.appointment_time=b.t;});
+      _invalidateCache(); renderKeepScroll(); showToast('同步失敗，已還原，請重新整理');
+      await loadData();
+      return;
+    }
+    const b=backup.find(b=>b.id===m.row.id);
+    done.push({id:m.row.id, d:b.d, t:b.t});
   }
+  _invalidateCache();   // 搬移成功→清掉快取，避免 90 秒內切換檢視看到舊位置
+  showToast(`已移至 ${newDate.slice(5)} ${newTime}`);
 }
 
 /* ── MODALS ── */
@@ -2917,7 +2930,13 @@ async function submitNewAppt(){
 function openEditAppt(id){
   const a=appointments.find(x=>x.id===id);
   if(!a)return;
-  openNewApptAt(a.appointment_date, a.appointment_time.slice(0,5), a);
+  // 一律用整組連續時段的「第一格」開啟編輯，避免點到 60 分鐘預約的第二格(續)時，
+  // 存檔把預約誤砍成 30 分鐘、還連帶誤發一則「預約已取消」給病人
+  const dayList=appointments.filter(x=>x.appointment_date===a.appointment_date&&x.status==='confirmed');
+  const grp=(groupConsecutiveAppts(dayList).find(g=>g.some(x=>x.id===a.id))||[a])
+    .slice().sort((x,y)=>x.appointment_time.localeCompare(y.appointment_time));
+  const head=grp[0]||a;
+  openNewApptAt(head.appointment_date, head.appointment_time.slice(0,5), head);
 }
 // ── 編輯預約：儲存變更（更新姓名/電話/治療師/日期/時段/類型/服務/備註）──
 async function submitEditAppt(id){
@@ -2959,7 +2978,9 @@ async function submitEditAppt(id){
         await sb.from('appointments').insert([{...row,status:'confirmed'}]);
       }
     }else{
-      await sb.from('appointments').update({status:'cancelled'}).eq('id',oldGroup[i].id);
+      // 縮短時長多出來的格子＝軟性移除，不是真的取消預約：一併清掉 line_user_id，
+      // 讓 Make 的取消通知條件(status=cancelled 且 line_user_id 存在)不成立，病人才不會收到「預約已取消」
+      await sb.from('appointments').update({status:'cancelled', line_user_id:null}).eq('id',oldGroup[i].id);
     }
   }
   await upsertPatient(name, phone, date, [], note);   // 編輯也整合病患

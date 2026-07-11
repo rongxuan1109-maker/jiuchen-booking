@@ -71,6 +71,12 @@ h1{font:700 32px/1.5 var(--serif);text-align:center;letter-spacing:3px}
   min-height:32px;letter-spacing:3px;text-shadow:0 0 18px #e9c27b55}
 .hint-rotate{text-align:center;font-size:12px;color:var(--muted);letter-spacing:2px;
   animation:hintFade 3s ease-in-out infinite}
+#viewbar{display:flex;justify-content:center;gap:8px;margin-bottom:4px}
+.view-chip{padding:7px 28px;border-radius:20px;border:1px solid var(--line2);cursor:pointer;
+  font-size:14px;letter-spacing:3px;color:var(--muted);transition:.25s}
+.view-chip.on{background:linear-gradient(135deg,#f0d49a,var(--gold2));color:#141a2c;
+  border-color:transparent;font-weight:600}
+#confirmbar{margin-top:10px;animation:fadeUp .4s ease}
 @keyframes hintFade{0%,100%{opacity:.4}50%{opacity:.9}}
 
 /* ── 選項膠囊/卡片 ── */
@@ -175,9 +181,17 @@ h1{font:700 32px/1.5 var(--serif);text-align:center;letter-spacing:3px}
     <div class="back-link" onclick="back()">返回</div>
     <div class="q-title">哪一區的星，正在跟你說話？</div>
     <div class="q-sub">轉動它，點一下那個地方</div>
+    <div id="viewbar">
+      <div class="view-chip on" data-r="0" onclick="turnTo(0,this)">正面</div>
+      <div class="view-chip" data-r="pi" onclick="turnTo(Math.PI,this)">背面</div>
+    </div>
     <div id="skywrap"><canvas id="skycv"></canvas></div>
-    <div class="hint-rotate">◂ 撥動可旋轉 ▸</div>
+    <div class="hint-rotate">◂ 也可以用手指撥轉 ▸</div>
     <div id="zone-label"></div>
+    <div id="confirmbar" style="display:none">
+      <button class="btn" onclick="confirmZone()">✓ 就是這裡</button>
+      <div class="hint-rotate" style="margin-top:8px">點錯了？直接點其他部位重選</div>
+    </div>
   </section>
 
   <section class="screen" id="s-sub">
@@ -1032,7 +1046,7 @@ var LABELS=[
  {z:'lowerleg',a:'llL',dx:-38,dy:4},
  {z:'foot',a:'ftL',dx:-34,dy:8},
 ];
-var sky={cv:null,ctx:null,W:0,H:0,rot:0,vrot:.004,drag:false,lastX:0,
+var sky={cv:null,ctx:null,W:0,H:0,rot:0,vrot:0,drag:false,lastX:0,
          sel:null,flare:0,raf:null,active:false};
 function skyInit(){
   sky.cv=document.getElementById('skycv');
@@ -1148,7 +1162,31 @@ function skyTap(e){
   S.zone=best;
   if(navigator.vibrate)navigator.vibrate(14);
   document.getElementById('zone-label').textContent=(ZONE_NAME[best]||best)+' 的星群亮了';
-  setTimeout(function(){openSub()},950);
+  document.getElementById('confirmbar').style.display='block';
+}
+function confirmZone(){
+  if(!S.zone)return;
+  document.getElementById('confirmbar').style.display='none';
+  openSub();
+}
+function turnTo(target,el){
+  document.querySelectorAll('.view-chip').forEach(c=>c.classList.remove('on'));
+  if(el)el.classList.add('on');
+  // 就近旋轉動畫
+  var start=sky.rot%(Math.PI*2);if(start<0)start+=Math.PI*2;
+  var goal=target;
+  var diff=goal-start;
+  if(diff>Math.PI)diff-=Math.PI*2;
+  if(diff<-Math.PI)diff+=Math.PI*2;
+  var t0=null;
+  function step(ts){
+    if(!t0)t0=ts;
+    var k=Math.min((ts-t0)/450,1);
+    var e=1-Math.pow(1-k,3);
+    sky.rot=start+diff*e;
+    if(k<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
 /* 背景星塵 */
@@ -1182,7 +1220,8 @@ function go(id,push){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.getElementById('s-'+id).classList.add('on');
   window.scrollTo(0,0);renderDots(id);
-  if(id==='map')skyStart();else if(id!=='reveal')skyStop();
+  if(id==='map'){skyStart();var cb=document.getElementById('confirmbar');if(cb&&!S.zone)cb.style.display='none'}
+  else if(id!=='reveal')skyStop();
 }
 function back(){var prev=HIST.pop()||'intro';go(prev,false)}
 function renderDots(cur){

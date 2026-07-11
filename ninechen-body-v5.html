@@ -1023,6 +1023,7 @@ Object.keys(CLUSTERS).forEach(function(z){
 var ANCH={head:[0,-198,0],neck:[0,-160,0],shL:[-44,-138,0],shR:[44,-138,0],
  elbL:[-60,-62,0],elbR:[60,-62,0],handL:[-66,4,0],handR:[66,4,0],
  chest:[0,-96,0],core:[0,-26,0],hip:[0,26,0],
+ chestF:[0,-96,14],chestB:[0,-96,-14],coreF:[0,-26,13],coreB:[0,-26,-13],
  thL:[-19,74,0],thR:[19,74,0],knL:[-19,120,0],knR:[19,120,0],
  llL:[-19,158,0],llR:[19,158,0],ftL:[-21,196,7],ftR:[21,196,7]};
 var BONES=[['head','neck'],['neck','shL'],['neck','shR'],
@@ -1036,10 +1037,10 @@ var LABELS=[
  {z:'shoulder',a:'shR',dx:24,dy:-6},
  {z:'arm',a:'elbR',dx:18,dy:0},
  {z:'hand',a:'handR',dx:16,dy:6},
- {z:'chest',a:'chest',dx:-14,dy:-10,face:'front'},
- {z:'upperback',a:'chest',dx:-14,dy:-10,face:'back'},
- {z:'core',a:'core',dx:-12,dy:4,face:'front'},
- {z:'lowerback',a:'core',dx:-12,dy:4,face:'back'},
+{z:'chest',a:'chestF',dx:-14,dy:-10,face:'front'},
+{z:'upperback',a:'chestB',dx:-14,dy:-10,face:'back'},
+{z:'core',a:'coreF',dx:-12,dy:4,face:'front'},
+{z:'lowerback',a:'coreB',dx:-12,dy:4,face:'back'},
  {z:'hip',a:'hip',dx:-46,dy:12},
  {z:'thigh',a:'thL',dx:-40,dy:0},
  {z:'knee',a:'knL',dx:-36,dy:4},
@@ -1071,7 +1072,7 @@ function skyInit(){
 function proj(p){
   var c=Math.cos(sky.rot),s=Math.sin(sky.rot);
   var x=p.x*c+p.z*s, z=-p.x*s+p.z*c;
-  var f=520, sc=f/(f+z+160);
+  var f=520, sc=f/(f-z+160);
   return {x:sky.W/2+x*sc*(sky.W/206), y:sky.H/2+p.y*sc*(sky.H/448), sc:sc, z:z};
 }
 function skyDraw(t){
@@ -1087,7 +1088,7 @@ function skyDraw(t){
   });
   // 星群（由遠到近）
   var pts=STARS.map(function(st){var q=proj(st);q.st=st;return q});
-  pts.sort(function(a,b){return b.z-a.z});
+  pts.sort(function(a,b){return a.z-b.z});
   pts.forEach(function(q){
     var st=q.st;
     var selz=st.zone===sky.sel;
@@ -1110,8 +1111,7 @@ function skyDraw(t){
   LABELS.forEach(function(L){
     var an=ANCH[L.a];
     var q=proj({x:an[0],y:an[1],z:an[2]});
-    if(L.face==='front'&&q.z>0)return;
-    if(L.face==='back'&&q.z<=0)return;
+    if(L.face&&q.z<4)return;
     Ls.push({name:ZONE_NAME[L.z]||L.z,q:q,sel:L.z===sky.sel});
   });
   var leftC=Ls.filter(l=>l.q.x<sky.W/2).sort((a,b)=>a.q.y-b.q.y);

@@ -94,9 +94,14 @@ h1{font:700 32px/1.5 var(--serif);text-align:center;letter-spacing:3px}
 .zp-chip span{font-size:10.5px;color:var(--muted);line-height:1.45;display:block}
 .zp-svg{width:100%;height:118px;margin:2px 0 6px;display:block}
 .zp-spot{cursor:pointer}
-.zp-spot .zs{fill:rgba(200,214,238,.75)}
-.zp-spot.hot .zs{fill:#f0cd82;filter:drop-shadow(0 0 4px #e9c27b);animation:spotPulse .9s ease-in-out infinite}
+.zp-spot .halo{opacity:.15;transition:opacity .25s}
+.zp-spot .ring{opacity:.45;transition:.25s}
+.zp-spot .core{opacity:.6}
+.zp-spot.hot .halo{opacity:1;animation:spotPulse 1s ease-in-out infinite}
+.zp-spot.hot .ring{opacity:1;stroke-width:1.6;filter:drop-shadow(0 0 5px #e9c27b)}
+.zp-spot.hot .core{opacity:1}
 @keyframes spotPulse{0%,100%{opacity:.75}50%{opacity:1}}
+.zp-svg{height:126px}
 @keyframes hintFade{0%,100%{opacity:.4}50%{opacity:.9}}
 
 /* ── 選項膠囊/卡片 ── */
@@ -1070,40 +1075,79 @@ var LABELS=[
  {z:'lowerleg',a:'llL',dx:-38,dy:4},
  {z:'foot',a:'ftL',dx:-34,dy:8},
 ];
-// 捏角部位圖：viewBox 100x110,skel=骨架折線,subs=細部座標(對應SUBAREAS的id)
-var PART_MAP={
- shoulder:{skel:[[50,12],[50,32],[58,60],[62,94]],subs:{front:[30,50],top:[50,24],back:[74,48],toarm:[62,84]}},
- neck:{skel:[[50,12],[50,84]],subs:{back:[50,30],side:[27,52],toshoulder:[73,72]}},
- lowerback:{skel:[[50,8],[50,92]],subs:{center:[50,44],side:[26,48],tohip:[50,84]}},
- knee:{skel:[[50,6],[50,50],[50,96]],subs:{front:[50,42],inner:[27,56],outer:[73,56],back:[50,74]}},
- foot:{skel:[[56,12],[50,58],[30,86],[78,74]],subs:{heel:[30,84],arch:[52,70],top:[64,36]}},
- hip:{skel:[[50,12],[50,54],[34,92]],subs:{side:[77,48],groin:[30,38],deep:[58,72]}},
- arm:{skel:[[50,8],[47,54],[45,98]],subs:{upper:[52,28],elbow:[47,54],wrist:[45,82]}},
+// 捏角部位圖：專業解剖線稿(HUD風) viewBox 100x110
+// art=線稿路徑組, subs=細部熱點座標(對應SUBAREAS id)
+var PART_ART={
+ lowerback:{art:[
+   'M43,16 h14 a3,3 0 0 1 3,3 v5 a3,3 0 0 1 -3,3 h-14 a3,3 0 0 1 -3,-3 v-5 a3,3 0 0 1 3,-3',
+   'M43,29 h14 a3,3 0 0 1 3,3 v5 a3,3 0 0 1 -3,3 h-14 a3,3 0 0 1 -3,-3 v-5 a3,3 0 0 1 3,-3',
+   'M43,42 h14 a3,3 0 0 1 3,3 v5 a3,3 0 0 1 -3,3 h-14 a3,3 0 0 1 -3,-3 v-5 a3,3 0 0 1 3,-3',
+   'M43,55 h14 a3,3 0 0 1 3,3 v5 a3,3 0 0 1 -3,3 h-14 a3,3 0 0 1 -3,-3 v-5 a3,3 0 0 1 3,-3',
+   'M36,20 h-6 M36,33 h-6 M36,46 h-6 M36,59 h-6 M64,20 h6 M64,33 h6 M64,46 h6 M64,59 h6',
+   'M33,14 C29,34 29,54 33,72','M67,14 C71,34 71,54 67,72',
+   'M18,80 C32,71 68,71 82,80','M44,68 L56,68 L52,92 L48,92 Z'],
+  subs:{center:[50,42],side:[30,44],tohip:[50,82]}},
+ shoulder:{art:[
+   'M16,34 C32,27 48,28 62,25','M62,25 l9,4',
+   'M66,41 m-11,0 a11,11 0 1 0 22,0 a11,11 0 1 0 -22,0',
+   'M74,30 C82,42 80,58 71,67','M55,29 C73,33 79,55 68,73',
+   'M59,74 L57,98','M73,68 L71,94','M16,44 h16 M16,53 h14'],
+  subs:{front:[48,46],top:[58,20],back:[81,44],toarm:[65,86]}},
+ neck:{art:[
+   'M60,10 C74,14 79,27 70,34 C65,38 59,36 57,30',
+   'M57,30 C53,34 46,35 42,32',
+   'M59,35 C55,45 53,55 55,65','M66,37 C62,47 60,56 61,66',
+   'M56,42 h8 M54,50 h9 M54,58 h9',
+   'M55,66 C46,76 32,82 16,86','M61,67 C54,78 42,86 30,90'],
+  subs:{back:[64,48],side:[40,52],toshoulder:[27,78]}},
+ knee:{art:[
+   'M44,6 C43,20 41,32 38,42','M56,6 C57,20 59,32 62,42',
+   'M38,42 C40,53 45,57 50,57 C55,57 60,53 62,42',
+   'M50,45 m-8,0 a8,8 0 1 0 16,0 a8,8 0 1 0 -16,0',
+   'M47,53 L47,62 M53,53 L53,62','M40,62 H60',
+   'M45,64 C44,78 45,90 46,100','M55,64 C56,78 55,90 54,100',
+   'M63,66 C64,80 63,92 62,100'],
+  subs:{front:[50,45],inner:[30,52],outer:[70,52],back:[50,72]}},
+ foot:{art:[
+   'M30,14 C28,32 26,50 20,64 C15,75 17,84 26,86 C44,91 62,89 84,85 C91,83 91,76 84,74 C69,70 58,61 52,46 C48,36 47,24 47,14',
+   'M30,80 C40,72 50,73 58,79','M34,32 m-4,0 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0',
+   'M66,84 v-6 M74,84 v-5'],
+  subs:{heel:[26,78],arch:[46,76],top:[44,40]}},
+ hip:{art:[
+   'M20,36 C24,22 44,20 48,34 C46,44 34,52 26,49 C20,46 18,42 20,36',
+   'M80,36 C76,22 56,20 52,34 C54,44 66,52 74,49 C80,46 82,42 80,36',
+   'M46,40 h8 l-2,18 h-4 Z','M40,60 C44,68 56,68 60,60',
+   'M30,66 m-7,0 a7,7 0 1 0 14,0 a7,7 0 1 0 -14,0',
+   'M70,66 m-7,0 a7,7 0 1 0 14,0 a7,7 0 1 0 -14,0',
+   'M27,72 L25,96','M73,72 L75,96','M21,64 l-5,3'],
+  subs:{side:[83,62],groin:[50,63],deep:[64,78]}},
+ arm:{art:[
+   'M38,14 C44,7 58,7 64,15',
+   'M45,17 C44,32 44,44 43,52','M60,17 C60,32 59,44 58,53',
+   'M43,55 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0','M56,56 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0',
+   'M42,60 C40,74 40,86 40,94','M55,60 C54,74 52,86 50,94',
+   'M38,96 H52','M38,98 C40,106 50,108 54,101'],
+  subs:{upper:[52,32],elbow:[50,55],wrist:[46,82]}},
 };
 function partSVG(zone){
-  var pm=PART_MAP[zone];if(!pm)return '';
+  var pm=PART_ART[zone];if(!pm)return '';
   var subs=SUBAREAS[zone]||[];
   var s='<svg viewBox="0 0 100 110" class="zp-svg">';
-  // 骨架
-  s+='<polyline points="'+pm.skel.map(p=>p[0]+','+p[1]).join(' ')+'" fill="none" stroke="rgba(150,172,215,.30)" stroke-width="1.2"/>';
-  // 沿骨架的小星
-  for(var i=0;i<pm.skel.length-1;i++){
-    var a=pm.skel[i],b=pm.skel[i+1];
-    for(var j=1;j<=3;j++){
-      var t=j/4,x=a[0]+(b[0]-a[0])*t+((i*7+j*13)%5-2),y=a[1]+(b[1]-a[1])*t+((i*11+j*7)%5-2);
-      s+='<circle cx="'+x+'" cy="'+y+'" r="'+(0.8+((i+j)%3)*0.35)+'" fill="rgba(200,214,238,.5)"/>';
-    }
-  }
-  // 細部星群(可點+可閃)
+  s+='<defs><radialGradient id="zg"><stop offset="0%" stop-color="#f0cd82" stop-opacity=".9"/><stop offset="100%" stop-color="#e9c27b" stop-opacity="0"/></radialGradient></defs>';
+  // HUD 角框
+  s+='<path d="M4,12 V4 H12 M88,4 H96 V12 M96,98 V106 H88 M12,106 H4 V98" fill="none" stroke="rgba(233,194,123,.45)" stroke-width="1"/>';
+  // 解剖線稿
+  pm.art.forEach(function(d){
+    s+='<path d="'+d+'" fill="none" stroke="rgba(163,184,222,.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+  });
+  // 細部熱點
   subs.forEach(function(sub,i){
     var pos=pm.subs[sub.id];if(!pos)return;
     s+='<g class="zp-spot" data-i="'+i+'" onclick="pickSubZ('+i+')">';
-    s+='<circle cx="'+pos[0]+'" cy="'+pos[1]+'" r="15" fill="transparent" style="pointer-events:all"/>';
-    for(var k=0;k<7;k++){
-      var ang=(k*2.39+i*1.7), rr=2.5+((k*5+i*3)%70)/10;
-      var x=pos[0]+Math.cos(ang)*rr, y=pos[1]+Math.sin(ang)*rr;
-      s+='<circle class="zs" cx="'+x+'" cy="'+y+'" r="'+(1.1+(k%3)*0.5)+'"/>';
-    }
+    s+='<circle cx="'+pos[0]+'" cy="'+pos[1]+'" r="16" fill="transparent" style="pointer-events:all"/>';
+    s+='<circle class="halo" cx="'+pos[0]+'" cy="'+pos[1]+'" r="11" fill="url(#zg)"/>';
+    s+='<circle class="ring" cx="'+pos[0]+'" cy="'+pos[1]+'" r="5.5" fill="none" stroke="#e9c27b" stroke-width="1.2"/>';
+    s+='<circle class="core" cx="'+pos[0]+'" cy="'+pos[1]+'" r="1.8" fill="#f0cd82"/>';
     s+='</g>';
   });
   s+='</svg>';

@@ -92,6 +92,11 @@ h1{font:700 32px/1.5 var(--serif);text-align:center;letter-spacing:3px}
 .zp-chip:hover{border-color:rgba(233,194,123,.5)}
 .zp-chip b{font:600 13.5px var(--sans);display:block;color:var(--ink)}
 .zp-chip span{font-size:10.5px;color:var(--muted);line-height:1.45;display:block}
+.zp-svg{width:100%;height:118px;margin:2px 0 6px;display:block}
+.zp-spot{cursor:pointer}
+.zp-spot .zs{fill:rgba(200,214,238,.75)}
+.zp-spot.hot .zs{fill:#f0cd82;filter:drop-shadow(0 0 4px #e9c27b);animation:spotPulse .9s ease-in-out infinite}
+@keyframes spotPulse{0%,100%{opacity:.75}50%{opacity:1}}
 @keyframes hintFade{0%,100%{opacity:.4}50%{opacity:.9}}
 
 /* ── 選項膠囊/卡片 ── */
@@ -1065,6 +1070,50 @@ var LABELS=[
  {z:'lowerleg',a:'llL',dx:-38,dy:4},
  {z:'foot',a:'ftL',dx:-34,dy:8},
 ];
+// 捏角部位圖：viewBox 100x110,skel=骨架折線,subs=細部座標(對應SUBAREAS的id)
+var PART_MAP={
+ shoulder:{skel:[[50,12],[50,32],[58,60],[62,94]],subs:{front:[30,50],top:[50,24],back:[74,48],toarm:[62,84]}},
+ neck:{skel:[[50,12],[50,84]],subs:{back:[50,30],side:[27,52],toshoulder:[73,72]}},
+ lowerback:{skel:[[50,8],[50,92]],subs:{center:[50,44],side:[26,48],tohip:[50,84]}},
+ knee:{skel:[[50,6],[50,50],[50,96]],subs:{front:[50,42],inner:[27,56],outer:[73,56],back:[50,74]}},
+ foot:{skel:[[56,12],[50,58],[30,86],[78,74]],subs:{heel:[30,84],arch:[52,70],top:[64,36]}},
+ hip:{skel:[[50,12],[50,54],[34,92]],subs:{side:[77,48],groin:[30,38],deep:[58,72]}},
+ arm:{skel:[[50,8],[47,54],[45,98]],subs:{upper:[52,28],elbow:[47,54],wrist:[45,82]}},
+};
+function partSVG(zone){
+  var pm=PART_MAP[zone];if(!pm)return '';
+  var subs=SUBAREAS[zone]||[];
+  var s='<svg viewBox="0 0 100 110" class="zp-svg">';
+  // 骨架
+  s+='<polyline points="'+pm.skel.map(p=>p[0]+','+p[1]).join(' ')+'" fill="none" stroke="rgba(150,172,215,.30)" stroke-width="1.2"/>';
+  // 沿骨架的小星
+  for(var i=0;i<pm.skel.length-1;i++){
+    var a=pm.skel[i],b=pm.skel[i+1];
+    for(var j=1;j<=3;j++){
+      var t=j/4,x=a[0]+(b[0]-a[0])*t+((i*7+j*13)%5-2),y=a[1]+(b[1]-a[1])*t+((i*11+j*7)%5-2);
+      s+='<circle cx="'+x+'" cy="'+y+'" r="'+(0.8+((i+j)%3)*0.35)+'" fill="rgba(200,214,238,.5)"/>';
+    }
+  }
+  // 細部星群(可點+可閃)
+  subs.forEach(function(sub,i){
+    var pos=pm.subs[sub.id];if(!pos)return;
+    s+='<g class="zp-spot" data-i="'+i+'" onclick="pickSubZ('+i+')">';
+    s+='<circle cx="'+pos[0]+'" cy="'+pos[1]+'" r="15" fill="transparent" style="pointer-events:all"/>';
+    for(var k=0;k<7;k++){
+      var ang=(k*2.39+i*1.7), rr=2.5+((k*5+i*3)%70)/10;
+      var x=pos[0]+Math.cos(ang)*rr, y=pos[1]+Math.sin(ang)*rr;
+      s+='<circle class="zs" cx="'+x+'" cy="'+y+'" r="'+(1.1+(k%3)*0.5)+'"/>';
+    }
+    s+='</g>';
+  });
+  s+='</svg>';
+  return s;
+}
+function hotSpot(i){
+  document.querySelectorAll('#zoompanel .zp-spot').forEach(function(g){
+    g.classList.toggle('hot', +g.dataset.i===i);
+  });
+}
 var sky={cv:null,ctx:null,W:0,H:0,rot:0,vrot:0,drag:false,lastX:0,
          sel:null,flare:0,raf:null,active:false,
          focus:{on:false,k:0,cx:0,cy:0,tx:0,ty:0,Z:1.85}};
@@ -1202,8 +1251,12 @@ function focusZone(zone){
   tween(F,'k',1,420);
   var subs=SUBAREAS[zone]||[];
   document.getElementById('zp-title').textContent=ZONE_NAME[zone]||zone;
-  var html=subs.map(function(s,i){
-    return '<div class="zp-chip" onclick="pickSubZ('+i+')"><b>'+s.n+'</b><span>'+(s.d||'')+'</span></div>';
+  var html=partSVG(zone);
+  html+=subs.map(function(s,i){
+    return '<div class="zp-chip" data-i="'+i+'" onclick="pickSubZ('+i+')" '+
+      'onmouseenter="hotSpot('+i+')" onmouseleave="hotSpot(-1)" '+
+      'ontouchstart="hotSpot('+i+')">'+
+      '<b>'+s.n+'</b><span>'+(s.d||'')+'</span></div>';
   }).join('');
   html+='<div class="zp-chip" onclick="pickSubZ(-1)"><b>'+(subs.length?'說不清楚':'就是這一帶')+'</b><span>'+(subs.length?'整個區域都算':'繼續下一步')+'</span></div>';
   document.getElementById('zp-chips').innerHTML=html;

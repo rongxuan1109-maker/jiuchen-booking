@@ -62,14 +62,28 @@ h1{font:700 30px/1.5 var(--serif);text-align:center;letter-spacing:2px}
 #s-intro p{color:var(--ink2);font-size:15.5px}
 
 /* ── 人形圖 ── */
-#bodywrap{position:relative;margin:4px auto 6px;width:min(76vw,300px)}
-#bodywrap svg{width:100%;height:auto;display:block}
+#stage{perspective:900px}
+#bodywrap{position:relative;margin:4px auto 6px;width:min(76vw,300px);
+  transform-style:preserve-3d;transition:transform .5s ease;will-change:transform}
+#bodywrap::after{content:"";position:absolute;left:16%;right:16%;bottom:-12px;height:20px;
+  border-radius:50%;background:radial-gradient(ellipse,rgba(90,70,40,.20),transparent 70%);
+  filter:blur(4px)}
+#bodywrap svg{width:100%;height:auto;display:block;animation:bodyBreath 5.5s ease-in-out infinite}
+@keyframes bodyBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.012)}}
 .fl{display:none}
 svg text.zlabel{font:400 9px var(--sans);fill:#ab9c82;letter-spacing:.5px;pointer-events:none}
+.bp{transform-box:fill-box;transform-origin:center;
+  transition:fill .25s,transform .35s cubic-bezier(.34,1.56,.64,1),filter .25s}
+.bp.connlight{animation:connGlow 1.5s ease}
+@keyframes connGlow{0%,100%{}45%{fill:#eedab0;filter:drop-shadow(0 0 9px #c08a5277)}}
+.tap-ring{fill:none;stroke:var(--warm);stroke-width:2.2;pointer-events:none;
+  transform-box:fill-box;transform-origin:center;animation:ringOut .7s ease-out forwards}
+@keyframes ringOut{from{transform:scale(.25);opacity:.95}to{transform:scale(3.4);opacity:0}}
 .bp{fill:#e5d9c3;stroke:#c9b894;stroke-width:1;cursor:pointer;
   transition:fill .25s, filter .25s}
 .bp:hover{fill:#ecd9b4}
 .bp.sel{fill:var(--warm);filter:drop-shadow(0 0 10px #c08a5288);
+  transform:scale(1.09);
   animation:selPulse 1.6s ease-in-out infinite}
 @keyframes selPulse{0%,100%{filter:drop-shadow(0 0 6px #c08a5266)}
   50%{filter:drop-shadow(0 0 16px #c08a52aa)}}
@@ -189,7 +203,7 @@ svg text.zlabel{font:400 9px var(--sans);fill:#ab9c82;letter-spacing:.5px;pointe
       <div class="flip-chip on" data-v="front" onclick="flip('front')">正面</div>
       <div class="flip-chip" data-v="back" onclick="flip('back')">背面</div>
     </div>
-    <div id="bodywrap" class="view-front"><svg id="bsvg" class="view-front" viewBox="0 0 220 500" xmlns="http://www.w3.org/2000/svg">
+    <div id="stage"><div id="bodywrap" class="view-front"><svg id="bsvg" class="view-front" viewBox="0 0 220 500" xmlns="http://www.w3.org/2000/svg">
 
       <!-- === 筋膜流線（更新座標）=== -->
       <path id="fl-sbl" class="fl" d="M110,465 L110,418 L110,344 L110,262 L110,172 L110,85 L110,28"/>
@@ -281,7 +295,7 @@ svg text.zlabel{font:400 9px var(--sans);fill:#ab9c82;letter-spacing:.5px;pointe
       <ellipse class="bp" cx="177" cy="230" rx="11" ry="14" data-zone="hand" onclick="pickBP(this)"/>
       <text class="zlabel" x="22" y="233" text-anchor="middle">手部</text>
 
-    </svg></div>
+    </svg></div></div>
     <div id="zone-label"></div>
   </section>
 
@@ -1122,22 +1136,64 @@ function renderDots(cur){
   el.innerHTML=flow.map((f,i)=>'<i class="'+(i<=idx?'f':'')+'"></i>').join('');
 }
 
-/* ── 人形圖 ── */
+/* ── 人形圖（3D 互動版）── */
 function flip(v){
-  document.getElementById('bodywrap').className='view-'+v;
+  var w=document.getElementById('bodywrap');
+  if(w.className==='view-'+v)return;
+  w.style.transition='transform .3s ease';
+  w.style.transform='rotateY(90deg)';
+  setTimeout(function(){
+    w.className='view-'+v;
+    w.style.transform='rotateY(0deg)';
+  },300);
   document.querySelectorAll('.flip-chip').forEach(c=>c.classList.toggle('on',c.dataset.v===v));
 }
+function tapRing(svg,evt){
+  try{
+    var pt=svg.createSVGPoint();pt.x=evt.clientX;pt.y=evt.clientY;
+    var loc=pt.matrixTransform(svg.getScreenCTM().inverse());
+    var c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',loc.x);c.setAttribute('cy',loc.y);c.setAttribute('r',13);
+    c.setAttribute('class','tap-ring');
+    svg.appendChild(c);
+    setTimeout(function(){c.remove()},750);
+  }catch(e){}
+}
 function bindBody(){
+  var svg=document.querySelector('#bodywrap svg');
   document.querySelectorAll('#bodywrap .bp').forEach(function(el){
     el.removeAttribute('onclick');
-    el.addEventListener('click',function(){
-      document.querySelectorAll('#bodywrap .bp').forEach(x=>x.classList.remove('sel'));
+    el.addEventListener('click',function(evt){
+      document.querySelectorAll('#bodywrap .bp').forEach(x=>x.classList.remove('sel','connlight'));
       document.querySelectorAll('#bodywrap .bp[data-zone="'+el.dataset.zone+'"]').forEach(x=>x.classList.add('sel'));
       S.zone=el.dataset.zone;
       document.getElementById('zone-label').textContent=ZONE_NAME[S.zone]||S.zone;
-      setTimeout(function(){openSub()},450);
+      tapRing(svg,evt);
+      if(navigator.vibrate)navigator.vibrate(12);
+      // 筋膜連結微光：跟這個部位相連的區域輕輕亮一下
+      var conn=(ZONESDATA[S.zone]&&ZONESDATA[S.zone].conn)||[];
+      conn.forEach(function(z,i){
+        document.querySelectorAll('#bodywrap .bp[data-zone="'+z+'"]').forEach(function(x){
+          setTimeout(function(){x.classList.add('connlight')},120+i*90);
+        });
+      });
+      setTimeout(function(){openSub()},900);
     });
   });
+  // 桌機：滑鼠移動,人偶立體轉動跟隨
+  if(matchMedia('(hover:hover)').matches){
+    var stage=document.getElementById('stage'),w=document.getElementById('bodywrap');
+    stage.addEventListener('mousemove',function(ev){
+      var r=stage.getBoundingClientRect();
+      var x=(ev.clientX-r.left)/r.width-.5,y=(ev.clientY-r.top)/r.height-.5;
+      w.style.transition='transform .15s ease-out';
+      w.style.transform='rotateY('+(x*14)+'deg) rotateX('+(-y*8)+'deg)';
+    });
+    stage.addEventListener('mouseleave',function(){
+      w.style.transition='transform .6s ease';
+      w.style.transform='rotateY(0) rotateX(0)';
+    });
+  }
 }
 function openSub(){
   var subs=SUBAREAS[S.zone];

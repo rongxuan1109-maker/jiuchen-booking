@@ -76,7 +76,22 @@ h1{font:700 32px/1.5 var(--serif);text-align:center;letter-spacing:3px}
   font-size:14px;letter-spacing:3px;color:var(--muted);transition:.25s}
 .view-chip.on{background:linear-gradient(135deg,#f0d49a,var(--gold2));color:#141a2c;
   border-color:transparent;font-weight:600}
-#confirmbar{margin-top:10px;animation:fadeUp .4s ease}
+#zoompanel{position:absolute;right:0;top:10%;width:49%;max-width:200px;
+  background:rgba(16,22,38,.88);border:1px solid rgba(233,194,123,.3);border-radius:16px;
+  padding:13px 13px 11px;backdrop-filter:blur(12px);z-index:4;
+  opacity:0;transform:translateX(24px);pointer-events:none;
+  transition:opacity .35s ease,transform .35s cubic-bezier(.34,1.4,.64,1)}
+#zoompanel.show{opacity:1;transform:none;pointer-events:auto}
+.zp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.zp-head b{font:600 16px var(--serif);color:var(--gold);letter-spacing:2px}
+.zp-x{color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px}
+.zp-sub{font-size:11px;color:var(--muted);margin-bottom:9px}
+.zp-chip{padding:9px 12px;border-radius:11px;background:rgba(150,170,220,.07);
+  border:1px solid var(--line);cursor:pointer;margin-bottom:7px;transition:.18s}
+.zp-chip:active{transform:scale(.97)}
+.zp-chip:hover{border-color:rgba(233,194,123,.5)}
+.zp-chip b{font:600 13.5px var(--sans);display:block;color:var(--ink)}
+.zp-chip span{font-size:10.5px;color:var(--muted);line-height:1.45;display:block}
 @keyframes hintFade{0%,100%{opacity:.4}50%{opacity:.9}}
 
 /* ── 選項膠囊/卡片 ── */
@@ -185,13 +200,16 @@ h1{font:700 32px/1.5 var(--serif);text-align:center;letter-spacing:3px}
       <div class="view-chip on" data-r="0" onclick="turnTo(0,this)">正面</div>
       <div class="view-chip" data-r="pi" onclick="turnTo(Math.PI,this)">背面</div>
     </div>
-    <div id="skywrap"><canvas id="skycv"></canvas></div>
+    <div id="skywrap"><canvas id="skycv"></canvas>
+      <div id="zoompanel">
+        <div class="zp-head"><b id="zp-title"></b><span class="zp-x" onclick="unfocus()">✕</span></div>
+        <div class="zp-sub">大概是哪一帶？</div>
+        <div id="zp-chips"></div>
+      </div>
+    </div>
     <div class="hint-rotate">◂ 也可以用手指撥轉 ▸</div>
     <div id="zone-label"></div>
-    <div id="confirmbar" style="display:none">
-      <button class="btn" onclick="confirmZone()">✓ 就是這裡</button>
-      <div class="hint-rotate" style="margin-top:8px">點錯了？直接點其他部位重選</div>
-    </div>
+
   </section>
 
   <section class="screen" id="s-sub">
@@ -1048,7 +1066,8 @@ var LABELS=[
  {z:'foot',a:'ftL',dx:-34,dy:8},
 ];
 var sky={cv:null,ctx:null,W:0,H:0,rot:0,vrot:0,drag:false,lastX:0,
-         sel:null,flare:0,raf:null,active:false};
+         sel:null,flare:0,raf:null,active:false,
+         focus:{on:false,k:0,cx:0,cy:0,tx:0,ty:0,Z:1.85}};
 function skyInit(){
   sky.cv=document.getElementById('skycv');
   sky.ctx=sky.cv.getContext('2d');
@@ -1073,14 +1092,20 @@ function proj(p){
   var c=Math.cos(sky.rot),s=Math.sin(sky.rot);
   var x=p.x*c+p.z*s, z=-p.x*s+p.z*c;
   var f=520, sc=f/(f-z+160);
-  return {x:sky.W/2+x*sc*(sky.W/206), y:sky.H/2+p.y*sc*(sky.H/448), sc:sc, z:z};
+  var px=sky.W/2+x*sc*(sky.W/206), py=sky.H/2+p.y*sc*(sky.H/448);
+  var F=sky.focus;
+  if(F.k>0){
+    px=px+((px-F.cx)*(F.Z-1)+(F.tx-F.cx))*F.k;
+    py=py+((py-F.cy)*(F.Z-1)+(F.ty-F.cy))*F.k;
+  }
+  return {x:px, y:py, sc:sc*(1+(F.Z-1)*F.k*.5), z:z};
 }
 function skyDraw(t){
   var ctx=sky.ctx;ctx.clearRect(0,0,sky.W,sky.H);
   if(!sky.drag)sky.rot+=sky.vrot;
   if(sky.flare>0)sky.flare*=.94;
-  // 星座骨架（讓人形一眼可讀）
-  ctx.strokeStyle='rgba(150,172,215,.20)';ctx.lineWidth=1;
+  // 星座骨架（讓人形一眼可讀;聚焦時淡出）
+  ctx.strokeStyle='rgba(150,172,215,'+(0.20*(1-sky.focus.k*.8))+')';ctx.lineWidth=1;
   BONES.forEach(function(bn){
     var a=proj({x:ANCH[bn[0]][0],y:ANCH[bn[0]][1],z:ANCH[bn[0]][2]});
     var b=proj({x:ANCH[bn[1]][0],y:ANCH[bn[1]][1],z:ANCH[bn[1]][2]});
@@ -1094,7 +1119,8 @@ function skyDraw(t){
     var selz=st.zone===sky.sel;
     var tw=.62+.38*Math.sin(t*.0016+st.tw);
     var r=st.r*q.sc*(selz?1.7+sky.flare*.9:1);
-    var a=(.35+.55*tw)*q.sc*(selz?1:.85);
+    var a=(.35+.55*tw)*Math.min(q.sc,1.1)*(selz?1:.85);
+    if(sky.focus.k>0&&!selz)a*=(1-.75*sky.focus.k);
     ctx.beginPath();ctx.arc(q.x,q.y,Math.max(r,0.4),0,6.29);
     if(selz){
       ctx.fillStyle='rgba(240,205,130,'+Math.min(a+.25,1)+')';
@@ -1108,12 +1134,15 @@ function skyDraw(t){
   // 部位名稱：左右兩欄對齊+牽引線,防碰撞（任何角度都不擠）
   ctx.font='11px "Noto Sans TC",sans-serif';
   var Ls=[];
+  if(sky.focus.k>.5)Ls=null;
+  if(Ls)
   LABELS.forEach(function(L){
     var an=ANCH[L.a];
     var q=proj({x:an[0],y:an[1],z:an[2]});
     if(L.face&&q.z<4)return;
     Ls.push({name:ZONE_NAME[L.z]||L.z,q:q,sel:L.z===sky.sel});
   });
+  if(!Ls)Ls=[];
   var leftC=Ls.filter(l=>l.q.x<sky.W/2).sort((a,b)=>a.q.y-b.q.y);
   var rightC=Ls.filter(l=>l.q.x>=sky.W/2).sort((a,b)=>a.q.y-b.q.y);
   function layout(col,x,align){
@@ -1157,17 +1186,52 @@ function skyTap(e){
       if(d<bd){bd=d;best=z}
     });
   });
-  if(bd>2600)return;   // 點太遠不算
+  if(bd>2600){if(sky.focus.on)unfocus();return}
   sky.sel=best;sky.flare=1;
   S.zone=best;
   if(navigator.vibrate)navigator.vibrate(14);
-  document.getElementById('zone-label').textContent=(ZONE_NAME[best]||best)+' 的星群亮了';
-  document.getElementById('confirmbar').style.display='block';
+  document.getElementById('zone-label').textContent=ZONE_NAME[best]||best;
+  focusZone(best);
 }
-function confirmZone(){
-  if(!S.zone)return;
-  document.getElementById('confirmbar').style.display='none';
-  openSub();
+function focusZone(zone){
+  // 部位質心(未聚焦座標)
+  var F=sky.focus;var k0=F.k;F.k=0;
+  var cs=CENTERS[zone];var q=proj(cs[0]);
+  if(cs.length>1){var q2=proj(cs[1]);q={x:(q.x+q2.x)/2,y:(q.y+q2.y)/2}}
+  F.k=k0;F.cx=q.x;F.cy=q.y;F.tx=sky.W*0.30;F.ty=sky.H*0.44;F.on=true;
+  tween(F,'k',1,420);
+  var subs=SUBAREAS[zone]||[];
+  document.getElementById('zp-title').textContent=ZONE_NAME[zone]||zone;
+  var html=subs.map(function(s,i){
+    return '<div class="zp-chip" onclick="pickSubZ('+i+')"><b>'+s.n+'</b><span>'+(s.d||'')+'</span></div>';
+  }).join('');
+  html+='<div class="zp-chip" onclick="pickSubZ(-1)"><b>'+(subs.length?'說不清楚':'就是這一帶')+'</b><span>'+(subs.length?'整個區域都算':'繼續下一步')+'</span></div>';
+  document.getElementById('zp-chips').innerHTML=html;
+  setTimeout(function(){document.getElementById('zoompanel').classList.add('show')},240);
+}
+function unfocus(){
+  sky.focus.on=false;sky.sel=null;
+  document.getElementById('zoompanel').classList.remove('show');
+  document.getElementById('zone-label').textContent='';
+  tween(sky.focus,'k',0,380);
+}
+function pickSubZ(i){
+  var subs=SUBAREAS[S.zone]||[];
+  S.sub=(i>=0&&subs[i])?subs[i].id:null;
+  document.getElementById('zoompanel').classList.remove('show');
+  tween(sky.focus,'k',0,300);
+  sky.focus.on=false;
+  setTimeout(function(){go('cards');renderCards()},220);
+}
+function tween(obj,prop,to,ms){
+  var from=obj[prop],t0=null;
+  function step(ts){
+    if(!t0)t0=ts;
+    var k=Math.min((ts-t0)/ms,1);
+    obj[prop]=from+(to-from)*(1-Math.pow(1-k,3));
+    if(k<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 function turnTo(target,el){
   document.querySelectorAll('.view-chip').forEach(c=>c.classList.remove('on'));
@@ -1213,14 +1277,14 @@ var S={zone:null,sub:null,feel:null,track:null,
        dqTime:null,dqMove:null,dqImpact:null,
        redflag:null,injuryOrigin:false,deepDone:false};
 var HIST=[];
-var FLOW_DOTS={feel:['map','sub','cards','dq-time','dq-move','dq-impact','redflag'],trauma:['map','sub','cards','tq-time','tq-mech','tq-sign','redflag']};
+var FLOW_DOTS={feel:['map','cards','dq-time','dq-move','dq-impact','redflag'],trauma:['map','cards','tq-time','tq-mech','tq-sign','redflag']};
 
 function go(id,push){
   if(push!==false && document.querySelector('.screen.on')) HIST.push(document.querySelector('.screen.on').id.slice(2));
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.getElementById('s-'+id).classList.add('on');
   window.scrollTo(0,0);renderDots(id);
-  if(id==='map'){skyStart();var cb=document.getElementById('confirmbar');if(cb&&!S.zone)cb.style.display='none'}
+  if(id==='map'){skyStart()}
   else if(id!=='reveal')skyStop();
 }
 function back(){var prev=HIST.pop()||'intro';go(prev,false)}

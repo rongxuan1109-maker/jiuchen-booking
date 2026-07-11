@@ -251,11 +251,6 @@ h1{font:700 32px/1.5 var(--serif);text-align:center;letter-spacing:3px}
     <div class="pcard"><div class="lbl">身體的話</div><p class="prose" id="r-body"></p></div>
     <div class="pcard"><div class="lbl">往前的方向</div><div id="r-soul"></div></div>
 
-    <div id="deep-invite">
-      <p>想看更完整的星圖嗎？<br>再回答三個問題，它會為你變得更準。</p>
-      <button class="btn ghost" onclick="startDeep()" style="letter-spacing:2px">深入探索（約 20 秒）</button>
-    </div>
-
     <div id="tcard">
       <div class="thead" onclick="toggleT()">
         <span class="code" id="t-code">——</span>
@@ -1002,7 +997,7 @@ Object.keys(CLUSTERS).forEach(function(zone){
       var u,v,w,d2;
       do{u=rnd()*2-1;v=rnd()*2-1;w=rnd()*2-1;d2=u*u+v*v+w*w}while(d2>1);
       STARS.push({x:c[0]+u*c[3],y:c[1]+v*c[4],z:c[2]+w*c[5],
-                  zone:zone,r:.9+rnd()*1.5,tw:rnd()*6.28});
+                  zone:zone,r:1.15+rnd()*1.7,tw:rnd()*6.28});
     }
   });
 });
@@ -1011,6 +1006,32 @@ Object.keys(CLUSTERS).forEach(function(z){
   var cs=CLUSTERS[z];CENTERS[z]=cs.map(c=>({x:c[0],y:c[1],z:c[2]}));
 });
 
+var ANCH={head:[0,-198,0],neck:[0,-160,0],shL:[-44,-138,0],shR:[44,-138,0],
+ elbL:[-60,-62,0],elbR:[60,-62,0],handL:[-66,4,0],handR:[66,4,0],
+ chest:[0,-96,0],core:[0,-26,0],hip:[0,26,0],
+ thL:[-19,74,0],thR:[19,74,0],knL:[-19,120,0],knR:[19,120,0],
+ llL:[-19,158,0],llR:[19,158,0],ftL:[-21,196,7],ftR:[21,196,7]};
+var BONES=[['head','neck'],['neck','shL'],['neck','shR'],
+ ['shL','elbL'],['elbL','handL'],['shR','elbR'],['elbR','handR'],
+ ['neck','chest'],['chest','core'],['core','hip'],
+ ['hip','thL'],['thL','knL'],['knL','llL'],['llL','ftL'],
+ ['hip','thR'],['thR','knR'],['knR','llR'],['llR','ftR']];
+var LABELS=[
+ {z:'head',a:'head',dx:30,dy:-6},
+ {z:'neck',a:'neck',dx:22,dy:2},
+ {z:'shoulder',a:'shR',dx:24,dy:-6},
+ {z:'arm',a:'elbR',dx:18,dy:0},
+ {z:'hand',a:'handR',dx:16,dy:6},
+ {z:'chest',a:'chest',dx:-14,dy:-10,face:'front'},
+ {z:'upperback',a:'chest',dx:-14,dy:-10,face:'back'},
+ {z:'core',a:'core',dx:-12,dy:4,face:'front'},
+ {z:'lowerback',a:'core',dx:-12,dy:4,face:'back'},
+ {z:'hip',a:'hip',dx:-46,dy:12},
+ {z:'thigh',a:'thL',dx:-40,dy:0},
+ {z:'knee',a:'knL',dx:-36,dy:4},
+ {z:'lowerleg',a:'llL',dx:-38,dy:4},
+ {z:'foot',a:'ftL',dx:-34,dy:8},
+];
 var sky={cv:null,ctx:null,W:0,H:0,rot:0,vrot:.004,drag:false,lastX:0,
          sel:null,flare:0,raf:null,active:false};
 function skyInit(){
@@ -1043,6 +1064,13 @@ function skyDraw(t){
   var ctx=sky.ctx;ctx.clearRect(0,0,sky.W,sky.H);
   if(!sky.drag)sky.rot+=sky.vrot;
   if(sky.flare>0)sky.flare*=.94;
+  // 星座骨架（讓人形一眼可讀）
+  ctx.strokeStyle='rgba(150,172,215,.20)';ctx.lineWidth=1;
+  BONES.forEach(function(bn){
+    var a=proj({x:ANCH[bn[0]][0],y:ANCH[bn[0]][1],z:ANCH[bn[0]][2]});
+    var b=proj({x:ANCH[bn[1]][0],y:ANCH[bn[1]][1],z:ANCH[bn[1]][2]});
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  });
   // 星群（由遠到近）
   var pts=STARS.map(function(st){var q=proj(st);q.st=st;return q});
   pts.sort(function(a,b){return b.z-a.z});
@@ -1061,6 +1089,22 @@ function skyDraw(t){
       ctx.shadowColor='#9fb4dd';ctx.shadowBlur=4;
     }
     ctx.fill();ctx.shadowBlur=0;
+  });
+  // 部位名稱（跟著旋轉,朝前才顯示）
+  ctx.font='10.5px "Noto Sans TC",sans-serif';ctx.textAlign='left';
+  LABELS.forEach(function(L){
+    var an=ANCH[L.a];
+    var q=proj({x:an[0],y:an[1],z:an[2]});
+    if(L.face==='front'&&q.z>0)return;
+    if(L.face==='back'&&q.z<=0)return;
+    var selz=L.z===sky.sel;
+    ctx.fillStyle=selz?'rgba(233,194,123,.95)':'rgba(168,182,208,.6)';
+    var name=ZONE_NAME[L.z]||L.z;
+    var tx=q.x+(L.dx<0?L.dx-name.length*10:L.dx),ty=q.y+L.dy;
+    ctx.fillText(name,tx,ty+3);
+    ctx.strokeStyle='rgba(168,182,208,.25)';ctx.lineWidth=.7;
+    ctx.beginPath();
+    ctx.moveTo(L.dx<0?tx+name.length*10+3:tx-4,ty+1);ctx.lineTo(q.x,q.y);ctx.stroke();
   });
   // 選中區的光暈環
   if(sky.sel&&sky.flare>.05){
@@ -1118,7 +1162,7 @@ var S={zone:null,sub:null,feel:null,track:null,
        dqTime:null,dqMove:null,dqImpact:null,
        redflag:null,injuryOrigin:false,deepDone:false};
 var HIST=[];
-var FLOW_DOTS={feel:['map','sub','cards','redflag'],trauma:['map','sub','cards','tq-time','tq-mech','tq-sign','redflag']};
+var FLOW_DOTS={feel:['map','sub','cards','dq-time','dq-move','dq-impact','redflag'],trauma:['map','sub','cards','tq-time','tq-mech','tq-sign','redflag']};
 
 function go(id,push){
   if(push!==false && document.querySelector('.screen.on')) HIST.push(document.querySelector('.screen.on').id.slice(2));
@@ -1158,7 +1202,7 @@ function renderCards(){
     '<div><b>有明確的受傷事件</b><span>扭到、撞到、拉到——某件事之後開始的</span></div></div>';
   document.getElementById('feel-cards').innerHTML=html;
 }
-function pickFeel(id){S.feel=id;S.track='feel';renderChips('redflag-chips',REDFLAGS,'pickRedflag');go('redflag')}
+function pickFeel(id){S.feel=id;S.track='feel';renderChips('dq-time-chips',DQ_TIME,'pickDqTime');go('dq-time')}
 function pickTrauma(){S.track='trauma';renderChips('tq-time-chips',TQ_TIME,'pickTqTime');go('tq-time')}
 function renderChips(elId,list,fn){
   document.getElementById(elId).innerHTML=list.map(function(o,i){
@@ -1173,10 +1217,10 @@ function pickTqTime(i){
 function pickTqMech(i){S.tqMech=TQ_MECH[i];renderChips('tq-sign-chips',TQ_SIGN,'pickTqSign');go('tq-sign')}
 function pickTqSign(i){S.tqSign=TQ_SIGN[i];renderChips('redflag-chips',REDFLAGS,'pickRedflag');go('redflag')}
 function pickRedflag(i){S.redflag=REDFLAGS[i].id==='none'?null:REDFLAGS[i];reveal()}
-function startDeep(){renderChips('dq-time-chips',DQ_TIME,'pickDqTime');go('dq-time')}
+
 function pickDqTime(i){S.dqTime=DQ_TIME[i];renderChips('dq-move-chips',DQ_MOVE,'pickDqMove');go('dq-move')}
 function pickDqMove(i){S.dqMove=DQ_MOVE[i];renderChips('dq-impact-chips',DQ_IMPACT,'pickDqImpact');go('dq-impact')}
-function pickDqImpact(i){S.dqImpact=DQ_IMPACT[i];S.deepDone=true;reveal()}
+function pickDqImpact(i){S.dqImpact=DQ_IMPACT[i];S.deepDone=true;renderChips('redflag-chips',REDFLAGS,'pickRedflag');go('redflag')}
 
 /* ═══════════ 揭曉＋星圖卡 ═══════════ */
 function reveal(){go('reveal');setTimeout(showResult,2300)}
@@ -1252,7 +1296,6 @@ function showResult(){
   if(S.redflag){rf.style.display='block';
     rf.innerHTML='<b>先說一件重要的事：</b>你提到「'+S.redflag.n+'」——這類訊號建議先給醫師或物理治療師當面評估，比任何線上探索都優先。'}
   else rf.style.display='none';
-  document.getElementById('deep-invite').style.display=(S.deepDone||isTrauma)?'none':'block';
   renderTcard();
   go('result');
   renderChartCard();

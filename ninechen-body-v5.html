@@ -992,7 +992,7 @@ function rnd(){seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff}
 var STARS=[];
 Object.keys(CLUSTERS).forEach(function(zone){
   CLUSTERS[zone].forEach(function(c){
-    for(var i=0;i<c[6];i++){
+    var _n=Math.round(c[6]*1.6);for(var i=0;i<_n;i++){
       // 橢球內隨機
       var u,v,w,d2;
       do{u=rnd()*2-1;v=rnd()*2-1;w=rnd()*2-1;d2=u*u+v*v+w*w}while(d2>1);
@@ -1039,7 +1039,7 @@ function skyInit(){
   sky.ctx=sky.cv.getContext('2d');
   var dpr=Math.min(devicePixelRatio||1,2);
   var w=sky.cv.parentNode.clientWidth||330;
-  var h=Math.min(w*1.32,460);
+  var h=Math.min(w*1.42,520);
   sky.cv.width=w*dpr;sky.cv.height=h*dpr;
   sky.cv.style.height=h+'px';
   sky.ctx.scale(dpr,dpr);sky.W=w;sky.H=h;
@@ -1058,7 +1058,7 @@ function proj(p){
   var c=Math.cos(sky.rot),s=Math.sin(sky.rot);
   var x=p.x*c+p.z*s, z=-p.x*s+p.z*c;
   var f=520, sc=f/(f+z+160);
-  return {x:sky.W/2+x*sc*(sky.W/238), y:sky.H/2+p.y*sc*(sky.H/512), sc:sc, z:z};
+  return {x:sky.W/2+x*sc*(sky.W/206), y:sky.H/2+p.y*sc*(sky.H/448), sc:sc, z:z};
 }
 function skyDraw(t){
   var ctx=sky.ctx;ctx.clearRect(0,0,sky.W,sky.H);
@@ -1090,21 +1090,34 @@ function skyDraw(t){
     }
     ctx.fill();ctx.shadowBlur=0;
   });
-  // 部位名稱（跟著旋轉,朝前才顯示）
-  ctx.font='10.5px "Noto Sans TC",sans-serif';ctx.textAlign='left';
+  // 部位名稱：左右兩欄對齊+牽引線,防碰撞（任何角度都不擠）
+  ctx.font='11px "Noto Sans TC",sans-serif';
+  var Ls=[];
   LABELS.forEach(function(L){
     var an=ANCH[L.a];
     var q=proj({x:an[0],y:an[1],z:an[2]});
     if(L.face==='front'&&q.z>0)return;
     if(L.face==='back'&&q.z<=0)return;
-    var selz=L.z===sky.sel;
-    ctx.fillStyle=selz?'rgba(233,194,123,.95)':'rgba(168,182,208,.6)';
-    var name=ZONE_NAME[L.z]||L.z;
-    var tx=q.x+(L.dx<0?L.dx-name.length*10:L.dx),ty=q.y+L.dy;
-    ctx.fillText(name,tx,ty+3);
-    ctx.strokeStyle='rgba(168,182,208,.25)';ctx.lineWidth=.7;
-    ctx.beginPath();
-    ctx.moveTo(L.dx<0?tx+name.length*10+3:tx-4,ty+1);ctx.lineTo(q.x,q.y);ctx.stroke();
+    Ls.push({name:ZONE_NAME[L.z]||L.z,q:q,sel:L.z===sky.sel});
+  });
+  var leftC=Ls.filter(l=>l.q.x<sky.W/2).sort((a,b)=>a.q.y-b.q.y);
+  var rightC=Ls.filter(l=>l.q.x>=sky.W/2).sort((a,b)=>a.q.y-b.q.y);
+  function layout(col,x,align){
+    var prev=-1e9;
+    col.forEach(function(l){
+      l.ty=Math.max(l.q.y,prev+20);prev=l.ty;l.tx=x;l.align=align;
+    });
+  }
+  layout(leftC,10,'left');layout(rightC,sky.W-10,'right');
+  Ls.forEach(function(l){
+    ctx.textAlign=l.align;
+    ctx.fillStyle=l.sel?'rgba(233,194,123,.95)':'rgba(160,175,203,.62)';
+    ctx.fillText(l.name,l.tx,l.ty+4);
+    var w=ctx.measureText(l.name).width;
+    var lx=l.align==='left'?l.tx+w+5:l.tx-w-5;
+    ctx.strokeStyle=l.sel?'rgba(233,194,123,.4)':'rgba(160,175,203,.22)';
+    ctx.lineWidth=.7;
+    ctx.beginPath();ctx.moveTo(lx,l.ty+1);ctx.lineTo(l.q.x,l.q.y);ctx.stroke();
   });
   // 選中區的光暈環
   if(sky.sel&&sky.flare>.05){

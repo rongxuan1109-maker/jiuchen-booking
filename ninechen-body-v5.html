@@ -65,8 +65,32 @@ h1{font:700 32px/1.5 var(--serif);text-align:center;letter-spacing:3px}
 #s-intro p{color:var(--ink2);font-size:15.5px;line-height:2.1}
 
 /* ── 星體人形 ── */
-#skywrap{position:relative;margin:0 auto;width:100%;max-width:360px}
-#skycv{width:100%;display:block;touch-action:none;cursor:grab}
+#skywrap{position:relative;margin:0 auto;width:100%;max-width:360px;overflow:visible}
+#bodyfig{width:min(70vw,280px);margin:0 auto;transition:transform .45s cubic-bezier(.3,1,.4,1)}
+#bodyfig svg{width:100%;height:auto;display:block}
+#bodyfig .bp{fill:rgba(163,184,222,.05);stroke:rgba(163,184,222,.75);stroke-width:1.2;
+  cursor:pointer;transition:fill .25s,stroke .25s,opacity .3s}
+#bodyfig .bp:hover{fill:rgba(233,194,123,.13)}
+#bodyfig .bp.sel{fill:rgba(233,194,123,.35);stroke:#e9c27b;
+  filter:drop-shadow(0 0 9px #e9c27baa);animation:selGlow 1.6s ease-in-out infinite}
+@keyframes selGlow{0%,100%{filter:drop-shadow(0 0 5px #e9c27b88)}50%{filter:drop-shadow(0 0 14px #e9c27bcc)}}
+#bodyfig.focused .bp:not(.sel){opacity:.18}
+#bodyfig.focused text.zlabel{opacity:0}
+#bodyfig .fl{display:none}
+#bodyfig text.zlabel{font:400 9px var(--sans);fill:rgba(168,182,208,.72);
+  letter-spacing:.5px;pointer-events:none;transition:opacity .3s}
+.view-back .front-only{display:none}
+.view-front .back-only{display:none}
+#reveal-fig{width:180px}
+#reveal-fig svg{width:100%;height:auto}
+#reveal-fig .bp{fill:rgba(163,184,222,.06);stroke:rgba(163,184,222,.45);stroke-width:1;pointer-events:none}
+#reveal-fig .bp.lit{fill:rgba(233,194,123,.4);stroke:#e9c27b;filter:drop-shadow(0 0 8px #e9c27b99)}
+#reveal-fig .fl{display:none}
+#reveal-fig .fl.fascia-line{display:block;fill:none;stroke:#e9c27b;stroke-width:2.5;
+  stroke-linecap:round;filter:drop-shadow(0 0 6px #e9c27baa);
+  stroke-dasharray:700;stroke-dashoffset:700;animation:drawLine 2.2s ease forwards}
+@keyframes drawLine{to{stroke-dashoffset:0}}
+#reveal-fig text.zlabel{display:none}
 #zone-label{text-align:center;font:600 18px var(--serif);color:var(--gold);
   min-height:32px;letter-spacing:3px;text-shadow:0 0 18px #e9c27b55}
 .hint-rotate{text-align:center;font-size:12px;color:var(--muted);letter-spacing:2px;
@@ -205,19 +229,111 @@ h1{font:700 32px/1.5 var(--serif);text-align:center;letter-spacing:3px}
   <section class="screen" id="s-map">
     <div class="back-link" onclick="back()">返回</div>
     <div class="q-title">哪一區的星，正在跟你說話？</div>
-    <div class="q-sub">轉動它，點一下那個地方</div>
+    <div class="q-sub">點選部位，可切換正面／背面</div>
     <div id="viewbar">
-      <div class="view-chip on" data-r="0" onclick="turnTo(0,this)">正面</div>
-      <div class="view-chip" data-r="pi" onclick="turnTo(Math.PI,this)">背面</div>
+      <div class="view-chip on" data-v="front" onclick="flip('front')">正面</div>
+      <div class="view-chip" data-v="back" onclick="flip('back')">背面</div>
     </div>
-    <div id="skywrap"><canvas id="skycv"></canvas>
+    <div id="skywrap"><div id="bodyfig" class="view-front"><svg id="bsvg" class="view-front" viewBox="0 0 220 500" xmlns="http://www.w3.org/2000/svg">
+
+      <!-- === 筋膜流線（更新座標）=== -->
+      <path id="fl-sbl" class="fl" d="M110,465 L110,418 L110,344 L110,262 L110,172 L110,85 L110,28"/>
+      <path id="fl-sfl" class="fl" d="M108,463 L108,418 L108,344 L108,262 L108,172 L108,85 L108,36"/>
+      <path id="fl-ll"  class="fl" d="M76,456 L68,388 L62,318 L60,248 L63,178 L70,110 L78,62"/>
+      <path id="fl-sp"  class="fl" d="M97,24 Q58,50 54,90 Q52,130 74,162 Q108,190 112,224 Q130,256 142,294 Q150,332 144,370 L128,460"/>
+      <path id="fl-dfl" class="fl" d="M110,460 L110,416 L110,348 L110,275 L110,202 L110,130 L110,70"/>
+      <path id="fl-arm" class="fl" d="M72,110 Q50,145 40,182 Q36,202 40,220"/>
+      <path id="fl-arm2" class="fl" d="M148,110 Q170,145 180,182 Q184,202 180,220"/>
+
+      <!-- ============================================================ -->
+      <!-- 可點擊熱區 = 身體本身（相鄰部位共用邊線，密合拼接無重疊）      -->
+      <!-- ============================================================ -->
+
+      <!-- 頭 (正面+背面) -->
+      <ellipse class="bp" cx="110" cy="42" rx="23" ry="27" data-zone="head" onclick="pickBP(this)"/>
+      <text class="zlabel" x="110" y="44" text-anchor="middle">頭 ／ 下顎</text>
+
+      <!-- 頸 (正面+背面) — 上接頭、下接軀幹 -->
+      <path class="bp" d="M100,68 L120,68 L124,90 L96,90 Z" data-zone="neck" onclick="pickBP(this)"/>
+      <text class="zlabel" x="110" y="83" text-anchor="middle">頸</text>
+
+      <!-- 肩 (正面+背面) — 軀幹與手臂的交會 -->
+      <ellipse class="bp" cx="65" cy="104" rx="19" ry="13" data-zone="shoulder" onclick="pickBP(this)"/>
+      <ellipse class="bp" cx="155" cy="104" rx="19" ry="13" data-zone="shoulder" onclick="pickBP(this)"/>
+      <text class="zlabel" x="32" y="107" text-anchor="middle">肩</text>
+
+      <!-- 胸口(正面)/上背(背面) — 頂邊 y=92, 底邊 y=166 -->
+      <path class="bp front-only" d="M73,92 L147,92 Q150,128 146,166 L74,166 Q70,128 73,92 Z" data-zone="chest" onclick="pickBP(this)"/>
+      <text class="zlabel front-only" x="110" y="132" text-anchor="middle">胸口</text>
+      <path class="bp back-only" d="M73,92 L147,92 Q150,128 146,166 L74,166 Q70,128 73,92 Z" data-zone="upperback" onclick="pickBP(this)"/>
+      <text class="zlabel back-only" x="110" y="132" text-anchor="middle">上背</text>
+
+      <!-- 腹核心(正面)/腰(背面) — 頂邊接胸口底 y=166, 底邊 y=236 -->
+      <path class="bp front-only" d="M74,166 L146,166 Q149,200 146,236 L74,236 Q71,200 74,166 Z" data-zone="core" onclick="pickBP(this)"/>
+      <text class="zlabel front-only" x="110" y="204" text-anchor="middle">腹 ／ 核心</text>
+      <path class="bp back-only" d="M74,166 L146,166 Q149,200 146,236 L74,236 Q71,200 74,166 Z" data-zone="lowerback" onclick="pickBP(this)"/>
+      <text class="zlabel back-only" x="110" y="204" text-anchor="middle">腰</text>
+
+      <!-- 臀／髖 (正面+背面) — 頂邊接核心底 y=236, 底邊 y=268 -->
+      <path class="bp" d="M74,236 L146,236 Q151,250 149,268 L71,268 Q69,250 74,236 Z" data-zone="hip" onclick="pickBP(this)"/>
+      <text class="zlabel hip-lbl" x="110" y="262" text-anchor="middle">臀 ／ 髖</text>
+
+      <!-- 薦髂關節 SIJ (背面) — 腰薦交界兩側 PSIS -->
+      <ellipse class="bp back-only" cx="93" cy="245" rx="10" ry="8" data-zone="sij" onclick="pickBP(this)"/>
+      <ellipse class="bp back-only" cx="127" cy="245" rx="10" ry="8" data-zone="sij" onclick="pickBP(this)"/>
+      <text class="zlabel back-only" x="80" y="247" text-anchor="middle">薦髂</text>
+
+      <!-- 薦椎尾椎 (背面) — SIJ之間正中 -->
+      <path class="bp back-only" d="M106,240 L114,240 Q116,254 110,264 Q104,254 106,240 Z" data-zone="sacrum" onclick="pickBP(this)"/>
+      <text class="zlabel back-only" x="110" y="250" text-anchor="middle">薦椎</text>
+
+      <!-- 鼠蹊 (正面) — 兩腿之間、髖底正中 -->
+      <path class="bp front-only" d="M96,268 L124,268 L117,290 L103,290 Z" data-zone="groin" onclick="pickBP(this)"/>
+      <text class="zlabel front-only" x="110" y="282" text-anchor="middle">鼠蹊</text>
+
+      <!-- 大腿 (正面+背面) — 頂邊接髖底, 左右分腿 -->
+      <path class="bp" d="M71,268 L96,268 Q94,312 90,355 L72,355 Q68,312 71,268 Z" data-zone="thigh" onclick="pickBP(this)"/>
+      <path class="bp" d="M149,268 L124,268 Q126,312 130,355 L148,355 Q152,312 149,268 Z" data-zone="thigh" onclick="pickBP(this)"/>
+      <text class="zlabel" x="50" y="312" text-anchor="middle">大腿</text>
+
+      <!-- 膝蓋 (正面+背面) -->
+      <ellipse class="bp" cx="81" cy="370" rx="12" ry="14" data-zone="knee" onclick="pickBP(this)"/>
+      <ellipse class="bp" cx="139" cy="370" rx="12" ry="14" data-zone="knee" onclick="pickBP(this)"/>
+      <text class="zlabel" x="50" y="373" text-anchor="middle">膝蓋</text>
+
+      <!-- 小腿 (正面+背面) -->
+      <path class="bp" d="M72,385 Q69,410 72,438 L90,438 Q91,410 90,385 Z" data-zone="lowerleg" onclick="pickBP(this)"/>
+      <path class="bp" d="M148,385 Q151,410 148,438 L130,438 Q129,410 130,385 Z" data-zone="lowerleg" onclick="pickBP(this)"/>
+      <text class="zlabel" x="48" y="412" text-anchor="middle">小腿</text>
+
+      <!-- 腳 (正面) -->
+      <ellipse class="bp front-only" cx="79" cy="450" rx="14" ry="9" data-zone="foot" onclick="pickBP(this)"/>
+      <ellipse class="bp front-only" cx="141" cy="450" rx="14" ry="9" data-zone="foot" onclick="pickBP(this)"/>
+      <text class="zlabel front-only" x="48" y="453" text-anchor="middle">腳</text>
+
+      <!-- 腳踝 (背面) -->
+      <ellipse class="bp back-only" cx="79" cy="444" rx="12" ry="8" data-zone="ankle" onclick="pickBP(this)"/>
+      <ellipse class="bp back-only" cx="141" cy="444" rx="12" ry="8" data-zone="ankle" onclick="pickBP(this)"/>
+      <text class="zlabel back-only" x="48" y="447" text-anchor="middle">腳踝</text>
+
+      <!-- 手臂 (正面+背面) — 自肩下垂 -->
+      <path class="bp" d="M56,116 Q44,152 40,192 Q38,212 46,215 L55,213 Q58,168 67,120 Z" data-zone="arm" onclick="pickBP(this)"/>
+      <path class="bp" d="M164,116 Q176,152 180,192 Q182,212 174,215 L165,213 Q162,168 153,120 Z" data-zone="arm" onclick="pickBP(this)"/>
+      <text class="zlabel" x="22" y="168" text-anchor="middle">手臂</text>
+
+      <!-- 手部 (正面+背面) — 手臂末端 -->
+      <ellipse class="bp" cx="43" cy="230" rx="11" ry="14" data-zone="hand" onclick="pickBP(this)"/>
+      <ellipse class="bp" cx="177" cy="230" rx="11" ry="14" data-zone="hand" onclick="pickBP(this)"/>
+      <text class="zlabel" x="22" y="233" text-anchor="middle">手部</text>
+
+    </svg></div>
       <div id="zoompanel">
         <div class="zp-head"><b id="zp-title"></b><span class="zp-x" onclick="unfocus()">✕</span></div>
         <div class="zp-sub">大概是哪一帶？</div>
         <div id="zp-chips"></div>
       </div>
     </div>
-    <div class="hint-rotate">◂ 也可以用手指撥轉 ▸</div>
+    <div class="hint-rotate">點一下不舒服的部位</div>
     <div id="zone-label"></div>
 
   </section>
@@ -277,6 +393,7 @@ h1{font:700 32px/1.5 var(--serif);text-align:center;letter-spacing:3px}
   </section>
 
   <section class="screen" id="s-reveal">
+    <div id="reveal-fig"></div>
     <div id="reveal-txt">正在為你連線星圖…</div>
   </section>
 
@@ -1158,198 +1275,82 @@ function hotSpot(i){
     g.classList.toggle('hot', +g.dataset.i===i);
   });
 }
-var sky={cv:null,ctx:null,W:0,H:0,rot:0,vrot:0,drag:false,lastX:0,
-         sel:null,flare:0,raf:null,active:false,
-         focus:{on:false,k:0,cx:0,cy:0,tx:0,ty:0,Z:1.85}};
-function skyInit(){
-  sky.cv=document.getElementById('skycv');
-  sky.ctx=sky.cv.getContext('2d');
-  var dpr=Math.min(devicePixelRatio||1,2);
-  var w=sky.cv.parentNode.clientWidth||330;
-  var h=Math.min(w*1.42,520);
-  sky.cv.width=w*dpr;sky.cv.height=h*dpr;
-  sky.cv.style.height=h+'px';
-  sky.ctx.scale(dpr,dpr);sky.W=w;sky.H=h;
-  // 手勢
-  sky.cv.addEventListener('pointerdown',function(e){
-    sky.drag=true;sky.lastX=e.clientX;sky.moved=0;sky.cv.setPointerCapture(e.pointerId)});
-  sky.cv.addEventListener('pointermove',function(e){
-    if(!sky.drag)return;
-    var dx=e.clientX-sky.lastX;sky.lastX=e.clientX;sky.moved+=Math.abs(dx);
-    sky.rot+=dx*.012});
-  sky.cv.addEventListener('pointerup',function(e){
-    sky.drag=false;
-    if(sky.moved<6)skyTap(e)});
-}
-function proj(p){
-  var c=Math.cos(sky.rot),s=Math.sin(sky.rot);
-  var x=p.x*c+p.z*s, z=-p.x*s+p.z*c;
-  var f=520, sc=f/(f-z+160);
-  var px=sky.W/2+x*sc*(sky.W/206), py=sky.H/2+p.y*sc*(sky.H/448);
-  var F=sky.focus;
-  if(F.k>0){
-    px=px+((px-F.cx)*(F.Z-1)+(F.tx-F.cx))*F.k;
-    py=py+((py-F.cy)*(F.Z-1)+(F.ty-F.cy))*F.k;
-  }
-  return {x:px, y:py, sc:sc*(1+(F.Z-1)*F.k*.5), z:z};
-}
-function skyDraw(t){
-  var ctx=sky.ctx;ctx.clearRect(0,0,sky.W,sky.H);
-  if(!sky.drag)sky.rot+=sky.vrot;
-  if(sky.flare>0)sky.flare*=.94;
-  // 星座骨架（讓人形一眼可讀;聚焦時淡出）
-  ctx.strokeStyle='rgba(150,172,215,'+(0.20*(1-sky.focus.k*.8))+')';ctx.lineWidth=1;
-  BONES.forEach(function(bn){
-    var a=proj({x:ANCH[bn[0]][0],y:ANCH[bn[0]][1],z:ANCH[bn[0]][2]});
-    var b=proj({x:ANCH[bn[1]][0],y:ANCH[bn[1]][1],z:ANCH[bn[1]][2]});
-    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-  });
-  // 星群（由遠到近）
-  var pts=STARS.map(function(st){var q=proj(st);q.st=st;return q});
-  pts.sort(function(a,b){return a.z-b.z});
-  pts.forEach(function(q){
-    var st=q.st;
-    var selz=st.zone===sky.sel;
-    var tw=.62+.38*Math.sin(t*.0016+st.tw);
-    var r=st.r*q.sc*(selz?1.7+sky.flare*.9:1);
-    var a=(.35+.55*tw)*Math.min(q.sc,1.1)*(selz?1:.85);
-    if(sky.focus.k>0&&!selz)a*=(1-.75*sky.focus.k);
-    ctx.beginPath();ctx.arc(q.x,q.y,Math.max(r,0.4),0,6.29);
-    if(selz){
-      ctx.fillStyle='rgba(240,205,130,'+Math.min(a+.25,1)+')';
-      ctx.shadowColor='#e9c27b';ctx.shadowBlur=12+sky.flare*10;
-    }else{
-      ctx.fillStyle='rgba(214,226,246,'+a+')';
-      ctx.shadowColor='#9fb4dd';ctx.shadowBlur=4;
-    }
-    ctx.fill();ctx.shadowBlur=0;
-  });
-  // 部位名稱：左右兩欄對齊+牽引線,防碰撞（任何角度都不擠）
-  ctx.font='11px "Noto Sans TC",sans-serif';
-  var Ls=[];
-  if(sky.focus.k>.5)Ls=null;
-  if(Ls)
-  LABELS.forEach(function(L){
-    var an=ANCH[L.a];
-    var q=proj({x:an[0],y:an[1],z:an[2]});
-    if(L.face&&q.z<4)return;
-    Ls.push({name:ZONE_NAME[L.z]||L.z,q:q,sel:L.z===sky.sel});
-  });
-  if(!Ls)Ls=[];
-  var leftC=Ls.filter(l=>l.q.x<sky.W/2).sort((a,b)=>a.q.y-b.q.y);
-  var rightC=Ls.filter(l=>l.q.x>=sky.W/2).sort((a,b)=>a.q.y-b.q.y);
-  function layout(col,x,align){
-    var prev=-1e9;
-    col.forEach(function(l){
-      l.ty=Math.max(l.q.y,prev+20);prev=l.ty;l.tx=x;l.align=align;
-    });
-  }
-  layout(leftC,10,'left');layout(rightC,sky.W-10,'right');
-  Ls.forEach(function(l){
-    ctx.textAlign=l.align;
-    ctx.fillStyle=l.sel?'rgba(233,194,123,.95)':'rgba(160,175,203,.62)';
-    ctx.fillText(l.name,l.tx,l.ty+4);
-    var w=ctx.measureText(l.name).width;
-    var lx=l.align==='left'?l.tx+w+5:l.tx-w-5;
-    ctx.strokeStyle=l.sel?'rgba(233,194,123,.4)':'rgba(160,175,203,.22)';
-    ctx.lineWidth=.7;
-    ctx.beginPath();ctx.moveTo(lx,l.ty+1);ctx.lineTo(l.q.x,l.q.y);ctx.stroke();
-  });
-  // 選中區的光暈環
-  if(sky.sel&&sky.flare>.05){
-    CENTERS[sky.sel].forEach(function(c){
-      var q=proj(c);
-      ctx.beginPath();ctx.arc(q.x,q.y,(1-sky.flare)*46+8,0,6.29);
-      ctx.strokeStyle='rgba(233,194,123,'+(sky.flare*.8)+')';
-      ctx.lineWidth=1.6;ctx.stroke();
-    });
-  }
-  if(sky.active)sky.raf=requestAnimationFrame(skyDraw);
-}
-function skyStart(){if(!sky.cv)skyInit();sky.active=true;cancelAnimationFrame(sky.raf);sky.raf=requestAnimationFrame(skyDraw)}
-function skyStop(){sky.active=false;cancelAnimationFrame(sky.raf)}
-function skyTap(e){
-  var r=sky.cv.getBoundingClientRect();
-  var mx=e.clientX-r.left,my=e.clientY-r.top;
-  var best=null,bd=1e9;
-  Object.keys(CENTERS).forEach(function(z){
-    CENTERS[z].forEach(function(c){
-      var q=proj(c);
-      var d=(q.x-mx)*(q.x-mx)+(q.y-my)*(q.y-my);
-      if(d<bd){bd=d;best=z}
+var FIG={inited:false,view:'front',focused:false};
+function figInit(){
+  if(FIG.inited)return;FIG.inited=true;
+  document.querySelectorAll('#bodyfig .bp').forEach(function(el){
+    el.removeAttribute('onclick');
+    el.addEventListener('click',function(ev){
+      ev.stopPropagation();
+      selectZone(el.dataset.zone);
     });
   });
-  if(bd>2600){if(sky.focus.on)unfocus();return}
-  sky.sel=best;sky.flare=1;
-  S.zone=best;
-  if(navigator.vibrate)navigator.vibrate(14);
-  document.getElementById('zone-label').textContent=ZONE_NAME[best]||best;
-  focusZone(best);
+}
+function flip(v){
+  if(FIG.focused)unfocus();
+  FIG.view=v;
+  var f=document.getElementById('bodyfig');
+  f.style.transition='transform .28s ease';
+  f.style.transform='rotateY(90deg)';
+  setTimeout(function(){
+    f.className='view-'+v;
+    f.style.transform='rotateY(0)';
+  },280);
+  document.querySelectorAll('.view-chip').forEach(c=>c.classList.toggle('on',c.dataset.v===v));
+}
+function selectZone(zone){
+  S.zone=zone;
+  document.querySelectorAll('#bodyfig .bp').forEach(x=>x.classList.remove('sel'));
+  document.querySelectorAll('#bodyfig .bp[data-zone="'+zone+'"]').forEach(x=>x.classList.add('sel'));
+  document.getElementById('zone-label').textContent=ZONE_NAME[zone]||zone;
+  if(navigator.vibrate)navigator.vibrate(12);
+  focusZone(zone);
 }
 function focusZone(zone){
-  // 部位質心(未聚焦座標)
-  var F=sky.focus;var k0=F.k;F.k=0;
-  var cs=CENTERS[zone];var q=proj(cs[0]);
-  if(cs.length>1){var q2=proj(cs[1]);q={x:(q.x+q2.x)/2,y:(q.y+q2.y)/2}}
-  F.k=k0;F.cx=q.x;F.cy=q.y;F.tx=sky.W*0.30;F.ty=sky.H*0.44;F.on=true;
-  tween(F,'k',1,420);
+  var wrap=document.getElementById('skywrap');
+  var fig=document.getElementById('bodyfig');
+  var els=Array.prototype.slice.call(
+    document.querySelectorAll('#bodyfig .bp[data-zone="'+zone+'"]'))
+    .filter(function(e){var r=e.getBoundingClientRect();return r.width>0});
+  if(!els.length)return;
+  fig.style.transition='none';var old=fig.style.transform;fig.style.transform='none';
+  var wr=wrap.getBoundingClientRect();
+  var cx=0,cy=0;
+  els.forEach(function(e){var r=e.getBoundingClientRect();cx+=r.x+r.width/2;cy+=r.y+r.height/2});
+  cx=cx/els.length-wr.x;cy=cy/els.length-wr.y;
+  fig.offsetHeight;
+  fig.style.transition='transform .45s cubic-bezier(.3,1,.4,1)';
+  var tx=wr.width*0.27,ty=wr.height*0.42,Z=1.9;
+  fig.style.transformOrigin=cx+'px '+cy+'px';
+  fig.style.transform='translate('+(tx-cx)+'px,'+(ty-cy)+'px) scale('+Z+')';
+  fig.classList.add('focused');
+  FIG.focused=true;
   var subs=SUBAREAS[zone]||[];
   document.getElementById('zp-title').textContent=ZONE_NAME[zone]||zone;
   var html=partSVG(zone);
   html+=subs.map(function(s,i){
     return '<div class="zp-chip" data-i="'+i+'" onclick="pickSubZ('+i+')" '+
-      'onmouseenter="hotSpot('+i+')" onmouseleave="hotSpot(-1)" '+
-      'ontouchstart="hotSpot('+i+')">'+
+      'onmouseenter="hotSpot('+i+')" onmouseleave="hotSpot(-1)" ontouchstart="hotSpot('+i+')">'+
       '<b>'+s.n+'</b><span>'+(s.d||'')+'</span></div>';
   }).join('');
   html+='<div class="zp-chip" onclick="pickSubZ(-1)"><b>'+(subs.length?'說不清楚':'就是這一帶')+'</b><span>'+(subs.length?'整個區域都算':'繼續下一步')+'</span></div>';
   document.getElementById('zp-chips').innerHTML=html;
-  setTimeout(function(){document.getElementById('zoompanel').classList.add('show')},240);
+  setTimeout(function(){document.getElementById('zoompanel').classList.add('show')},200);
 }
 function unfocus(){
-  sky.focus.on=false;sky.sel=null;
+  var fig=document.getElementById('bodyfig');
+  fig.style.transform='none';fig.classList.remove('focused');
+  FIG.focused=false;S.zone=null;
+  document.querySelectorAll('#bodyfig .bp').forEach(x=>x.classList.remove('sel'));
   document.getElementById('zoompanel').classList.remove('show');
   document.getElementById('zone-label').textContent='';
-  tween(sky.focus,'k',0,380);
 }
 function pickSubZ(i){
   var subs=SUBAREAS[S.zone]||[];
   S.sub=(i>=0&&subs[i])?subs[i].id:null;
   document.getElementById('zoompanel').classList.remove('show');
-  tween(sky.focus,'k',0,300);
-  sky.focus.on=false;
-  setTimeout(function(){go('cards');renderCards()},220);
+  setTimeout(function(){go('cards');renderCards()},180);
 }
-function tween(obj,prop,to,ms){
-  var from=obj[prop],t0=null;
-  function step(ts){
-    if(!t0)t0=ts;
-    var k=Math.min((ts-t0)/ms,1);
-    obj[prop]=from+(to-from)*(1-Math.pow(1-k,3));
-    if(k<1)requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
-function turnTo(target,el){
-  document.querySelectorAll('.view-chip').forEach(c=>c.classList.remove('on'));
-  if(el)el.classList.add('on');
-  // 就近旋轉動畫
-  var start=sky.rot%(Math.PI*2);if(start<0)start+=Math.PI*2;
-  var goal=target;
-  var diff=goal-start;
-  if(diff>Math.PI)diff-=Math.PI*2;
-  if(diff<-Math.PI)diff+=Math.PI*2;
-  var t0=null;
-  function step(ts){
-    if(!t0)t0=ts;
-    var k=Math.min((ts-t0)/450,1);
-    var e=1-Math.pow(1-k,3);
-    sky.rot=start+diff*e;
-    if(k<1)requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
-
 /* 背景星塵 */
 (function(){
   var cv=document.getElementById('dust'),ctx=cv.getContext('2d');
@@ -1381,8 +1382,7 @@ function go(id,push){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   document.getElementById('s-'+id).classList.add('on');
   window.scrollTo(0,0);renderDots(id);
-  if(id==='map'){skyStart()}
-  else if(id!=='reveal')skyStop();
+  if(id==='map')figInit();
 }
 function back(){var prev=HIST.pop()||'intro';go(prev,false)}
 function renderDots(cur){
@@ -1436,7 +1436,26 @@ function pickDqMove(i){S.dqMove=DQ_MOVE[i];renderChips('dq-impact-chips',DQ_IMPA
 function pickDqImpact(i){S.dqImpact=DQ_IMPACT[i];S.deepDone=true;renderChips('redflag-chips',REDFLAGS,'pickRedflag');go('redflag')}
 
 /* ═══════════ 揭曉＋星圖卡 ═══════════ */
-function reveal(){go('reveal');setTimeout(showResult,2300)}
+function reveal(){
+  var host=document.getElementById('reveal-fig');
+  var fig=document.querySelector('#bodyfig svg');
+  if(host&&fig){
+    host.innerHTML='<div class="view-'+FIG.view+'">'+fig.outerHTML+'</div>';
+    host.querySelectorAll('.bp').forEach(function(el){
+      el.classList.remove('sel');
+      if(el.dataset.zone===S.zone)el.classList.add('lit');
+    });
+    var lines=(ZONESDATA[S.zone]&&ZONESDATA[S.zone].lines)||['fl-sbl'];
+    var lit=0;
+    host.querySelectorAll('.fl').forEach(function(el){
+      if(lines.indexOf(el.id)>-1){
+        el.classList.add('fascia-line');
+        el.style.animationDelay=(lit*0.5)+'s';lit++;
+      }
+    });
+  }
+  go('reveal');setTimeout(showResult,2600);
+}
 
 function drawChart(cv,scale){
   // 靜態星圖卡：正面視角+選區發光+星座連線

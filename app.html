@@ -250,7 +250,7 @@ const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const ADMIN_EMAIL='admin@ninechen2020.com';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
 
-const SHIFT_SLOTS={am:['09:00','09:30','10:00','10:30'],pm:['15:00','15:30','16:00','16:30'],eve:['18:00','18:30','19:00','19:30']};
+const SHIFT_SLOTS={am:['09:00','09:30','10:00','10:30','11:00'],pm:['15:00','15:30','16:00','16:30','17:00'],eve:['18:00','18:30','19:00','19:30','20:00']};
 const ALL_SLOTS=[...SHIFT_SLOTS.am,...SHIFT_SLOTS.pm,...SHIFT_SLOTS.eve];
 const BLOCK_OF={}; Object.entries(SHIFT_SLOTS).forEach(([b,a])=>a.forEach(s=>BLOCK_OF[s]=b));
 const WD=['日','一','二','三','四','五','六'];

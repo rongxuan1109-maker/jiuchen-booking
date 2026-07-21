@@ -418,3 +418,12 @@ input[type="search"], .search-input { border-color:#f0e6da !important; backgroun
   .mini-panel { display:none !important; }   /* 手機空間小,小日曆仍用點日期彈窗 */
   #dateNav { display:flex !important; }      /* 手機保留 ‹今天› 快速換日 */
 }
+
+/* ── 手機:治療師籤條列被裁掉 → 限寬+原地左右滑動(2026-07-21) ── */
+@media (max-width: 900px) {
+  .header-left { min-width:0; max-width:100%; flex-wrap:wrap; }
+  #thTabs { max-width:calc(100vw - 24px) !important; flex-wrap:nowrap !important;
+    overflow-x:auto !important; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  #thTabs::-webkit-scrollbar { display:none; }
+  #thTabs > * { flex-shrink:0; }
+}

@@ -1,0 +1,420 @@
+/* ═══ 九辰後台 · 暖橘皮膚 v1 ═══
+   用法:整段複製,貼在 admin.html 第一個樣式區塊結束之後,外面用 style 標籤包起來。
+   不喜歡 → 整段刪掉即還原。只改顏色/圓角/陰影,不動任何排版屬性。 */
+
+:root{
+  /* 主色:tan 棕 → 暖橘 */
+  --green:#c2571f;
+  --green-dark:#8a4a1c;
+  --green-light:#fdf1e6;
+  --warm:#c2571f;
+  --accent:#8a4a1c;
+
+  /* 底色:純白 → 暖米白,卡片維持白讓層次浮出來 */
+  --bg:#faf6f1;
+  --white:#ffffff;
+  --surface:#ffffff;
+  --paper:#ffffff;
+  --glow:#fdf1e6;
+
+  /* 文字:更溫潤的深棕 */
+  --ink:#3d3026;
+  --text:#3d3026;
+  --text2:#6b5643;
+  --text3:#a08b76;
+  --muted:#a08b76;
+  --deep:#3d3026;
+
+  /* 邊框與陰影:更淡、更軟 */
+  --border:#eee3d4;
+  --grid:rgba(120,80,40,.08);
+  --radius:12px;
+  --shadow:0 2px 12px rgba(120,80,40,.08);
+
+  /* 新診/回診標籤 */
+  --new-color:#d95d39;
+  --new-bg:#fdeae3;
+  --return-color:#8a4a1c;
+  --return-bg:#fdf1e6;
+
+  /* 統計框預設色(仍可用色票換) */
+  --stat-bg:#fdf1e6; --stat-fg:#a5701f; --stat-bd:#f5e3cd; --stat-num:#c2571f;
+}
+
+/* 圓角統一調圓潤(只動 radius,不動大小位置) */
+.login-box,.modal,.appt-card,.week-container{border-radius:16px;}
+button,.act-btn,.mBtn,.th-tab,.nav-btn,.today-btn,.refresh-btn,.view-toggle{border-radius:10px;}
+input,select,textarea,.field-input{border-radius:10px;}
+.badge,.stat{border-radius:99px;}
+.appt-pop{border-radius:16px;}
+.toast{border-radius:99px;}
+
+/* 主按鈕 hover 稍微加深(原本已有 transition) */
+.login-btn,.mBtn.primary{border-radius:10px;}
+
+/* 深色模式維持原本設定,不覆蓋 body.dark */
+
+
+/* ═══ v2 加強:字體+卡片感 ═══ */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+*, *::before, *::after { font-family:'Noto Sans TC','PingFang TC',sans-serif !important; }
+
+/* 底色分離:頁面米白、卡片純白浮起 */
+body { background:#f6efe6 !important; }
+.appt-card, .modal, .login-box, .week-container, .patient-card, .stat-card, .panel, .list-card {
+  background:#ffffff !important;
+  box-shadow:0 2px 14px rgba(120,80,40,.09) !important;
+  border-color:#f0e6da !important;
+}
+
+/* 按鈕與標籤更圓潤有份量 */
+button, .act-btn, .mBtn, .th-tab, .nav-btn, .today-btn, .view-toggle { font-weight:700; }
+
+/* 輸入框聚焦時暖橘光暈 */
+input:focus, select:focus, textarea:focus {
+  border-color:#c2571f !important;
+  box-shadow:0 0 0 3px rgba(194,87,31,.12) !important;
+  outline:none !important;
+}
+
+/* 表頭/星期列淡暖底 */
+th, .cal-head, .week-head { background:#fdf8f1 !important; }
+
+
+/* ═══ v3:表單控件 — 追蹤系統同款 ═══ */
+/* 輸入框/下拉:白底、暖棕框、圓角 */
+input, select, textarea, .field-input {
+  background:#ffffff !important;
+  border:1.5px solid #e3d5c3 !important;
+  border-radius:10px !important;
+  color:#3d3026 !important;
+  -webkit-appearance:none; appearance:none;
+}
+select { padding-right:28px !important;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a08b76' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  background-repeat:no-repeat !important; background-position:right 10px center !important;
+}
+
+/* 主按鈕:深墨 → 暖橘 */
+.mBtn.primary { background:#c2571f !important; border-color:#c2571f !important; color:#fff !important; font-weight:900 !important; }
+.mBtn.primary:hover { background:#a5490f !important; }
+/* 取消/一般按鈕:白底暖橘框 */
+.mBtn { background:#fff !important; border:1.5px solid #e3d5c3 !important; color:#6b5643 !important; font-weight:700 !important; font-size:14px !important; }
+.mBtn:hover { border-color:#c2571f !important; color:#c2571f !important; }
+.mBtn.danger { background:#fdeae3 !important; border-color:#f0c9ba !important; color:#c14a28 !important; }
+.mBtn.primary[disabled] { background:#e3d5c3 !important; border-color:#e3d5c3 !important; }
+
+/* 欄位標籤 */
+.field-lbl, .modal-lbl { color:#6b5643 !important; font-weight:700 !important; }
+
+
+/* ═══ v4:彈窗質感對齊追蹤系統 ═══ */
+/* 彈窗改米白底,欄位白卡浮起 */
+.modal { background:#fdf8f1 !important; }
+.modal h1,.modal h2,.modal h3,.modal-title { font-weight:900 !important; color:#3d3026 !important; }
+/* 標籤粗黑 */
+.field-lbl, .modal-lbl, .modal label { font-weight:900 !important; color:#3d3026 !important; font-size:13px !important; }
+/* 輸入框內文字加粗、白卡+軟陰影取代細框 */
+.modal input, .modal select, .modal textarea, .field-input {
+  border:none !important;
+  box-shadow:0 1px 4px rgba(120,80,40,.12) !important;
+  font-weight:700 !important;
+  padding:10px 12px !important;
+  border-radius:12px !important;
+}
+.modal input:focus, .modal select:focus, .modal textarea:focus {
+  box-shadow:0 0 0 2.5px rgba(194,87,31,.35) !important;
+}
+/* 類型切換(初診/複診)做成膠囊選中感 */
+.type-btn, .toggle-btn { border-radius:12px !important; font-weight:700 !important; }
+.type-btn.active, .toggle-btn.active { background:#c2571f !important; color:#fff !important; border-color:#c2571f !important; font-weight:900 !important; }
+/* 日曆卡也浮起 */
+.modal .cal, .mini-cal, .date-picker { background:#fff !important; border:none !important; box-shadow:0 1px 4px rgba(120,80,40,.12) !important; border-radius:14px !important; }
+/* 彈窗內按鈕更有份量 */
+.mBtn { padding:13px !important; border-radius:12px !important; }
+
+
+/* ═══ v5:顏色分類(對齊追蹤系統的色票) ═══ */
+/* 治療師欄:金黃系(同「震波治療」標籤) */
+#na-th { background-color:#faf0dd !important; color:#a5701f !important; }
+/* 時間欄:綠系(同「疼痛·後」) */
+#na-time, #na-end { background-color:#eaf3ee !important; color:#38795a !important; }
+/* 電話/姓名維持白;備註/其他部位:暖橘淡底(同「回家小任務」) */
+#na-note, #na-other { background-color:#fdf3e7 !important; color:#5c452f !important; }
+/* 病人頁/歷史的新診回診標籤已走 --new/--return 變數,不用動 */
+
+
+/* ═══ v6:標題橫幅 — 同治療紀錄卡的橘色標題列 ═══ */
+.modal-title {
+  background:#c2571f !important; color:#fff !important;
+  font-weight:900 !important; font-size:15px !important; letter-spacing:1px !important;
+  padding:8px 14px !important; border-radius:12px !important;
+  margin-bottom:14px !important; display:block !important;
+}
+
+
+/* ═══ v7:區塊間距 — 避免黏在一起 ═══ */
+.modal input, .modal select, .modal textarea { margin-bottom:6px !important; }
+.field-lbl, .modal label { margin-top:8px !important; margin-bottom:5px !important; display:inline-block !important; }
+.modal-row { padding:9px 0 !important; border-bottom:1px solid #f0e6da !important; }
+.modal-row:last-of-type { border-bottom:none !important; }
+.modal-btns { margin-top:18px !important; gap:10px !important; }
+
+
+/* ═══ v8:欄位群組白卡浮起(層次感) ═══ */
+/* 彈窗直屬的群組區塊 → 白卡+留白+軟陰影 */
+.modal > div:not(.modal-handle):not(.modal-btns):not(.modal-row) {
+  background:#fff; border-radius:14px;
+  padding:10px 12px; margin-bottom:10px;
+  box-shadow:0 1px 4px rgba(120,80,40,.09);
+}
+/* 卡內的輸入框回歸淡框,避免白上白看不見 */
+.modal input, .modal select, .modal textarea, .field-input {
+  border:1.5px solid #eee3d4 !important;
+  box-shadow:none !important;
+  background-color:#fdfaf5;
+}
+.modal input:focus, .modal select:focus, .modal textarea:focus {
+  border-color:#c2571f !important;
+  box-shadow:0 0 0 2.5px rgba(194,87,31,.15) !important;
+}
+/* 按鈕列不當卡片 */
+.modal-btns { background:transparent !important; box-shadow:none !important; padding:0 !important; }
+
+
+/* ═══ v9:隱藏部位點選選單,改自己打字 ═══ */
+#na-body-summary, #na-body-picker { display:none !important; }
+
+
+/* ═══ v10:彈窗排版比例 ═══ */
+.modal { padding:18px 18px 16px !important; }
+/* 卡片間距一致、內距放寬 */
+.modal > div:not(.modal-handle):not(.modal-btns):not(.modal-row) {
+  padding:12px 14px !important; margin-bottom:12px !important;
+}
+/* 標籤貼近自己的輸入框:上距歸零(卡片已有留白),下距縮小 */
+.field-lbl, .modal label { margin-top:0 !important; margin-bottom:6px !important; font-size:12.5px !important; }
+/* 輸入框高度一致、卡片內不再各自留下距 */
+.modal input, .modal select, .modal textarea { margin-bottom:0 !important; padding:9px 12px !important; font-size:14px !important; }
+/* 同卡片內兩個輸入項之間的間隔 */
+.modal input + label, .modal select + label, .modal textarea + label,
+.modal input + .field-lbl, .modal select + .field-lbl, .modal textarea + .field-lbl { margin-top:12px !important; }
+/* 標題橫幅與內容的距離 */
+.modal-title { margin-bottom:12px !important; }
+/* 日期時間列(彈窗頂部)置中比例 */
+.modal-btns { margin-top:14px !important; }
+.mBtn { padding:12px !important; font-size:14px !important; }
+
+
+/* ═══ v11:日期時段列 — 橘暖強調卡 ═══ */
+.modal-title + div {
+  background:#fdf1e6 !important;
+  box-shadow:none !important;
+  border:1.5px dashed #e8c4a8 !important;
+}
+.modal-title + div > span:first-child {
+  font-weight:900 !important;
+  font-size:17px !important;
+  color:#c2571f !important;
+  letter-spacing:.5px !important;
+}
+
+
+/* ═══ v12:提示字變淡 + 區塊統整 ═══ */
+.modal input::placeholder, .modal textarea::placeholder { color:#cbbba7 !important; font-weight:400 !important; }
+
+
+
+/* ═══ v13:標題+日期時段 合併成一張頭卡 ═══ */
+.modal-title { margin-bottom:0 !important; border-radius:12px 12px 0 0 !important; }
+.modal-title + div {
+  border:none !important;
+  border-radius:0 0 14px 14px !important;
+  margin-top:0 !important;
+  background:#fdf1e6 !important;
+}
+
+
+/* ═══ v14:全系統整合 — 主畫面同款層次 ═══ */
+/* 頂欄+工作列:白卡浮起 */
+header, .topbar, .workbar {
+  background:#fff !important;
+  box-shadow:0 1px 6px rgba(120,80,40,.07) !important;
+  border-bottom:1px solid #f0e6da !important;
+}
+/* 治療師分頁:膠囊化 */
+.th-tab { border-radius:99px !important; font-weight:700 !important; border:1.5px solid #eee3d4 !important; background:#fff !important; }
+.th-tab.active, .th-tab[data-active="1"] { background:#c2571f !important; border-color:#c2571f !important; color:#fff !important; font-weight:900 !important; }
+/* 統計小標籤:淡色膠囊 */
+.stat { border:none !important; background:#fdf1e6 !important; font-weight:700 !important; }
+/* 預約卡:白卡+軟陰影+圓角 */
+.appt-card, .appt {
+  border-radius:12px !important;
+  box-shadow:0 1px 4px rgba(120,80,40,.10) !important;
+  border:none !important;
+}
+/* 日曆容器:白卡浮在米白底上 */
+.week-container, #dayTL, .day-timeline, .cal-container {
+  background:#fff !important;
+  border-radius:16px !important;
+  box-shadow:0 2px 12px rgba(120,80,40,.07) !important;
+  border:none !important;
+}
+/* 右側今日清單 */
+.side-panel, .today-list, #apptList {
+  background:#fff !important;
+  border-radius:16px !important;
+  box-shadow:0 2px 12px rgba(120,80,40,.07) !important;
+  border:none !important;
+}
+/* 導覽按鈕群:圓潤一致 */
+.nav-btn, .today-btn, .view-toggle, .refresh-btn {
+  background:#fff !important; border:1.5px solid #eee3d4 !important;
+  border-radius:10px !important; font-weight:700 !important; color:#6b5643 !important;
+}
+.nav-btn:hover, .today-btn:hover, .view-toggle:hover { border-color:#c2571f !important; color:#c2571f !important; }
+/* 主要動作(新增預約 / 日曆切換 active) */
+.view-toggle.active, .primary-action, #fab {
+  background:#c2571f !important; border-color:#c2571f !important; color:#fff !important; font-weight:900 !important;
+}
+#fab { box-shadow:0 4px 16px rgba(194,87,31,.35) !important; }
+/* 病人頁卡片 */
+.patient-card, .p-card { background:#fff !important; border-radius:14px !important; box-shadow:0 1px 5px rgba(120,80,40,.09) !important; border:none !important; }
+/* 搜尋框 */
+input[type="search"], .search-input { background:#fff !important; border:1.5px solid #eee3d4 !important; border-radius:99px !important; }
+/* 主內容區留白 */
+#mainContent { padding-top:6px; }
+
+
+/* ═══ v15:頂欄減噪 ═══ */
+/* 深色模式鈕拿掉 */
+#themeToggle { display:none !important; }
+/* 農曆(初四▼)淡化縮小 */
+#lunarSel, .lunar, [id*="lunar"] { font-size:11px !important; opacity:.55; }
+/* 日/週/月 + 日曆/病人:選中橘、未選無框只留字,減少框線數量 */
+.view-toggle:not(.active) { border-color:transparent !important; background:transparent !important; }
+.nav-btn { border-color:transparent !important; background:transparent !important; }
+.nav-btn:hover { background:#fdf1e6 !important; }
+/* 統計(今日/初診/回診)合併成一組淡底,去掉個別膠囊感 */
+.stat { background:transparent !important; padding:2px 6px !important; }
+/* 搜尋框縮短存在感 */
+input[type="search"], .search-input { border-color:#f0e6da !important; background:#fdfaf5 !important; }
+/* 排班鈕與治療師分頁同款 */
+/* 第二列右側的重新整理小鈕淡化 */
+.workbar .nav-btn, .workbar button[title*="重"] { opacity:.7; }
+
+
+/* ═══ v16:日檢視時間軸 白卡化 ═══ */
+/* 時間軸主卡 */
+#day-layout > div:first-child {
+  background:#fff !important;
+  border-radius:16px !important;
+  box-shadow:0 2px 12px rgba(120,80,40,.07) !important;
+  padding:6px 10px 10px !important;
+}
+/* 右側今日預約側欄:數字卡 */
+#day-sidebar > div:first-child {
+  background:#fff !important;
+  border:none !important;
+  border-radius:14px !important;
+  box-shadow:0 1px 5px rgba(120,80,40,.09) !important;
+  font-weight:700 !important;
+  color:#6b5643 !important;
+}
+#day-sidebar > div:first-child span { font-weight:900 !important; font-size:18px !important; }
+/* 隱藏清單鈕:淡橘膠囊 */
+#sidebarToggle { border-radius:99px !important; font-weight:700 !important; }
+/* 小時標籤淡化 */
+#day-scroll, .cal-scroll { scrollbar-width:thin; }
+
+
+/* ═══ v17:品牌 Logo 區 ═══ */
+.logo {
+  background:#c2571f !important;
+  border:none !important;
+  box-shadow:0 2px 8px rgba(194,87,31,.3) !important;
+}
+.logo svg, .logo svg * { stroke:#fff !important; }
+.header-title { font-weight:900 !important; font-size:16px !important; color:#3d3026 !important; letter-spacing:.5px !important; }
+.header-sub { color:#a08b76 !important; font-weight:700 !important; letter-spacing:2px !important; }
+
+
+/* ═══ v18:小日曆固定顯示、頂欄日期導覽移除 ═══ */
+.mini-toggle { display:none !important; }
+#calGrid.mini-collapsed .mini-panel { width:218px !important; padding:0 4px 0 16px !important; opacity:1 !important; pointer-events:auto !important; }
+.mini-panel { padding-top:12px !important; }
+/* 上方 ‹ 今天 › 日期列拿掉(小日曆取代) */
+#dateNav { display:none !important; }
+
+
+/* ═══ v19:今日清單移到小日曆下方,時間軸滿版 ═══ */
+#day-layout { grid-template-columns:1fr !important; }
+#miniCalPanel #day-sidebar { display:block !important; margin-top:14px; }
+#miniCalPanel #day-sidebar .cal-scroll { max-height:calc(100vh - 480px) !important; }
+#dayTLHeader, #sidebarToggle { display:none !important; }
+
+
+/* ═══ v20:工作列右側動作鈕拿掉(直接點時間軸新增) ═══ */
+.wb-actions { display:none !important; }
+
+
+/* ═══ v21:頂欄重新分組 ═══ */
+/* 日/週/月:分段選單(segmented control) */
+.view-toggle {
+  border:none !important;
+  background:#f4ece1 !important;
+  border-radius:99px !important;
+  padding:3px !important;
+  gap:2px !important;
+}
+.view-btn {
+  border-radius:99px !important;
+  padding:6px 16px !important;
+  font-weight:700 !important;
+  color:#a08b76 !important;
+}
+.view-btn.active {
+  background:#c2571f !important;
+  color:#fff !important;
+  font-weight:900 !important;
+  box-shadow:0 1px 4px rgba(194,87,31,.3);
+}
+/* 搜尋框收窄靠右 */
+.header input[type="search"], .header .search-input { max-width:260px !important; }
+/* 第二列:治療師群組膠囊化已做;統計推到最右對齊 */
+.stats { margin-left:auto !important; background:#fdf8f1 !important; border-radius:99px !important; padding:4px 14px !important; gap:10px !important; }
+.workbar .wb-spacer { display:none !important; }
+/* 治療師標籤列與統計之間平衡 */
+.workbar { gap:10px !important; }
+/* 登出鈕維持淡化 */
+#logoutBtn { opacity:.6; }
+#logoutBtn:hover { opacity:1; }
+
+
+/* ═══ v22:防折行收尾 ═══ */
+.header-title { white-space:nowrap !important; font-size:15px !important; }
+.header-sub { white-space:nowrap !important; }
+#mini-today-row, .mini-panel span { white-space:nowrap; }
+.nav-btn, .view-btn, .th-tab, .today-btn, .wb-label, .header button { white-space:nowrap !important; }
+
+/* v23:「治療師」字樣拿掉 */
+.wb-label { display:none !important; }
+
+/* v24:互換後的排版 */
+.header-left .th-tabs { border:none !important; background:transparent !important; padding:0 !important; margin-left:10px; }
+#workbar #dateBarCenter { max-width:300px; flex:1; }
+#workbar #viewToggle { flex-shrink:0; }
+.header { overflow:visible !important; }
+
+
+/* ═══ v25:手機版同步 ═══ */
+@media (max-width:640px){
+  .header { flex-wrap:wrap !important; }
+  .header-left { flex-wrap:wrap; gap:8px; }
+  .header-left .th-tabs { margin-left:0; width:100%; overflow-x:auto; padding-bottom:2px !important; }
+  #workbar { flex-wrap:nowrap !important; overflow-x:auto; }
+  #workbar #dateBarCenter { min-width:150px; }
+  .stats { display:flex !important; padding:3px 10px !important; }
+  .mini-panel { display:none !important; }   /* 手機空間小,小日曆仍用點日期彈窗 */
+  #dateNav { display:flex !important; }      /* 手機保留 ‹今天› 快速換日 */
+}

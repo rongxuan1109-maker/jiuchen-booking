@@ -549,6 +549,16 @@ input,select,textarea{border-radius:8px;}
 .now-line{position:absolute;left:0;right:0;height:2px;background:#ea4335;z-index:25;pointer-events:none;}
 .now-line::before{content:'';position:absolute;left:-1px;top:-4px;width:10px;height:10px;border-radius:50%;background:#ea4335;}
 </style>
+<style id="a6print-css">
+#a6print{display:none;}
+@media print{
+  body.printing-card #a6print{display:block !important;position:absolute;left:0;top:0;}
+  body.printing-card>*:not(#a6print){display:none !important;}
+  body.printing-card{background:#fff !important;}
+  @page{size:105mm 148.5mm;margin:0;}
+}
+</style>
+<link rel="stylesheet" href="admin-warm-skin.css?v=1">
 </head>
 <body>
 
@@ -641,7 +651,7 @@ input,select,textarea{border-radius:8px;}
     </button>
   </div>
 </div>
-<div id="calGrid" class="mini-collapsed" style="display:flex;align-items:flex-start">
+<div id="calGrid" style="display:flex;align-items:flex-start">
   <button class="mini-toggle" id="miniToggle" onclick="toggleMiniPanel()" title="展開/收起小日曆">▸</button>
   <div id="miniCalPanel" class="mini-panel"></div>
   <div id="mainContent" style="flex:1;min-width:0"></div>
@@ -942,6 +952,10 @@ function debouncedSearch(val){
   }, 400);
 }
 
+function openTracking(name){
+  localStorage.setItem('ptrack_open', name);
+  if(window.trkFromAppt) trkFromAppt(name);
+}
 function ptCard(p){
   return `<div onclick="openPatientDetail(${p.id})" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px">
     <div style="width:38px;height:38px;border-radius:50%;border:1px solid var(--border);border-radius:10px;background:var(--glow);color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:17px;flex-shrink:0">${p.name[0]}</div>
@@ -951,6 +965,8 @@ function ptCard(p){
       ${(function(){const v=patientVisitInfo(p);return v?`<div style="font-size:11px;font-weight:400;margin-top:2px"><span style="color:#fff;background:${relColor(v.last)};padding:1px 7px;border-radius:9px">${relTime(v.last)}</span> <span style="color:var(--accent)">最近 ${v.last}　·　共 ${v.count} 次</span></div>`:'<div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:300">尚無就診紀錄</div>';})()}
       ${p.body_parts&&p.body_parts.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">${p.body_parts.map(bp=>`<span style="background:var(--glow);color:var(--accent);padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:9px">${bp}</span>`).join('')}</div>`:''}
     </div>
+    <button onclick="event.stopPropagation();openTracking('${String(p.name).replace(/'/g,'')}')"
+      style="padding:6px 12px;border:1.5px solid #c2571f;background:#fff;color:#c2571f;font-size:12px;font-weight:700;cursor:pointer;border-radius:10px;white-space:nowrap;font-family:'Noto Sans TC',sans-serif">📋 治療紀錄</button>
     <span style="color:var(--muted);font-size:16px">›</span>
   </div>`;
 }
@@ -1195,7 +1211,7 @@ async function submitNewPatient(){
   else showToast('儲存失敗：'+error.message);
 }
 
-function openPatientDetail(id){
+function editPatientOld(id){
   const p=patients.find(x=>x.id===id);
   if(!p)return;
   window._editParts=[...(p.body_parts||[])];
@@ -1271,7 +1287,9 @@ async function loadPatientHistory(p){
       const cancelled=a.status==='cancelled';
       return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);${cancelled?'opacity:.45;text-decoration:line-through':''}">
         <span style="display:flex;align-items:center;gap:7px"><span style="font-size:10px;color:#fff;background:${relColor(a.appointment_date)};padding:1px 7px;border-radius:9px;white-space:nowrap">${relTime(a.appointment_date)}</span><span>${a.appointment_date} ${a.appointment_time.slice(0,5)}</span></span>
-        <span style="color:var(--muted);font-size:11px;text-align:right">${a.type==='new'?'初診':'複診'}${th?' · '+th:''}</span>
+        <button onclick="event.stopPropagation();openTracking('${String(p.name).replace(/'/g,'')}')"
+      style="padding:6px 12px;border:1.5px solid #c2571f;background:#fff;color:#c2571f;font-size:12px;font-weight:700;cursor:pointer;border-radius:10px;white-space:nowrap;font-family:'Noto Sans TC',sans-serif">📋 治療紀錄</button>
+    <span style="color:var(--muted);font-size:11px;text-align:right">${a.type==='new'?'初診':'複診'}${th?' · '+th:''}</span>
       </div>${noteText(a)?`<div style="padding:3px 0 7px 2px;border-bottom:1px solid var(--border)"><span style="font-size:11px;color:var(--new-color);background:var(--new-bg);padding:2px 8px;border-radius:7px;line-height:1.6;display:inline-block">📝 ${esc(noteText(a))}</span></div>`:''}`;
     }).join('')+(rows.length>30?`<div style="font-size:11px;color:var(--muted);margin-top:6px">（僅顯示最近 30 筆）</div>`:'');
 }
@@ -1398,6 +1416,7 @@ function render(){
   else if(curView==='week')renderWeek();
   else renderMonth();
   renderMiniCal();
+  relocateDaySidebar();
 }
 
 /* ── 左側小日曆：點日期 → 主檢視跳到該日期（保留目前日/週/月層級）── */
@@ -1428,7 +1447,12 @@ function renderMiniCal(){
     else if(inWeek){bg='rgba(192,138,82,.10)';rad='0';}
     cells+=`<div ${valid?`class="mini-day" onclick="pickMiniDate('${ds}')"`:''} style="text-align:center;font-size:11px;line-height:24px;height:24px;cursor:${valid?'pointer':'default'};background:${bg};color:${col};border-radius:${rad};font-weight:${fw};transition:background .12s">${valid?dn:''}</div>`;
   }
+  const _tn=new Date(), _tw=wd[_tn.getDay()];
   panel.innerHTML=`
+    <div style="background:#fff;border-radius:14px;box-shadow:0 1px 5px rgba(120,80,40,.09);padding:9px 14px;margin-bottom:10px;display:flex;align-items:center;gap:6px;white-space:nowrap">
+      <span style="font-size:11px;color:#a08b76;font-weight:700;white-space:nowrap">今天</span>
+      <span style="font-size:14px;font-weight:900;color:#3d3026;white-space:nowrap">${_tn.getMonth()+1}/${_tn.getDate()}（${_tw}）</span>
+    </div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 9px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
         <span style="font-size:12px;font-weight:400;letter-spacing:.5px">${y}年${m+1}月</span>
@@ -1457,9 +1481,16 @@ function renderDayNotesPanel(){
     </div>`).join('')}
   </div>`;
 }
+if(!window._miniClockTimer){window._miniClockTimer=setInterval(()=>{const c=document.getElementById('mini-clock');if(c){const n=new Date();c.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}},1000);}
+function relocateDaySidebar(){
+  const panel=document.getElementById('miniCalPanel');
+  const sb=document.getElementById('day-sidebar');
+  if(panel&&sb&&sb.parentElement!==panel){panel.appendChild(sb);sb.style.display='block';}
+}
 function miniCalNav(dir){
   miniCalDate=new Date(miniCalDate.getFullYear(),miniCalDate.getMonth()+dir,1);
   renderMiniCal();
+  relocateDaySidebar();
 }
 function pickMiniDate(ds){
   const [y,mo,d]=ds.split('-').map(Number);
@@ -1759,14 +1790,18 @@ function openApptPopover(el,id,ev){
       ${isNew?'<span style="font-size:10px;font-weight:600;background:var(--new-bg);color:var(--new-color);padding:1px 7px;border-radius:8px">初診</span>':''}
     </div>
     <div class="ap-row"><span class="ap-ic">◷</span><div>${dateStr}<br>${timeStr}</div></div>
-    <div class="ap-row"><span class="ap-ic">◍</span><div>${esc(getThName(a.therapist_id))}</div></div>
+    <div class="ap-row" style="position:relative"><span class="ap-ic">◍</span><div>${esc(getThName(a.therapist_id))}</div>
+      <button style="position:absolute;right:0;bottom:-2px;width:calc(50% - 8px);display:flex;align-items:center;justify-content:center;gap:5px;padding:9px;border:1px solid #c2571f;border-radius:9px;background:#fdf1e6;color:#c2571f;font-size:12px;font-weight:900;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px" onclick="closeApptPopover();trkFromAppt('${esc(a.patient_name).replace(/'/g,'')}')">📋 治療紀錄</button>
+    </div>
     ${phone?`<div class="ap-row"><span class="ap-ic">☏</span><div>${phone}</div></div>`:''}
     ${px?`<div class="ap-row"><span class="ap-ic">⇄</span><div>代約：${esc(px.name)} 治療師</div></div>`:''}
     ${partsText(a)?`<div class="ap-row"><span class="ap-ic">⊕</span><div>${esc(partsText(a))}</div></div>`:''}
     ${note?`<div class="ap-row"><span class="ap-ic">✎</span><div>${esc(note)}</div></div>`:''}
+    
     <div class="ap-btns">
       <button class="ap-btn primary" onclick="bookNext(${id})">約下次</button>
       <button class="ap-btn" onclick="closeApptPopover();openModal(${id})">修改</button>
+    </div>
     </div>
     <div class="ap-btns" style="margin-top:7px">
       <button class="ap-btn danger" onclick="closeApptPopover();cancelAppt(${id})">取消預約</button>
@@ -2698,16 +2733,18 @@ function openNewApptAt(date, time, edit){
         </button>`}
       </div>
       ${window._naProxyId?`<div style="background:rgba(121,134,203,.18);border:1px solid #7986CB;color:#3949ab;padding:9px 13px;margin-bottom:14px;font-size:12px;letter-spacing:.5px">🤝 代約：<b>${(therapists.find(t=>t.id===window._naProxyId)||{}).name||''}</b> 幫 <b>${(therapists.find(t=>t.id==preThId)||{}).name||'（請選治療師）'}</b> 代約</div>`:''}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px">
+      <div style="margin-bottom:13px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div><label class="field-lbl">姓名 *</label><input id="na-name" style="${fieldBox()}" placeholder="" value="${edit?String(edit.patient_name||'').replace(/"/g,'&quot;'):''}"></div>
         <div><label class="field-lbl">電話<span style="color:var(--muted);font-weight:300">（初診必填）</span></label><input id="na-phone" type="tel" style="${fieldBox()}" placeholder="" value="${edit?String(edit.patient_phone||'').replace(/"/g,'&quot;'):''}"></div>
       </div>
-      <div style="margin-bottom:13px">
+      <div style="margin-top:12px">
         <label class="field-lbl">類型 *</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div id="na-new" onclick="naSelectType('new')" style="border:1px solid ${naTy==='new'?'var(--warm)':'var(--border)'};padding:8px;text-align:center;cursor:pointer;background:${naTy==='new'?'var(--glow)':'transparent'};color:${naTy==='new'?'var(--accent)':'var(--text)'};font-size:13px;font-weight:${naTy==='new'?'400':'300'}">初診</div>
-          <div id="na-return" onclick="naSelectType('return')" style="border:1px solid ${naTy==='return'?'var(--warm)':'var(--border)'};padding:8px;text-align:center;cursor:pointer;background:${naTy==='return'?'var(--glow)':'transparent'};color:${naTy==='return'?'var(--accent)':'var(--text)'};font-size:13px;font-weight:${naTy==='return'?'400':'300'}">複診</div>
+          <div id="na-new" onclick="naSelectType('new')" style="${naTy==='new'?'border:1.5px solid #c2571f;padding:10px;text-align:center;cursor:pointer;background:#c2571f;color:#fff;font-size:14px;font-weight:900;border-radius:12px':'border:1.5px solid #eee3d4;padding:10px;text-align:center;cursor:pointer;background:#fff;color:#6b5643;font-size:14px;font-weight:700;border-radius:12px'}">初診</div>
+          <div id="na-return" onclick="naSelectType('return')" style="${naTy==='return'?'border:1.5px solid #c2571f;padding:10px;text-align:center;cursor:pointer;background:#c2571f;color:#fff;font-size:14px;font-weight:900;border-radius:12px':'border:1.5px solid #eee3d4;padding:10px;text-align:center;cursor:pointer;background:#fff;color:#6b5643;font-size:14px;font-weight:700;border-radius:12px'}">複診</div>
         </div>
+      </div>
       </div>
       <div style="margin-bottom:13px">
         <label class="field-lbl">治療師 *</label>
@@ -2715,8 +2752,7 @@ function openNewApptAt(date, time, edit){
           <option value="">不指定</option>
           ${therapists.map(t=>`<option value="${t.id}" ${t.id==preThId?'selected':''}>${t.name} 治療師</option>`).join('')}
         </select>
-      </div>
-      <div style="margin-bottom:13px">
+      <div style="margin-top:12px">
         <label class="field-lbl">代約者<span style="color:var(--muted);font-weight:300">（同事幫病人約時選，可留空）</span></label>
         <select id="na-proxy" style="${fieldBox().replace('font-size:14px','font-size:13px')}appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b4fb0' stroke-width='1.2' fill='none'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 2px center;padding-right:18px">
           <option value="">無（本人預約）</option>
@@ -2751,20 +2787,22 @@ function openNewApptAt(date, time, edit){
         <button onclick="toggleDayTimeline()" class="mBtn primary" style="width:100%;margin-top:10px">完成</button>
       </div>
       <div style="margin-bottom:10px">
-        <label class="field-lbl">治療部位（可多選・分左右）</label>
+        <label class="field-lbl">治療部位</label>
         <div id="na-body-summary" onclick="toggleBodyPicker()" style="display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:13px;font-weight:300">
           <span id="na-body-summary-text" style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">＋ 點此選擇部位</span>
           <span id="na-body-caret" style="color:var(--muted);flex-shrink:0">▾</span>
         </div>
         <div id="na-body-picker" style="display:none;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:7px"></div>
-        <input id="na-other" oninput="updateBodySummary()" style="${fieldBox()}margin-top:8px;margin-bottom:8px" placeholder="其他部位（沒列到的自己打，例：肋骨）" value="${edit?String(parseParts(edit.symptoms).other||'').replace(/"/g,'&quot;'):''}">
+        <input id="na-other" oninput="updateBodySummary()" style="${fieldBox()}margin-top:8px;margin-bottom:8px" placeholder="例：左肩、右膝" value="${edit?String(parseParts(edit.symptoms).other||'').replace(/"/g,'&quot;'):''}">
         <label class="field-lbl">備註</label>
         <input id="na-note" style="${fieldBox()}" placeholder="代約人姓名/關係/電話、特殊需求…" value="${edit?String(noteText(edit)||'').replace(/"/g,'&quot;'):''}">
       </div>
       ${edit?`
       <div style="margin:8px 0 4px;padding-top:12px;border-top:1px dashed var(--border)">
         <div id="na-hx-summary" onclick="toggleHxPicker('${edit.line_user_id||''}')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;font-size:13px;font-weight:300">
-          <span style="color:var(--text2)">🏃 居家運動處方<span id="na-hx-count" style="color:var(--muted);font-size:12px"></span></span>
+          <button onclick="event.stopPropagation();openTracking('${String(edit.patient_name||'').replace(/'/g,'')}')"
+      style="padding:6px 12px;border:1.5px solid #c2571f;background:#fff;color:#c2571f;font-size:12px;font-weight:700;cursor:pointer;border-radius:10px;white-space:nowrap;font-family:'Noto Sans TC',sans-serif">📋 治療紀錄</button>
+    <span style="color:var(--text2)">🏃 居家運動處方<span id="na-hx-count" style="color:var(--muted);font-size:12px"></span></span>
           <span id="na-hx-caret" style="color:var(--muted)">▾</span>
         </div>
         <div id="na-hx-picker" style="display:none"></div>
@@ -2882,8 +2920,10 @@ function naSyncEnd(){
 
 function naSelectType(t){
   window._naType=t;
-  document.getElementById('na-new').style.cssText=`border:1px solid ${t==='new'?'var(--warm)':'var(--border)'};padding:8px;text-align:center;cursor:pointer;background:${t==='new'?'var(--glow)':'transparent'};color:${t==='new'?'var(--accent)':'var(--text)'};font-size:13px;font-weight:${t==='new'?'400':'300'}`;
-  document.getElementById('na-return').style.cssText=`border:1px solid ${t==='return'?'var(--warm)':'var(--border)'};padding:8px;text-align:center;cursor:pointer;background:${t==='return'?'var(--glow)':'transparent'};color:${t==='return'?'var(--accent)':'var(--text)'};font-size:13px;font-weight:${t==='return'?'400':'300'}`;
+  const on ="border:1.5px solid #c2571f;padding:10px;text-align:center;cursor:pointer;background:#c2571f;color:#fff;font-size:14px;font-weight:900;border-radius:12px";
+  const off="border:1.5px solid #eee3d4;padding:10px;text-align:center;cursor:pointer;background:#fff;color:#6b5643;font-size:14px;font-weight:700;border-radius:12px";
+  document.getElementById('na-new').style.cssText=(t==='new'?on:off);
+  document.getElementById('na-return').style.cssText=(t==='return'?on:off);
 }
 
 function getNextTimeSlot(t){
@@ -3349,5 +3389,27 @@ function dismissA2hs(){
   if(b) b.style.display='none';
 }
 </script>
+<script>
+/* v24:列位互換 — 治療師/排班上排,搜尋+日週月下排 */
+(function(){
+  function relocateBars(){
+    var hl=document.querySelector('.header-left');
+    var hr=document.querySelector('.header-right');
+    var wb=document.getElementById('workbar');
+    var vt=document.getElementById('viewToggle');
+    var th=document.getElementById('thTabs');
+    var st=document.getElementById('statsRow');
+    var sr=document.getElementById('dateBarCenter');
+    if(!hl||!wb||!vt||!th||!sr)return;
+    hl.appendChild(th);            // 治療師標籤(含排班)上移
+    wb.insertBefore(sr, st);       // 搜尋移到下排
+    wb.insertBefore(vt, sr);       // 日週月移到下排
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',relocateBars);
+  else relocateBars();
+})();
+</script>
+
+<script src="admin-trk.js?v=38"></script>
 </body>
 </html>

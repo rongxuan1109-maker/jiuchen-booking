@@ -135,7 +135,7 @@ window.renderPatients=function(){
     var recChip=function(v,label){ var on=recencyFilter===v; return '<div onclick="recencyFilter=\''+v+'\';TRK.page=0;renderPatients()" style="padding:3px 10px;font-size:11px;cursor:pointer;border-radius:99px;border:1px solid '+(on?'#c2571f':'var(--border)')+';background:'+(on?'#fdf1e6':'#fff')+';color:'+(on?'#c2571f':'var(--muted)')+';font-weight:700">'+label+'</div>'; };
     var partChip=function(v,label){ var on=partFilter===v; return '<div onclick="partFilter=\''+v+'\';TRK.page=0;renderPatients()" style="padding:3px 10px;font-size:11px;cursor:pointer;border-radius:99px;border:1px solid '+(on?'#c98a2e':'var(--border)')+';background:'+(on?'#faf0dd':'#fff')+';color:'+(on?'#a5701f':'var(--muted)')+';font-weight:700">'+label+'</div>'; };
     el.innerHTML=
-    '<div style="display:grid;grid-template-columns:280px 320px minmax(0,1fr);gap:20px;padding:0 24px 20px;align-items:stretch;max-width:1400px;margin:0 auto;height:calc(100vh - 180px)">'+
+    '<div style="display:grid;grid-template-columns:300px 360px minmax(0,1fr);gap:24px;padding:0 24px 20px;align-items:stretch;max-width:1480px;margin:0 auto;height:calc(100vh - 180px)">'+
       '<div style="display:flex;flex-direction:column;min-height:0">'+
         '<div style="background:#fff;border:1px solid #f0e6da;border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(120,80,40,.06)">'+
           '<div style="display:flex;gap:6px;margin-bottom:8px">'+
@@ -199,14 +199,14 @@ window.renderTrkPanel=function(){
     '</div>';
   }).join(''):'<div style="font-size:12px;color:#b3a08c">尚無治療紀錄</div>';
   el.innerHTML=
-  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap">'+
+  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap;max-width:560px;margin-left:auto;margin-right:auto">'+
     '<div><b style="font-size:17px">'+esc(TRK.sel)+'</b><span style="font-size:12px;color:#a08b76;margin-left:8px">'+esc(p&&p.phone||'')+' · 共 '+visits.length+' 次紀錄</span></div>'+
     '<div style="display:flex;gap:6px">'+
       (p?'<button onclick="editPatientOld('+p.id+')" style="padding:7px 12px;border:1.5px solid #e3d5c3;border-radius:10px;background:#fff;color:#8a7361;font-size:12px;font-weight:700;cursor:pointer">編輯基本資料</button>':'')+
       '<button onclick="trkNew()" style="padding:7px 14px;border:none;border-radius:10px;background:#c2571f;color:#fff;font-size:12px;font-weight:900;cursor:pointer">＋ 填寫今日治療紀錄</button>'+
     '</div>'+
   '</div>'+
-  '<div style="background:#fdf8f1;border:1px solid #f0e6da;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;max-width:460px;aspect-ratio:105/148.5;max-height:calc(100vh - 320px);overflow-y:auto;box-shadow:0 3px 14px rgba(120,80,40,.12)">'+
+  '<div style="background:#fdf8f1;border:1px solid #f0e6da;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;max-width:560px;width:100%;margin:0 auto;box-shadow:0 3px 14px rgba(120,80,40,.12)">'+
     '<div style="background:#c2571f;border-radius:12px;padding:7px 12px;color:#fff;display:flex;justify-content:space-between;align-items:center"><b style="font-size:14px;letter-spacing:1px">治療紀錄卡</b><span style="font-size:12px;font-weight:700">'+(TRK.cvIdx!=null?'檢視/編輯 '+esc(visits[TRK.cvIdx]&&visits[TRK.cvIdx].date||''):today())+'</span></div>'+
     '<div style="display:flex;gap:6px">'+
       '<div onclick="trkPop(\'pb\')" style="flex:1;background:#fff;border-radius:12px;padding:6px 8px;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(120,80,40,.1)"><div style="font-size:11px;color:#a08b76;font-weight:700">疼痛 · 前</div><div style="font-size:20px;font-weight:900;color:#c14a28">'+(cv.painBefore===''||cv.painBefore==null?'－':cv.painBefore)+'<span style="font-size:10px;color:#c0ad98;font-weight:400"> /10</span></div></div>'+
@@ -227,12 +227,12 @@ window.renderTrkPanel=function(){
     '</div>'+
     '<div style="text-align:center;font-size:10px;color:#b3906a;margin-top:auto">每一次進步,都值得被看見 ♡ 九辰物理治療所</div>'+
   '</div>'+
-  '<div style="display:flex;gap:8px;margin-top:10px;max-width:460px">'+
+  '<div style="display:flex;gap:8px;margin-top:10px;max-width:560px;margin-left:auto;margin-right:auto">'+
     '<button onclick="trkSave()" style="flex:1.2;padding:11px;border:none;border-radius:10px;background:#c2571f;color:#fff;font-size:14px;font-weight:900;cursor:pointer">儲存紀錄</button>'+
     '<button onclick="trkCopy()" style="flex:1;padding:11px;border:1.5px solid #c2571f;border-radius:10px;background:#fff;color:#c2571f;font-size:13px;font-weight:900;cursor:pointer">'+(TRK.copied?'✓ 已複製':'📋 複製到診所系統')+'</button>'+
     '<button onclick="trkSavePrint()" style="flex:1;padding:11px;border:1.5px solid #c2571f;border-radius:10px;background:#fff;color:#c2571f;font-size:13px;font-weight:900;cursor:pointer">🖨 儲存並列印</button>'+
   '</div>'+
-  '<div style="font-size:12px;color:#b3a08c;margin:6px 2px 10px">'+esc(TRK.msg)+'</div>';
+  '<div style="font-size:12px;color:#b3a08c;margin:6px 2px 10px;max-width:560px;margin-left:auto;margin-right:auto">'+esc(TRK.msg)+'</div>';
   var hel=document.getElementById('trkHistory');
   if(hel)hel.innerHTML='<div style="font-size:12px;font-weight:900;color:#8a7361;margin:2px 2px 8px">歷史紀錄（'+visits.length+' 次）</div>'+
     '<div style="flex:1;display:flex;flex-direction:column;gap:8px;overflow-y:auto;padding-right:4px;min-height:0">'+hist+'</div>';

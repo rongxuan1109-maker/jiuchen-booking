@@ -134,10 +134,11 @@ window.renderPatients=function(){
     if(TRK.page==null||TRK.page<0)TRK.page=0;
     if(TRK.page>=totalPages)TRK.page=totalPages-1;
     var pageItems=filtered.slice(TRK.page*PAGE,TRK.page*PAGE+PAGE);
+    var narrow=window.innerWidth<900; TRK._narrow=narrow;  /* 手機/平板窄螢幕→直排 */
     var recChip=function(v,label){ var on=recencyFilter===v; return '<div onclick="recencyFilter=\''+v+'\';TRK.page=0;renderPatients()" style="padding:3px 10px;font-size:11px;cursor:pointer;border-radius:99px;border:1px solid '+(on?'#c2571f':'var(--border)')+';background:'+(on?'#fdf1e6':'#fff')+';color:'+(on?'#c2571f':'var(--muted)')+';font-weight:700">'+label+'</div>'; };
     var partChip=function(v,label){ var on=partFilter===v; return '<div onclick="partFilter=\''+v+'\';TRK.page=0;renderPatients()" style="padding:3px 10px;font-size:11px;cursor:pointer;border-radius:99px;border:1px solid '+(on?'#c98a2e':'var(--border)')+';background:'+(on?'#faf0dd':'#fff')+';color:'+(on?'#a5701f':'var(--muted)')+';font-weight:700">'+label+'</div>'; };
     el.innerHTML=
-    '<div style="display:grid;grid-template-columns:300px 360px minmax(0,1fr);gap:24px;padding:0 24px 20px;align-items:stretch;max-width:1480px;margin:0 auto;height:calc(100vh - 180px)">'+
+    '<div style="'+(narrow?'display:flex;flex-direction:column;gap:14px;padding:0 12px 20px;max-width:680px;margin:0 auto':'display:grid;grid-template-columns:300px 360px minmax(0,1fr);gap:24px;padding:0 24px 20px;align-items:stretch;max-width:1480px;margin:0 auto;height:calc(100vh - 180px)')+'">'+
       '<div style="display:flex;flex-direction:column;min-height:0">'+
         '<div style="background:#fff;border:1px solid #f0e6da;border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(120,80,40,.06)">'+
           '<div style="display:flex;gap:6px;margin-bottom:8px">'+
@@ -148,7 +149,7 @@ window.renderPatients=function(){
           '<div style="display:flex;gap:4px;flex-wrap:wrap"><span style="font-size:10px;color:var(--muted);align-self:center">部位</span>'+partChip('','全部')+BODY_PARTS.map(function(p){return partChip(p,p);}).join('')+'</div>'+
         '</div>'+
         '<div style="font-size:11px;color:var(--muted);margin:0 2px 8px">共 '+filtered.length+' 位病人'+(totalPages>1?' · 第 '+(TRK.page+1)+' / '+totalPages+' 頁':'')+'</div>'+
-        '<div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px">'+
+        '<div style="'+(narrow?'max-height:42vh':'flex:1;min-height:0')+';overflow-y:auto;display:flex;flex-direction:column;gap:6px">'+
         (filtered.length?pageItems.map(function(p){
           var r=rec(p.name); var n=r?r.visits.length:0;
           return '<div class="trk-pt" data-name="'+esc(p.name)+'" onclick="trkSelect(\''+esc(p.name).replace(/'/g,'')+'\')" style="background:#fff;border:1px solid #f0e6da;border-radius:12px;padding:10px 12px;cursor:pointer">'+
@@ -166,10 +167,14 @@ window.renderPatients=function(){
       '<div id="trkHistory" style="display:flex;flex-direction:column;min-height:0"></div><div id="trkPanel" style="width:100%;display:flex;flex-direction:column;min-height:0"></div>'+
     '</div><div id="trkPop"></div>';
     renderTrkPanel(); markSel();
-    var g=el.firstElementChild;  /* 依實際位置貼齊視窗底,消掉下方留白 */
-    if(g){ var top=g.getBoundingClientRect().top; g.style.height='calc(100vh - '+Math.round(top+14)+'px)'; }
+    var g=el.firstElementChild;  /* 桌機:依實際位置貼齊視窗底,消掉下方留白;手機直排不需要 */
+    if(g&&!narrow){ var top=g.getBoundingClientRect().top; g.style.height='calc(100vh - '+Math.round(top+14)+'px)'; }
   });
 };
+window.addEventListener('resize',function(){  /* 轉向/縮放跨過斷點→重排 */
+  var n=window.innerWidth<900;
+  if(TRK._narrow!=null&&n!==TRK._narrow&&document.getElementById('trkPanel')&&!document.getElementById('trkModal')){ TRK._narrow=n; TRK.skipLoad=true; renderPatients(); }
+});
 
 /* ── 右側:紀錄卡+歷史 ── */
 window.renderTrkPanel=function(){

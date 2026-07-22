@@ -2392,6 +2392,7 @@ function openModal(id){
         <div class="modal-row"><span class="modal-lbl">治療師</span><span class="modal-val">${a.therapist_name==='全部'?'全部治療師':getThName(a.therapist_id)}</span></div>
         ${a.service?`<div class="modal-row"><span class="modal-lbl">備註</span><span class="modal-val">${a.service}</span></div>`:''}
         <div class="modal-btns">
+          <button class="mBtn primary" onclick="editEventOpen(${a.id})">修改</button>
           <button class="mBtn danger" onclick="deleteEvent(${a.id})">刪除整個活動</button>
           <button class="mBtn" onclick="closeModal()">關閉</button>
         </div>
@@ -3132,6 +3133,7 @@ let _naCalY=new Date().getFullYear(), _naCalM=new Date().getMonth();
 let _naSelY=new Date().getFullYear(), _naSelM=new Date().getMonth(), _naSelD=new Date().getDate();
 
 function openNewEvent(){
+  window._evEditEid=null;
   window._evTimes=[];
   window._evThs=[];
   const n=new Date();
@@ -3167,7 +3169,7 @@ function _renderEventModal(){
   <div class="modal-bg" onclick="guardedCloseModal()">
     <div class="modal" onclick="event.stopPropagation()" style="max-height:90vh;overflow-y:auto">
       <div class="modal-handle"></div>
-      <p class="modal-title">新增活動/休診</p>
+      <p class="modal-title">${window._evEditEid?'修改':'新增'}活動/休診</p>
 
       <div style="margin-bottom:14px">
         <label class="field-lbl">活動名稱 *</label>
@@ -3216,7 +3218,7 @@ function _renderEventModal(){
 
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">取消</button>
-        <button class="mBtn primary" onclick="submitNewEvent()">新增活動</button>
+        <button class="mBtn primary" onclick="submitNewEvent()">${window._evEditEid?'儲存修改':'新增活動'}</button>
       </div>
     </div>
   </div>`;
@@ -3262,11 +3264,28 @@ function naDayPick(y,m,d){
 }
 
 function openNewEventOn(dateStr){
+  window._evEditEid=null;
   const d=new Date(dateStr+'T00:00:00');
   _evCalY=d.getFullYear();_evCalM=d.getMonth();
   _evSelY=d.getFullYear();_evSelM=d.getMonth();_evSelD=d.getDate();
   window._evTimes=[];window._evThs=[];
   _renderEventModal();
+}
+function editEventOpen(id){
+  const a=appointments.find(x=>x.id===id); if(!a)return;
+  const m=(a.note||'').match(/event:(\w+)/); if(!m)return;
+  const eid=m[1];
+  const rows=appointments.filter(x=>(x.note||'').includes('event:'+eid)&&x.status!=='cancelled');
+  const d=new Date(a.appointment_date+'T00:00:00');
+  _evCalY=d.getFullYear();_evCalM=d.getMonth();
+  _evSelY=d.getFullYear();_evSelM=d.getMonth();_evSelD=d.getDate();
+  window._evTimes=[...new Set(rows.map(r=>r.appointment_time.slice(0,5)))].sort();
+  const ths=[...new Set(rows.map(r=>r.therapist_id))];
+  window._evThs=ths.includes(null)?['all']:ths;
+  window._evEditEid=eid;
+  _renderEventModal();
+  document.getElementById('ev-title').value=a.patient_name||'';
+  document.getElementById('ev-note').value=a.service||'';
 }
 function _evCalPrev(){_evCalM--;if(_evCalM<0){_evCalM=11;_evCalY--;}_renderEventModal();}
 function _evCalNext(){_evCalM++;if(_evCalM>11){_evCalM=0;_evCalY++;}_renderEventModal();}
@@ -3329,9 +3348,13 @@ async function submitNewEvent(){
       });
     }
   }
+  if(window._evEditEid){
+    const{error:e0}=await sb.from('appointments').update({status:'cancelled'}).like('note',`event:${window._evEditEid}%`);
+    if(e0){showToast('更新失敗：'+e0.message);return;}
+  }
   const{error}=await sb.from('appointments').insert(rows);
-  if(error){showToast('新增失敗：'+error.message);return;}
-  closeModal();showToast('活動已新增');_invalidateCache();await loadData();
+  if(error){showToast((window._evEditEid?'更新':'新增')+'失敗：'+error.message);return;}
+  closeModal();showToast(window._evEditEid?'活動已更新':'活動已新增');window._evEditEid=null;_invalidateCache();await loadData();
 }
 
 async function deleteEvent(id){

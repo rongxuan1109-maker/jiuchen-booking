@@ -3174,6 +3174,7 @@ function openNewEvent(){
 }
 
 function _renderEventModal(){
+  const _keepScroll=document.querySelector('#modalArea .modal')?.scrollTop??0;   /* 重畫不跳位 */
   const todayStr=fmtDate(new Date());
   const selStr=`${_evSelY}-${String(_evSelM+1).padStart(2,'0')}-${String(_evSelD).padStart(2,'0')}`;
   const first=new Date(_evCalY,_evCalM,1).getDay();
@@ -3276,6 +3277,7 @@ function _renderEventModal(){
       </div>
     </div>
   </div>`;
+  const _m=document.querySelector('#modalArea .modal'); if(_m)_m.scrollTop=_keepScroll;
 }
 
 function _renderNaCal(){

@@ -11,32 +11,27 @@
     font-weight:900;box-shadow:4px 4px 0 #E8556D;display:flex;align-items:center;gap:8px;}
   .title small{color:#E8556D;font-weight:900;}
   .card{background:#fff;border:3px solid #2E3644;border-radius:20px;padding:18px 20px;margin-top:16px;box-shadow:4px 4px 0 rgba(46,54,68,.15);}
-  .card h2{margin:0 0 8px;font-size:17px;display:flex;align-items:center;gap:8px;}
+  .card h2{margin:0 0 8px;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .card p{margin:6px 0;font-size:15px;line-height:1.8;}
   .tag{display:inline-block;background:#3E9B4F;color:#fff;border-radius:99px;padding:2px 12px;font-size:13px;font-weight:900;}
   .rose{background:#E8556D;}
   .amber{background:#E9A13B;}
+  .date{font-size:16px;font-weight:900;}
+  .muted{color:#8a7a5c;font-size:13px;}
   a.tel{color:#E8556D;font-weight:900;text-decoration:none;}
   .foot{text-align:center;margin-top:22px;font-size:13px;color:#8a7a5c;}
+  .loading{text-align:center;padding:18px;color:#8a7a5c;font-size:14px;}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="title">🕐 休診資訊 <small>!!</small></div>
 
+  <div id="live"><div class="card"><div class="loading">查詢最新休診公告中…</div></div></div>
+
   <div class="card">
     <h2><span class="tag rose">固定休診</span></h2>
     <p><b>每週日全天公休</b>——讓治療師們充飽電，下週繼續照顧你！</p>
-  </div>
-
-  <div class="card">
-    <h2><span class="tag amber">國定假日</span></h2>
-    <p>逢國定假日休診，實際安排會提前在 LINE 公告，請留意訊息通知。</p>
-  </div>
-
-  <div class="card">
-    <h2><span class="tag">臨時休診</span></h2>
-    <p>若有臨時調整，我們會第一時間透過 LINE 通知已預約的朋友，並協助改約。</p>
   </div>
 
   <div class="card">
@@ -47,5 +42,48 @@
 
   <div class="foot">九辰物理治療所 ♡ 每一次進步，都值得被看見</div>
 </div>
+
+<script>
+const SB = 'https://vmkdawpukwpsifqguljy.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZta2Rhd3B1a3dwc2lmcWd1bGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjE2MDUsImV4cCI6MjA5NTQzNzYwNX0.hq8rbjKe3NOUhV1sbViBtuQLSzQuWCnK1_4QSrCy2xM';
+const TH = {1:'徐若椏', 2:'劉恕愷', 3:'張維庭', 4:'江榮軒'};
+const WD = '日一二三四五六';
+
+function addMin(hm, m){ const [h, mm] = hm.split(':').map(Number); const t = h*60+mm+m; return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }
+function fmtDate(iso){ const [y,m,d] = iso.split('-').map(Number); return m+'/'+d+'（'+WD[new Date(y,m-1,d).getDay()]+'）'; }
+
+fetch(SB + '/rest/v1/rpc/get_closures', {
+  method: 'POST',
+  headers: {apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json'},
+  body: '{}'
+}).then(r => r.json()).then(rows => {
+  const el = document.getElementById('live');
+  if (!Array.isArray(rows)) throw new Error('bad');
+  // 同一天+同對象+同名稱 = 一則公告
+  const g = {};
+  rows.forEach(r => {
+    const k = r.appointment_date + '|' + (r.therapist_id ?? 'all') + '|' + r.title;
+    if (!g[k]) g[k] = {date: r.appointment_date, th: r.therapist_id, title: r.title, times: []};
+    g[k].times.push(r.appointment_time.slice(0,5));
+  });
+  const list = Object.values(g).sort((a,b) => a.date.localeCompare(b.date));
+  if (!list.length) {
+    el.innerHTML = '<div class="card"><h2><span class="tag">近期公告</span></h2><p>目前沒有臨時休診，各治療師依班表正常看診 😊</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(ev => {
+    ev.times.sort();
+    const lo = ev.times[0], hi = addMin(ev.times[ev.times.length-1], 30);
+    const allDay = lo <= '09:30' && hi >= '19:30';
+    const range = allDay ? '全天' : lo + '–' + hi;
+    const who = ev.th == null ? '<span class="tag rose">全院休診</span>' : '<span class="tag amber">' + (TH[ev.th] || '治療師') + ' 治療師休診</span>';
+    const extra = ev.th == null ? '' : '<p class="muted">其他治療師照常看診</p>';
+    const ttl = ev.title && !/^(휴|公休|休診|請假)$/.test(ev.title) ? '（' + ev.title + '）' : '';
+    return '<div class="card"><h2>' + who + '</h2><p><span class="date">' + fmtDate(ev.date) + '</span>　' + range + ttl + '</p>' + extra + '</div>';
+  }).join('');
+}).catch(() => {
+  document.getElementById('live').innerHTML = '<div class="card"><p class="muted">公告載入失敗，請稍後再試，或直接來電確認。</p></div>';
+});
+</script>
 </body>
 </html>

@@ -3125,7 +3125,7 @@ let _naSelY=new Date().getFullYear(), _naSelM=new Date().getMonth(), _naSelD=new
 
 function openNewEvent(){
   window._evTimes=[];
-  window._evThs=['all'];
+  window._evThs=[];
   const n=new Date();
   _evCalY=n.getFullYear();_evCalM=n.getMonth();
   _evSelY=n.getFullYear();_evSelM=n.getMonth();_evSelD=n.getDate();
@@ -3257,7 +3257,7 @@ function openNewEventOn(dateStr){
   const d=new Date(dateStr+'T00:00:00');
   _evCalY=d.getFullYear();_evCalM=d.getMonth();
   _evSelY=d.getFullYear();_evSelM=d.getMonth();_evSelD=d.getDate();
-  window._evTimes=[];window._evThs=['all'];
+  window._evTimes=[];window._evThs=[];
   _renderEventModal();
 }
 function _evCalPrev(){_evCalM--;if(_evCalM<0){_evCalM=11;_evCalY--;}_renderEventModal();}
@@ -3280,14 +3280,13 @@ function evClearTimes(){
 }
 function evToggleTh(id){
   if(id==='all'){
-    window._evThs=['all'];
+    window._evThs=window._evThs.includes('all')?[]:['all'];    // 按全部=四位自動反白;再按=清空
   } else if(window._evThs.includes('all')){
-    window._evThs=therapists.map(t=>t.id).filter(x=>x!==id);   // 全亮時點某人=把他移除,其餘個別選取
+    window._evThs=therapists.map(t=>t.id).filter(x=>x!==id);   // 全亮時點某人=把他熄掉,其餘保留
   } else {
     const idx=window._evThs.indexOf(id);
-    if(idx>=0)window._evThs.splice(idx,1);else window._evThs.push(id);
-    if(window._evThs.length===0)window._evThs=['all'];                       // 全取消=回到全部
-    if(window._evThs.length===therapists.length)window._evThs=['all'];       // 四位都選=等於全部
+    if(idx>=0)window._evThs.splice(idx,1);else window._evThs.push(id);       // 點誰亮誰
+    if(window._evThs.length===therapists.length)window._evThs=['all'];       // 四位點滿=等於全部
   }
   const isAll=window._evThs.includes('all');
   document.getElementById('ev-th-all').style.cssText=partTagStyle(isAll);
@@ -3299,6 +3298,7 @@ async function submitNewEvent(){
   const date=`${_evSelY}-${String(_evSelM+1).padStart(2,'0')}-${String(_evSelD).padStart(2,'0')}`;
   const note=document.getElementById('ev-note').value.trim();
   if(!title||!date||!window._evTimes.length){showToast('請填寫名稱並選擇時段');return;}
+  if(!window._evThs.length){showToast('請選擇影響治療師（或按「全部」）');return;}
   const eventId=_genEventId();
   const isAll=window._evThs.includes('all');
   const thIds=isAll?[null]:window._evThs;

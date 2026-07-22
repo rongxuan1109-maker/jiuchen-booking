@@ -984,7 +984,9 @@ async function integratePatients(){
   const{data:appts,error}=await sb.from('appointments').select('patient_name,patient_phone,appointment_date,note,status').limit(10000);
   if(error){showToast('讀取預約失敗：'+error.message);return;}
   const{data:existing}=await sb.from('patients').select('id,name,phone');
-  const exName=new Set((existing||[]).map(p=>p.name));   // 以姓名認人;同電話不同名=家人,照建
+  const exKey=new Set((existing||[]).map(p=>p.name+'|'+(p.phone||'')));
+  const exNameNoPhone=new Set((existing||[]).filter(p=>!p.phone).map(p=>p.name));
+  const exNameAll=new Set((existing||[]).map(p=>p.name));   // 規則:同名同話=同人;同名舊檔無話=同人;同名不同話=真同名分檔;同話不同名=家人分檔
   // 每位病患取最早日期（key=姓名|電話）
   const map={};
   (appts||[]).forEach(a=>{
@@ -995,8 +997,13 @@ async function integratePatients(){
   });
   const toInsert=[];
   Object.values(map).forEach(p=>{
-    if(exName.has(p.name))return;
-    exName.add(p.name);
+    if(p.phone){
+      if(exKey.has(p.name+'|'+p.phone))return;
+      if(exNameNoPhone.has(p.name))return;
+    } else {
+      if(exNameAll.has(p.name))return;
+    }
+    exKey.add(p.name+'|'+(p.phone||''));exNameAll.add(p.name);
     toInsert.push({name:p.name,phone:p.phone||null,body_parts:[],first_visit:p.first||null,note:null});
   });
   if(!toInsert.length){showToast('沒有需要新增的病患（都已建檔）');renderPatients();return;}
@@ -1014,11 +1021,16 @@ async function upsertPatient(name, phone, date, parts, note){
   if(!name) return;
   let found=null;
   if(phone){
-    // 電話+姓名都符合才算同一人;同電話不同名=家人共用電話,各自建檔
+    // 電話+姓名都符=同一人;同電話不同名=家人各自建檔
     const{data}=await sb.from('patients').select('id,phone,first_visit').eq('phone',phone).eq('name',name).limit(1);
     if(data&&data[0]) found=data[0];
-  }
-  if(!found){
+    if(!found){
+      // 同名但舊檔沒電話=同一人(補電話);同名且電話不同=真同名,另建新檔
+      const{data:d2}=await sb.from('patients').select('id,phone,first_visit').eq('name',name).limit(5);
+      const cand=(d2||[]).find(p=>!p.phone);
+      if(cand) found=cand;
+    }
+  } else {
     const{data}=await sb.from('patients').select('id,phone,first_visit').eq('name',name).limit(1);
     if(data&&data[0]) found=data[0];
   }

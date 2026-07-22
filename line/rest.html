@@ -87,7 +87,10 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
       range = segs.join('、');
     }
     const who = ev.th == null ? '<span class="tag rose">全院休診</span>' : '<span class="tag amber">' + (TH[ev.th] || '治療師') + ' 治療師休診</span>';
-    const extra = ev.th == null ? '' : '<p class="muted">其他治療師照常看診</p>';
+    const notes = [];
+    if (range !== '整天') notes.push('其餘時段照常看診');
+    if (ev.th != null) notes.push('其他治療師照常看診');
+    const extra = notes.length ? '<p class="muted">' + notes.join('・') + '</p>' : '';
     const ttl = ev.title && !/^(휴|公休|休診|請假)$/.test(ev.title) ? '（' + ev.title + '）' : '';
     return '<div class="card"><h2>' + who + '</h2><p><span class="date">' + fmtDate(ev.date) + '</span>　' + range + ttl + '</p>' + extra + '</div>';
   }).join('');

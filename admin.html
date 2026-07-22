@@ -3159,7 +3159,14 @@ function evPickBlock(b){
   _renderEventModal();
 }
 function evToggleCustom(){window._evCustomOpen=!window._evCustomOpen;_renderEventModal();}
-function evSetKind(k){window._evKind=k;_renderEventModal();}
+function evSetKind(k){
+  window._evKind=k;
+  if(k!=='memo'){
+    const allOn=TIMES.every(t=>window._evTimes.includes(t));
+    if(!allOn){ const ok=[...EV_BLK.am,...EV_BLK.pm,...EV_BLK.eve]; window._evTimes=window._evTimes.filter(t=>ok.includes(t)); }
+  }
+  _renderEventModal();
+}
 function openNewEvent(){
   window._evKind='close';
   window._evSelEnd=null;window._evArmed=false;
@@ -3237,7 +3244,7 @@ function _renderEventModal(){
           const blkOn=b=>EV_BLK[b].every(t=>window._evTimes.includes(t));
           const inBlks=t=>EV_BLK.am.includes(t)||EV_BLK.pm.includes(t)||EV_BLK.eve.includes(t);
           const hasOdd=!allOn&&window._evTimes.some(t=>!inBlks(t));
-          const showCustom=(window._evKind==='memo'&&window._evCustomOpen)||hasOdd;
+          const showCustom=window._evKind==='memo'&&(window._evCustomOpen||hasOdd);   /* 休診只跟診次,自訂僅活動用 */
           return `<div style="display:flex;gap:6px;flex-wrap:wrap">
             <div onclick="evPickBlock('all')" style="${partTagStyle(allOn)}">整天</div>
             <div onclick="evPickBlock('am')" style="${partTagStyle(blkOn('am'))}">早診 9–11</div>

@@ -73,9 +73,19 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
   }
   el.innerHTML = list.map(ev => {
     ev.times.sort();
-    const lo = ev.times[0], hi = addMin(ev.times[ev.times.length-1], 30);
-    const allDay = lo <= '09:30' && hi >= '19:30';
-    const range = allDay ? '全天' : lo + '–' + hi;
+    // 依實際勾選時段顯示:45格以上=整天;否則列出各連續段
+    let range;
+    if (ev.times.length >= 45) range = '整天';
+    else {
+      const f = t => t.replace(/^0/,'');
+      const segs = []; let st = ev.times[0], pv = ev.times[0];
+      for (let k = 1; k <= ev.times.length; k++) {
+        const c = ev.times[k];
+        if (c !== addMin(pv, 30)) { segs.push(f(st) + '–' + f(addMin(pv, 30))); st = c; }
+        pv = c;
+      }
+      range = segs.join('、');
+    }
     const who = ev.th == null ? '<span class="tag rose">全院休診</span>' : '<span class="tag amber">' + (TH[ev.th] || '治療師') + ' 治療師休診</span>';
     const extra = ev.th == null ? '' : '<p class="muted">其他治療師照常看診</p>';
     const ttl = ev.title && !/^(휴|公休|休診|請假)$/.test(ev.title) ? '（' + ev.title + '）' : '';

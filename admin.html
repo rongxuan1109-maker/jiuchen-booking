@@ -1187,9 +1187,9 @@ function openNewPatient(){
           ${BODY_PARTS.map(p=>`<div onclick="npTogglePart('${p}')" id="np-part-${p}" style="${partTagStyle(false)}">${p}</div>`).join('')}
         </div>
       </div>
-      <div style="margin-bottom:12px">
-        <label class="field-lbl">初診日期</label>
-        <input id="np-first" type="date" style="${fieldBox()}">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div><label class="field-lbl">生日</label><input id="np-birthday" type="date" style="${fieldBox()}"></div>
+        <div><label class="field-lbl">初診日期</label><input id="np-first" type="date" style="${fieldBox()}"></div>
       </div>
       <div style="margin-bottom:12px">
         <label class="field-lbl">備註</label>
@@ -1217,6 +1217,7 @@ async function submitNewPatient(){
   const{error}=await sb.from('patients').insert([{
     name,phone:document.getElementById('np-phone').value.trim()||null,
     body_parts:window._npParts||[],
+    birthday:document.getElementById('np-birthday').value||null,
     first_visit:document.getElementById('np-first').value||null,
     note:document.getElementById('np-note').value.trim()||null
   }]);
@@ -1247,9 +1248,9 @@ function editPatientOld(id){
           ${BODY_PARTS.map(bp=>`<div onclick="epTogglePart('${bp}')" id="ep-p-${bp}" style="${partTagStyle(window._editParts.includes(bp))}">${bp}</div>`).join('')}
         </div>
       </div>
-      <div style="margin-bottom:12px">
-        <label class="field-lbl">初診日期</label>
-        <input id="ep-first" type="date" value="${p.first_visit||''}" style="${fieldBox()}">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div><label class="field-lbl">生日</label><input id="ep-birthday" type="date" value="${p.birthday||''}" style="${fieldBox()}"></div>
+        <div><label class="field-lbl">初診日期</label><input id="ep-first" type="date" value="${p.first_visit||''}" style="${fieldBox()}"></div>
       </div>
       <div style="margin-bottom:12px">
         <label class="field-lbl">備註</label>
@@ -1321,6 +1322,7 @@ async function savePatient(id){
   const{error}=await sb.from('patients').update({
     name,phone:document.getElementById('ep-phone').value.trim()||null,
     body_parts:window._editParts||[],
+    birthday:document.getElementById('ep-birthday').value||null,
     first_visit:document.getElementById('ep-first').value||null,
     note:document.getElementById('ep-note').value.trim()||null
   }).eq('id',id);
@@ -3551,6 +3553,6 @@ function dismissA2hs(){
 })();
 </script>
 
-<script src="admin-trk.js?v=41"></script>
+<script src="admin-trk.js?v=42"></script>
 </body>
 </html>

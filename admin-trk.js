@@ -154,7 +154,7 @@ window.renderPatients=function(){
           var r=rec(p.name); var n=r?r.visits.length:0;
           return '<div class="trk-pt" data-name="'+esc(p.name)+'" onclick="trkSelect(\''+esc(p.name).replace(/'/g,'')+'\')" style="background:#fff;border:1px solid #f0e6da;border-radius:12px;padding:10px 12px;cursor:pointer">'+
             '<div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:13px">'+esc(p.name)+'</b><span style="font-size:10px;color:#b3a08c">'+(n?n+' 次紀錄':'')+'</span></div>'+
-            '<div style="font-size:11px;color:#a08b76;margin-top:1px">'+esc(p.phone||'無電話')+(p.body_parts&&p.body_parts.length?' · '+p.body_parts.join('/'):'')+'</div>'+
+            '<div style="font-size:11px;color:#a08b76;margin-top:1px">'+esc(p.phone||'無電話')+(p.birthday?' · 🎂'+p.birthday:'')+(p.body_parts&&p.body_parts.length?' · '+p.body_parts.join('/'):'')+'</div>'+
           '</div>';
         }).join(''):'<div style="text-align:center;padding:30px;color:var(--muted)">沒有符合條件的病人</div>')+
         '</div>'+
@@ -211,7 +211,7 @@ window.renderTrkPanel=function(){
   }).join(''):'<div style="font-size:12px;color:#b3a08c">尚無治療紀錄</div>';
   el.innerHTML=
   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap;width:100%;max-width:'+MW+';margin-left:auto;margin-right:auto">'+
-    '<div><b style="font-size:17px">'+esc(TRK.sel)+'</b><span style="font-size:12px;color:#a08b76;margin-left:8px">'+esc(p&&p.phone||'')+' · 共 '+visits.length+' 次紀錄</span></div>'+
+    '<div><b style="font-size:17px">'+esc(TRK.sel)+'</b><span style="font-size:12px;color:#a08b76;margin-left:8px">'+esc(p&&p.phone||'')+(p&&p.birthday?' · 🎂'+p.birthday:'')+' · 共 '+visits.length+' 次紀錄</span></div>'+
     '<div style="display:flex;gap:6px">'+
       (p?'<button onclick="editPatientOld('+p.id+')" style="padding:7px 12px;border:1.5px solid #e3d5c3;border-radius:10px;background:#fff;color:#8a7361;font-size:12px;font-weight:700;cursor:pointer">編輯基本資料</button>':'')+
       '<button onclick="trkNew()" style="padding:7px 14px;border:none;border-radius:10px;background:#c2571f;color:#fff;font-size:12px;font-weight:900;cursor:pointer">＋ 填寫今日治療紀錄</button>'+

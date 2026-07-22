@@ -3197,7 +3197,7 @@ function _renderEventModal(){
       <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <div onclick="evToggleTh('all')" id="ev-th-all" style="${partTagStyle(window._evThs.includes('all'))}">全部</div>
-          ${therapists.map(t=>`<div onclick="evToggleTh(${t.id})" id="ev-th-${t.id}" style="${partTagStyle(window._evThs.includes(t.id))}">${t.name}</div>`).join('')}
+          ${therapists.map(t=>`<div onclick="evToggleTh(${t.id})" id="ev-th-${t.id}" style="${partTagStyle(window._evThs.includes('all')||window._evThs.includes(t.id))}">${t.name}</div>`).join('')}
         </div>
       </div>
 
@@ -3281,16 +3281,17 @@ function evClearTimes(){
 function evToggleTh(id){
   if(id==='all'){
     window._evThs=['all'];
-    therapists.forEach(t=>{document.getElementById('ev-th-'+t.id).style.cssText=partTagStyle(false);});
-    document.getElementById('ev-th-all').style.cssText=partTagStyle(true);
+  } else if(window._evThs.includes('all')){
+    window._evThs=therapists.map(t=>t.id).filter(x=>x!==id);   // 全亮時點某人=把他移除,其餘個別選取
   } else {
-    const allIdx=window._evThs.indexOf('all');
-    if(allIdx>=0){window._evThs.splice(allIdx,1);document.getElementById('ev-th-all').style.cssText=partTagStyle(false);}
     const idx=window._evThs.indexOf(id);
     if(idx>=0)window._evThs.splice(idx,1);else window._evThs.push(id);
-    document.getElementById('ev-th-'+id).style.cssText=partTagStyle(window._evThs.includes(id));
-    if(window._evThs.length===0){window._evThs=['all'];document.getElementById('ev-th-all').style.cssText=partTagStyle(true);}
+    if(window._evThs.length===0)window._evThs=['all'];                       // 全取消=回到全部
+    if(window._evThs.length===therapists.length)window._evThs=['all'];       // 四位都選=等於全部
   }
+  const isAll=window._evThs.includes('all');
+  document.getElementById('ev-th-all').style.cssText=partTagStyle(isAll);
+  therapists.forEach(t=>{document.getElementById('ev-th-'+t.id).style.cssText=partTagStyle(isAll||window._evThs.includes(t.id));});
 }
 
 async function submitNewEvent(){

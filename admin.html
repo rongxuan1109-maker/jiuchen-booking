@@ -1871,12 +1871,12 @@ function renderDay(){
   // 將連續時段合併成群組，並用 Google 風格演算法排重疊
   const groups=groupConsecutiveAppts(dayAppts);
   const items=groups.map(g=>{const ti=TIMES.indexOf(g[0].appointment_time.slice(0,5));return{g,s:ti,e:ti+g.length};}).filter(x=>x.s>=0);
+  const evGroups=groups.filter(g=>isEvent(g[0]));        // 活動抽離時間軸,改釘表頭小卡
   const apIt=items.filter(x=>!isEvent(x.g[0]));
-  layoutOverlap(apIt);                                  // 活動不佔欄位,病人卡維持全寬
-  items.filter(x=>isEvent(x.g[0])).forEach(x=>{x.col=0;x.cols=1;});
+  layoutOverlap(apIt);
 
   let blocksHtml='';
-  items.forEach(it=>{
+  apIt.forEach(it=>{
     const group=it.g, a=group[0], slots=group.length;
     const unit=100/it.cols;
     const left=it.col*unit, width=(it.cols-it.col)*unit; // 交疊堆層：往右延伸到底，後欄疊上層
@@ -1917,6 +1917,7 @@ function renderDay(){
       <div id="dayTLHeader" style="padding:5px 4px 5px 2px;font-size:12px;display:flex;align-items:center;justify-content:flex-end">
         <button onclick="toggleDaySidebar()" id="sidebarToggle" style="border:none;background:var(--glow);color:var(--accent);padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;border-radius:7px">隱藏清單 ›</button>
       </div>
+      ${evGroups.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;padding:2px 8px 8px">${evGroups.map(g=>{const a=g[0];const lo=a.appointment_time.slice(0,5);const hi=slotEnd(g[g.length-1].appointment_time);const rng=g.length>=20?'全天':lo+'–'+hi;return `<div onclick="openModal(${a.id})" style="cursor:pointer;background:rgba(90,65,38,.12);border:1.5px dashed rgba(90,65,38,.45);color:#5a4126;border-radius:9px;padding:4px 12px;font-size:12px;font-weight:500">📌 ${a.therapist_id?thCode(a)+'—':''}${esc(a.patient_name)}<span style="opacity:.7;font-weight:300"> ${rng}</span></div>`;}).join('')}</div>`:''}
       <div id="day-scroll" class="cal-scroll" style="display:flex;max-height:calc(100vh - 165px);overflow-y:auto">
         <div style="width:56px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
         <div style="flex:1;position:relative;" onmousedown="calSelStart(event,this,'${ds}')">${rowsHtml}${blocksHtml}${nowLineHtml}</div>
@@ -2077,6 +2078,12 @@ function renderWeek(){
   const CELL_H=SLOT_H;
 
   // 欄位標題
+  const evChipsOf=(ds)=>{
+    const evs=appointments.filter(a=>a.appointment_date===ds&&a.status!=='cancelled'&&isEvent(a)&&(curThId===0||a.therapist_id===curThId||a.therapist_id===null));
+    const seen={},out=[];
+    evs.forEach(a=>{const k=(a.note||'')+'|'+(a.therapist_id==null?'all':a.therapist_id);if(seen[k])return;seen[k]=1;out.push(a);});
+    return out.map(a=>`<span onclick="event.stopPropagation();openModal(${a.id})" style="display:block;margin:3px 2px 0;cursor:pointer;background:rgba(90,65,38,.12);border:1px dashed rgba(90,65,38,.45);color:#5a4126;border-radius:7px;padding:2px 5px;font-size:9px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(a.patient_name)}">📌${a.therapist_id?thCode(a):''} ${esc(a.patient_name)}</span>`).join('');
+  };
   const headers=Array.from({length:7},(_,i)=>{
     const d=new Date(ws);d.setDate(ws.getDate()+i);
     const isToday=fmtDate(d)===todayStr;
@@ -2086,6 +2093,7 @@ function renderWeek(){
       <span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;color:${isToday?'var(--warm)':'var(--ink)'};line-height:1.2">${d.getDate()}</span>
       ${lb.lunar?`<span style="display:block;font-size:10px;color:${lb.hot?'var(--warm)':'rgba(155,138,116,.8)'};margin-top:1px">${lb.lunar}</span>`:'<span style="display:block;font-size:10px"> </span>'}
       ${lb.holiday?`<span style="display:block;font-size:9px;color:var(--warm);font-weight:400">${lb.holiday}</span>`:''}
+      ${evChipsOf(fmtDate(d))}
     </div>`;
   }).join('');
 
@@ -2111,10 +2119,9 @@ function renderWeek(){
     const groups=groupConsecutiveAppts(colAppts);
     const items=groups.map(g=>{const ti=TIMES.indexOf(g[0].appointment_time.slice(0,5));return{g,s:ti,e:ti+g.length};}).filter(x=>x.s>=0);
     const apIt=items.filter(x=>!isEvent(x.g[0]));
-    layoutOverlap(apIt);                                // 活動不佔欄位
-    items.filter(x=>isEvent(x.g[0])).forEach(x=>{x.col=0;x.cols=1;});
+    layoutOverlap(apIt);                                // 活動不進時間軸,改釘日期表頭
     let blocksHtml='';
-    items.forEach(it=>{
+    apIt.forEach(it=>{
       const group=it.g, a=group[0], slots=group.length;
       const unit=100/it.cols;
       const left=it.col*unit, width=(it.cols-it.col)*unit; // 交疊堆層

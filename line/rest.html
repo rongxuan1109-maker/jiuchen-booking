@@ -71,11 +71,10 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
     el.innerHTML = '<div class="card"><h2><span class="tag">近期公告</span></h2><p>目前沒有臨時休診，各治療師依班表正常看診 😊</p></div>';
     return;
   }
-  el.innerHTML = list.map(ev => {
+  // 依實際勾選時段顯示:45格以上=整天;否則列出各連續段
+  list.forEach(ev => {
     ev.times.sort();
-    // 依實際勾選時段顯示:45格以上=整天;否則列出各連續段
-    let range;
-    if (ev.times.length >= 45) range = '整天';
+    if (ev.times.length >= 45) ev.range = '整天';
     else {
       const f = t => t.replace(/^0/,'');
       const segs = []; let st = ev.times[0], pv = ev.times[0];
@@ -84,15 +83,26 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
         if (c !== addMin(pv, 30)) { segs.push(f(st) + '–' + f(addMin(pv, 30))); st = c; }
         pv = c;
       }
-      range = segs.join('、');
+      ev.range = segs.join('、');
     }
+  });
+  // 連續多天且內容相同 → 合併成一張卡(出國/長假)
+  const nextDay = iso => { const [y,m,d] = iso.split('-').map(Number); const t = new Date(y, m-1, d+1); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); };
+  const merged = [];
+  for (const ev of list) {
+    const last = merged[merged.length-1];
+    if (last && last.th === ev.th && last.title === ev.title && last.range === ev.range && nextDay(last.dateEnd) === ev.date) last.dateEnd = ev.date;
+    else merged.push(Object.assign({}, ev, {dateEnd: ev.date}));
+  }
+  el.innerHTML = merged.map(ev => {
     const who = ev.th == null ? '<span class="tag rose">全院休診</span>' : '<span class="tag amber">' + (TH[ev.th] || '治療師') + ' 治療師休診</span>';
     const notes = [];
-    if (range !== '整天') notes.push('其餘時段照常看診');
+    if (ev.range !== '整天') notes.push('其餘時段照常看診');
     if (ev.th != null) notes.push('其他治療師照常看診');
     const extra = notes.length ? '<p class="muted">' + notes.join('・') + '</p>' : '';
-    const ttl = ev.title && !/^(휴|公休|休診|請假)$/.test(ev.title) ? '（' + ev.title + '）' : '';
-    return '<div class="card"><h2>' + who + '</h2><p><span class="date">' + fmtDate(ev.date) + '</span>　' + range + ttl + '</p>' + extra + '</div>';
+    const ttl = ev.title && !/^(公休|休診|請假)$/.test(ev.title) ? '（' + ev.title + '）' : '';
+    const dateTxt = fmtDate(ev.date) + (ev.dateEnd !== ev.date ? ' ～ ' + fmtDate(ev.dateEnd) : '');
+    return '<div class="card"><h2>' + who + '</h2><p><span class="date">' + dateTxt + '</span>　' + ev.range + ttl + '</p>' + extra + '</div>';
   }).join('');
 }).catch(() => {
   document.getElementById('live').innerHTML = '<div class="card"><p class="muted">公告載入失敗，請稍後再試，或直接來電確認。</p></div>';

@@ -3162,6 +3162,7 @@ function evToggleCustom(){window._evCustomOpen=!window._evCustomOpen;_renderEven
 function evSetKind(k){window._evKind=k;_renderEventModal();}
 function openNewEvent(){
   window._evKind='close';
+  window._evSelEnd=null;window._evArmed=false;
   window._evCustomOpen=false;
   window._evEditEid=null;
   window._evTimes=[];
@@ -3182,7 +3183,7 @@ function _renderEventModal(){
   cal+=Array.from({length:dim},(_,i)=>{
     const d=new Date(_evCalY,_evCalM,i+1);
     const ds=fmtDate(d);
-    const isSel=ds===selStr;const isToday=ds===todayStr;const isSun=d.getDay()===0;
+    const isSel=ds>=selStr&&ds<=(window._evSelEnd||selStr);const isToday=ds===todayStr;const isSun=d.getDay()===0;
     const lb=lunarLabel(d);
     return `<div onclick="evPickDay(${_evCalY},${_evCalM},${i+1})" style="text-align:center;padding:5px 2px;cursor:pointer;background:${isSel?'var(--warm)':'transparent'};border:1px solid ${isSel?'var(--warm)':'transparent'}">
       <div style="font-family:'Cormorant Garamond',serif;font-size:15px;color:${isSel?'#f3ede1':isToday?'var(--warm)':isSun?'var(--new-color)':'var(--text)'}">${i+1}</div>
@@ -3223,7 +3224,7 @@ function _renderEventModal(){
         </div>
         <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">${cal}</div>
         <p style="margin-top:10px;font-size:11px;color:var(--warm);text-align:center;font-weight:300">
-          已選：${selStr}
+          已選：${selStr}${window._evSelEnd?` ～ ${window._evSelEnd}（${Math.round((new Date(window._evSelEnd)-new Date(selStr))/86400000)+1} 天）`:''}<span style="color:var(--muted)">　點兩個日期＝連續多天</span>
         </p>
       </div>
 
@@ -3319,6 +3320,7 @@ function naDayPick(y,m,d){
 function openNewEventOn(dateStr){
   window._evEditEid=null;
   window._evKind='close';
+  window._evSelEnd=null;window._evArmed=true;
   window._evCustomOpen=false;
   const d=new Date(dateStr+'T00:00:00');
   _evCalY=d.getFullYear();_evCalM=d.getMonth();
@@ -3341,13 +3343,23 @@ function editEventOpen(id){
   window._evThs=ths.includes(null)?['all']:ths;
   window._evEditEid=eid;
   window._evCustomOpen=false;
+  const _dts=[...new Set(rows.map(r=>r.appointment_date))].sort();
+  if(_dts.length>1){ const l=_dts[0].split('-').map(Number); _evSelY=l[0];_evSelM=l[1]-1;_evSelD=l[2]; window._evSelEnd=_dts[_dts.length-1]; } else { window._evSelEnd=null; }
+  window._evArmed=true;
   _renderEventModal();
   document.getElementById('ev-title').value=a.patient_name||'';
   document.getElementById('ev-note').value=a.service||'';
 }
 function _evCalPrev(){_evCalM--;if(_evCalM<0){_evCalM=11;_evCalY--;}_renderEventModal();}
 function _evCalNext(){_evCalM++;if(_evCalM>11){_evCalM=0;_evCalY++;}_renderEventModal();}
-function evPickDay(y,m,d){_evSelY=y;_evSelM=m;_evSelD=d;_renderEventModal();}
+function evPickDay(y,m,d){
+  const iso=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const startIso=`${_evSelY}-${String(_evSelM+1).padStart(2,'0')}-${String(_evSelD).padStart(2,'0')}`;
+  if(!window._evArmed||window._evSelEnd||iso<startIso){ _evSelY=y;_evSelM=m;_evSelD=d; window._evSelEnd=null; window._evArmed=true; }
+  else if(iso===startIso){ window._evSelEnd=null; }
+  else { window._evSelEnd=iso; }
+  _renderEventModal();
+}
 
 function evToggleTime(t){
   const key=t.replace(':','-');
@@ -3389,14 +3401,19 @@ async function submitNewEvent(){
   const evSt=window._evKind==='memo'?'cancelled':'confirmed';   /* 活動用cancelled=不擋前台預約,純顯示 */
   const isAll=window._evThs.includes('all');
   const thIds=isAll?[null]:window._evThs;
+  const dates=[];
+  { const _s=new Date(date+'T00:00:00'); const _e=new Date((window._evSelEnd||date)+'T00:00:00');
+    for(let _d=new Date(_s); _d<=_e; _d.setDate(_d.getDate()+1)) dates.push(fmtDate(_d)); }
+  if(dates.length>31){showToast('一次最多選 31 天');return;}
   const rows=[];
+  for(const dd of dates){
   for(const t of window._evTimes){
     for(const thId of thIds){
       rows.push({
         therapist_id:thId,
         patient_name:title,
         patient_phone:'',
-        appointment_date:date,
+        appointment_date:dd,
         appointment_time:t+':00',
         type:'new',
         service:note||'',
@@ -3408,13 +3425,15 @@ async function submitNewEvent(){
       });
     }
   }
+  }
   if(window._evEditEid){
     let e0;
     if(window._evEditKind==='memo'){ ({error:e0}=await sb.from('appointments').delete().like('note',`memo:${window._evEditEid}%`)); }
     else { ({error:e0}=await sb.from('appointments').update({status:'cancelled'}).like('note',`event:${window._evEditEid}%`)); }
     if(e0){showToast('更新失敗：'+e0.message);return;}
   }
-  const{error}=await sb.from('appointments').insert(rows);
+  let error=null;
+  for(let _i=0;_i<rows.length&&!error;_i+=400){ ({error}=await sb.from('appointments').insert(rows.slice(_i,_i+400))); }
   if(error){showToast((window._evEditEid?'更新':'新增')+'失敗：'+error.message);return;}
   const _kw=window._evKind==='memo'?'活動':'休診';closeModal();showToast(window._evEditEid?_kw+'已更新':_kw+'已新增');window._evEditEid=null;window._evEditKind=null;_invalidateCache();await loadData();
 }

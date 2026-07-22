@@ -984,8 +984,7 @@ async function integratePatients(){
   const{data:appts,error}=await sb.from('appointments').select('patient_name,patient_phone,appointment_date,note,status').limit(10000);
   if(error){showToast('讀取預約失敗：'+error.message);return;}
   const{data:existing}=await sb.from('patients').select('id,name,phone');
-  const exPhone=new Set((existing||[]).filter(p=>p.phone).map(p=>p.phone));
-  const exName=new Set((existing||[]).map(p=>p.name));
+  const exName=new Set((existing||[]).map(p=>p.name));   // 以姓名認人;同電話不同名=家人,照建
   // 每位病患取最早日期（key=姓名|電話）
   const map={};
   (appts||[]).forEach(a=>{
@@ -996,8 +995,8 @@ async function integratePatients(){
   });
   const toInsert=[];
   Object.values(map).forEach(p=>{
-    if(p.phone){ if(exPhone.has(p.phone))return; exPhone.add(p.phone); }
-    else { if(exName.has(p.name))return; exName.add(p.name); }
+    if(exName.has(p.name))return;
+    exName.add(p.name);
     toInsert.push({name:p.name,phone:p.phone||null,body_parts:[],first_visit:p.first||null,note:null});
   });
   if(!toInsert.length){showToast('沒有需要新增的病患（都已建檔）');renderPatients();return;}
@@ -1015,7 +1014,8 @@ async function upsertPatient(name, phone, date, parts, note){
   if(!name) return;
   let found=null;
   if(phone){
-    const{data}=await sb.from('patients').select('id,phone,first_visit').eq('phone',phone).limit(1);
+    // 電話+姓名都符合才算同一人;同電話不同名=家人共用電話,各自建檔
+    const{data}=await sb.from('patients').select('id,phone,first_visit').eq('phone',phone).eq('name',name).limit(1);
     if(data&&data[0]) found=data[0];
   }
   if(!found){

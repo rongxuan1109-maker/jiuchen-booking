@@ -2081,8 +2081,9 @@ function renderWeek(){
   const evChipsOf=(ds)=>{
     const evs=appointments.filter(a=>a.appointment_date===ds&&a.status!=='cancelled'&&isEvent(a)&&(curThId===0||a.therapist_id===curThId||a.therapist_id===null));
     const seen={},out=[];
-    evs.forEach(a=>{const k=(a.note||'')+'|'+(a.therapist_id==null?'all':a.therapist_id);if(seen[k])return;seen[k]=1;out.push(a);});
-    return out.map(a=>`<span onclick="event.stopPropagation();openModal(${a.id})" style="display:block;margin:3px 2px 0;cursor:pointer;background:#E57373;border:1px dashed rgba(255,255,255,.55);color:#fff;border-radius:7px;padding:2px 5px;font-size:9px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(a.patient_name)}">📌${a.therapist_id?thCode(a):''} ${esc(a.patient_name)}</span>`).join('');
+    evs.forEach(a=>{const k=(a.note||'')+'|'+(a.therapist_id==null?'all':a.therapist_id);if(seen[k]){seen[k].ts.push(a.appointment_time);return;}seen[k]={a,ts:[a.appointment_time]};out.push(seen[k]);});
+    return out.map(o=>{const a=o.a;o.ts.sort();const rng=o.ts.length>=20?'全天':o.ts[0].slice(0,5)+'–'+slotEnd(o.ts[o.ts.length-1]);
+      return `<span onclick="event.stopPropagation();openModal(${a.id})" style="display:block;margin:3px 2px 0;cursor:pointer;background:#E57373;border:1px dashed rgba(255,255,255,.55);color:#fff;border-radius:7px;padding:2px 5px;font-size:9px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(a.patient_name)}（${rng}）">📌${a.therapist_id?thCode(a):''} ${esc(a.patient_name)}${rng!=='全天'?` <span style=\"opacity:.85;font-weight:400\">${rng}</span>`:''}</span>`;}).join('');
   };
   const headers=Array.from({length:7},(_,i)=>{
     const d=new Date(ws);d.setDate(ws.getDate()+i);

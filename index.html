@@ -1075,7 +1075,7 @@ function renderSuccess(el) {
         </svg>
       </div>
       <p class="success-title">預約成功</p>
-      <p class="success-sub">診所將以 LINE 或電話與您確認<br>請保持聯絡暢通</p>
+      <p class="success-sub">可隨時至 LINE 選單「預約資訊」查詢或取消預約<br>預約前一天晚上會傳 LINE 提醒您</p>
       <div class="warm-divider"></div>
       <div class="booking-summary">
         <div class="confirm-row"><span class="confirm-lbl">姓名</span><span class="confirm-val">${state.name}</span></div>
@@ -1083,6 +1083,7 @@ function renderSuccess(el) {
         <div class="confirm-row"><span class="confirm-lbl">治療師</span><span class="confirm-val">${state.therapistId===0?'不指定':state.therapistName+' 治療師'}</span></div>
       </div>
       <div class="btn-row" style="margin-top:22px">
+        <button class="btn" onclick="location.href='https://liff.line.me/2010100504-sH4QFQP5'"><span>查看我的預約</span></button>
         <button class="btn primary" onclick="resetBooking()"><span>再次預約</span></button>
       </div>
     </div>

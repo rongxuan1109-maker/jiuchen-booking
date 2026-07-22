@@ -845,6 +845,7 @@ const _twH={'1/1':'元旦','2/28':'和平','4/4':'清明','4/5':'清明',
             '5/1':'勞動','10/10':'國慶','12/25':'聖誕','12/31':'跨年'};
 function twHoliday(date){return _twH[`${date.getMonth()+1}/${date.getDate()}`]||null;}
 function isEvent(a){return !!(a.note&&a.note.startsWith('event:'));}
+function isMemo(a){return !!(a.note&&a.note.startsWith('memo:'));}   /* 活動(內部行程,不擋預約) */
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 // 某時段(HH:MM)的結束時間 = +30 分
 function slotEnd(t){t=t.slice(0,5);let[h,m]=t.split(':').map(Number);m+=30;if(m>=60){m-=60;h++;}return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;}
@@ -1630,7 +1631,7 @@ function renderDateLabel(){
 function getFiltered(dateStr){
   return appointments.filter(a=>{
     const dm=dateStr?a.appointment_date===dateStr:true;
-    const tm=curThId===0||a.therapist_id===curThId||(isEvent(a)&&a.therapist_id===null);
+    const tm=curThId===0||a.therapist_id===curThId||((isEvent(a)||isMemo(a))&&a.therapist_id===null);
     return dm&&tm;
   });
 }
@@ -1882,8 +1883,8 @@ function renderDay(){
   // 將連續時段合併成群組，並用 Google 風格演算法排重疊
   const groups=groupConsecutiveAppts(dayAppts);
   const items=groups.map(g=>{const ti=TIMES.indexOf(g[0].appointment_time.slice(0,5));return{g,s:ti,e:ti+g.length};}).filter(x=>x.s>=0);
-  const evMap={};                                        // 活動抽離時間軸,同一活動合成一張卡
-  dayAppts.filter(isEvent).forEach(a=>{const k=(a.note||'')+'|'+(a.therapist_id==null?'all':a.therapist_id);(evMap[k]=evMap[k]||{a,ts:[]}).ts.push(a.appointment_time);});
+  const evMap={};                                        // 休診(紅)/活動(黃)抽離時間軸,各合成一張卡
+  getFiltered(ds).filter(a=>(isEvent(a)&&a.status!=='cancelled')||isMemo(a)).forEach(a=>{const k=(a.note||'')+'|'+(a.therapist_id==null?'all':a.therapist_id);(evMap[k]=evMap[k]||{a,ts:[]}).ts.push(a.appointment_time);});
   const evGroups=Object.values(evMap);
   const apIt=items.filter(x=>!isEvent(x.g[0]));
   layoutOverlap(apIt);
@@ -1930,7 +1931,7 @@ function renderDay(){
       <div id="dayTLHeader" style="padding:5px 4px 5px 2px;font-size:12px;display:flex;align-items:center;justify-content:flex-end">
         <button onclick="toggleDaySidebar()" id="sidebarToggle" style="border:none;background:var(--glow);color:var(--accent);padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;border-radius:7px">隱藏清單 ›</button>
       </div>
-      ${evGroups.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;padding:2px 8px 8px">${evGroups.map(o=>{const a=o.a;const rng=evRangeText(o.ts.slice().sort());return `<div onclick="openModal(${a.id})" style="cursor:pointer;background:#E57373;border:1.5px dashed rgba(255,255,255,.55);color:#2b2b2b;border-radius:9px;padding:5px 14px;line-height:1.45"><div style="font-size:12px;font-weight:600">${esc(a.patient_name)}</div><div style="font-size:11px;opacity:.9;font-weight:400">${rng}</div></div>`;}).join('')}</div>`:''}
+      ${evGroups.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;padding:2px 8px 8px">${evGroups.map(o=>{const a=o.a;const rng=evRangeText(o.ts.slice().sort());return `<div onclick="openModal(${a.id})" style="cursor:pointer;background:${isMemo(a)?'#F5CE62':'#E57373'};border:1.5px dashed rgba(255,255,255,.55);color:#2b2b2b;border-radius:9px;padding:5px 14px;line-height:1.45"><div style="font-size:12px;font-weight:600">${esc(a.patient_name)}</div><div style="font-size:11px;opacity:.9;font-weight:400">${rng}</div></div>`;}).join('')}</div>`:''}
       <div id="day-scroll" class="cal-scroll" style="display:flex;max-height:calc(100vh - 165px);overflow-y:auto">
         <div style="width:56px;flex-shrink:0;border-right:1px solid var(--border)">${timeColHtml}</div>
         <div style="flex:1;position:relative;" onmousedown="calSelStart(event,this,'${ds}')">${rowsHtml}${blocksHtml}${nowLineHtml}</div>
@@ -2092,11 +2093,11 @@ function renderWeek(){
 
   // 欄位標題
   const evChipsOf=(ds)=>{
-    const evs=appointments.filter(a=>a.appointment_date===ds&&a.status!=='cancelled'&&isEvent(a)&&(curThId===0||a.therapist_id===curThId||a.therapist_id===null));
+    const evs=appointments.filter(a=>a.appointment_date===ds&&((isEvent(a)&&a.status!=='cancelled')||isMemo(a))&&(curThId===0||a.therapist_id===curThId||a.therapist_id===null));
     const seen={},out=[];
     evs.forEach(a=>{const k=(a.note||'')+'|'+(a.therapist_id==null?'all':a.therapist_id);if(seen[k]){seen[k].ts.push(a.appointment_time);return;}seen[k]={a,ts:[a.appointment_time]};out.push(seen[k]);});
     return out.map(o=>{const a=o.a;o.ts.sort();const rng=evRangeText(o.ts.slice().sort());
-      return `<span onclick="event.stopPropagation();openModal(${a.id})" style="display:block;margin:3px 2px 0;cursor:pointer;background:#E57373;border:1px dashed rgba(255,255,255,.55);color:#2b2b2b;border-radius:7px;padding:3px 5px;line-height:1.4" title="${esc(a.patient_name)}（${rng}）"><span style="display:block;font-size:9px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.patient_name)}</span><span style="display:block;font-size:8.5px;opacity:.9;font-weight:400">${rng}</span></span>`;}).join('');
+      return `<span onclick="event.stopPropagation();openModal(${a.id})" style="display:block;margin:3px 2px 0;cursor:pointer;background:${isMemo(a)?'#F5CE62':'#E57373'};border:1px dashed rgba(255,255,255,.55);color:#2b2b2b;border-radius:7px;padding:3px 5px;line-height:1.4" title="${esc(a.patient_name)}（${rng}）"><span style="display:block;font-size:9px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.patient_name)}</span><span style="display:block;font-size:8.5px;opacity:.9;font-weight:400">${rng}</span></span>`;}).join('');
   };
   const headers=Array.from({length:7},(_,i)=>{
     const d=new Date(ws);d.setDate(ws.getDate()+i);
@@ -2394,19 +2395,19 @@ function openModal(id){
   const a=appointments.find(x=>x.id===id);
   if(!a)return;
   // 活動類型
-  if(isEvent(a)){
+  if(isEvent(a)||isMemo(a)){
     document.getElementById('modalArea').innerHTML=`
     <div class="modal-bg" onclick="guardedCloseModal()">
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-handle"></div>
-        <p class="modal-title">📅 活動詳情</p>
-        <div class="modal-row"><span class="modal-lbl">活動名稱</span><span class="modal-val">${a.patient_name}</span></div>
+        <p class="modal-title">${isMemo(a)?'📋 活動詳情（內部行程）':'⛔ 休診詳情'}</p>
+        <div class="modal-row"><span class="modal-lbl">名稱</span><span class="modal-val">${a.patient_name}</span></div>
         <div class="modal-row"><span class="modal-lbl">日期時間</span><span class="modal-val">${a.appointment_date} ${a.appointment_time.slice(0,5)}</span></div>
         <div class="modal-row"><span class="modal-lbl">治療師</span><span class="modal-val">${a.therapist_name==='全部'?'全部治療師':getThName(a.therapist_id)}</span></div>
         ${a.service?`<div class="modal-row"><span class="modal-lbl">備註</span><span class="modal-val">${a.service}</span></div>`:''}
         <div class="modal-btns">
           <button class="mBtn primary" onclick="editEventOpen(${a.id})">修改</button>
-          <button class="mBtn danger" onclick="deleteEvent(${a.id})">刪除整個活動</button>
+          <button class="mBtn danger" onclick="deleteEvent(${a.id})">刪除</button>
           <button class="mBtn" onclick="closeModal()">關閉</button>
         </div>
       </div>
@@ -3145,7 +3146,23 @@ let _evSelY=new Date().getFullYear(), _evSelM=new Date().getMonth(), _evSelD=new
 let _naCalY=new Date().getFullYear(), _naCalM=new Date().getMonth();
 let _naSelY=new Date().getFullYear(), _naSelM=new Date().getMonth(), _naSelD=new Date().getDate();
 
+const EV_BLK={am:['09:00','09:30','10:00','10:30','11:00'],pm:['15:00','15:30','16:00','16:30','17:00'],eve:['18:00','18:30','19:00','19:30','20:00']};
+function evPickBlock(b){
+  if(b==='all'){
+    const allOn=TIMES.every(t=>window._evTimes.includes(t));
+    window._evTimes=allOn?[]:TIMES.slice();
+  } else {
+    const on=EV_BLK[b].every(t=>window._evTimes.includes(t));
+    if(on) window._evTimes=window._evTimes.filter(t=>!EV_BLK[b].includes(t));
+    else EV_BLK[b].forEach(t=>{if(!window._evTimes.includes(t))window._evTimes.push(t);});
+  }
+  _renderEventModal();
+}
+function evToggleCustom(){window._evCustomOpen=!window._evCustomOpen;_renderEventModal();}
+function evSetKind(k){window._evKind=k;_renderEventModal();}
 function openNewEvent(){
+  window._evKind='close';
+  window._evCustomOpen=false;
   window._evEditEid=null;
   window._evTimes=[];
   window._evThs=[];
@@ -3185,8 +3202,15 @@ function _renderEventModal(){
       <p class="modal-title">${window._evEditEid?'修改':'新增'}活動/休診</p>
 
       <div style="margin-bottom:14px">
-        <label class="field-lbl">活動名稱 *</label>
-        <input id="ev-title" style="${fieldBox()}" placeholder="例如：員工會議、公休" value="${titleVal}">
+        <label class="field-lbl">類型 *</label>
+        <div style="display:flex;gap:10px">
+          <div onclick="evSetKind('close')" style="flex:1;text-align:center;padding:9px;cursor:pointer;border-radius:12px;${window._evKind!=='memo'?'background:#E57373;color:#fff;font-weight:900;border:1.5px solid #E57373':'background:#fff;color:var(--muted);border:1px solid var(--border)'}">休診<div style="font-size:10px;font-weight:400;margin-top:2px">擋預約・上公告</div></div>
+          <div onclick="evSetKind('memo')" style="flex:1;text-align:center;padding:9px;cursor:pointer;border-radius:12px;${window._evKind==='memo'?'background:#E9A13B;color:#fff;font-weight:900;border:1.5px solid #E9A13B':'background:#fff;color:var(--muted);border:1px solid var(--border)'}">活動<div style="font-size:10px;font-weight:400;margin-top:2px">內部行程・不擋預約</div></div>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="field-lbl">名稱 *</label>
+        <input id="ev-title" style="${fieldBox()}" placeholder="${window._evKind==='memo'?'例如：員工會議、教育訓練':'例如：公休、請假、颱風休診'}" value="${titleVal}">
       </div>
 
       <!-- 行事曆選日期 -->
@@ -3203,16 +3227,32 @@ function _renderEventModal(){
         </p>
       </div>
 
-      <!-- 時段 -->
+      <!-- 時段:像排班一樣用診次勾選,特殊需求展開自訂 -->
       <label class="field-lbl">封鎖時段 *</label>
       <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button onclick="evSelectAllTimes()" style="padding:5px 12px;border:1px solid var(--warm);background:var(--warm);color:#f3ede1;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">全選</button>
-          <button onclick="evClearTimes()" style="padding:5px 12px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">清除</button>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px" id="ev-times-wrap">
-          ${TIMES.map(t=>`<div onclick="evToggleTime('${t}')" id="ev-t-${t.replace(':','-')}" style="${partTagStyle(window._evTimes.includes(t))}">${t}</div>`).join('')}
-        </div>
+        ${(()=>{
+          const allOn=TIMES.every(t=>window._evTimes.includes(t));
+          const blkOn=b=>EV_BLK[b].every(t=>window._evTimes.includes(t));
+          const inBlks=t=>EV_BLK.am.includes(t)||EV_BLK.pm.includes(t)||EV_BLK.eve.includes(t);
+          const hasOdd=!allOn&&window._evTimes.some(t=>!inBlks(t));
+          const showCustom=(window._evKind==='memo'&&window._evCustomOpen)||hasOdd;
+          return `<div style="display:flex;gap:6px;flex-wrap:wrap">
+            <div onclick="evPickBlock('all')" style="${partTagStyle(allOn)}">整天</div>
+            <div onclick="evPickBlock('am')" style="${partTagStyle(blkOn('am'))}">早診 9–11</div>
+            <div onclick="evPickBlock('pm')" style="${partTagStyle(blkOn('pm'))}">午診 15–17</div>
+            <div onclick="evPickBlock('eve')" style="${partTagStyle(blkOn('eve'))}">晚診 18–20</div>
+            ${window._evKind==='memo'?`<div onclick="evToggleCustom()" style="${partTagStyle(showCustom)}">自訂時段 ${showCustom?'▴':'▾'}</div>`:''}
+          </div>
+          <div id="ev-custom-wrap" style="display:${showCustom?'block':'none'};margin-top:12px;border-top:1px dashed var(--border);padding-top:12px">
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <button onclick="evSelectAllTimes()" style="padding:5px 12px;border:1px solid var(--warm);background:var(--warm);color:#f3ede1;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">全選</button>
+              <button onclick="evClearTimes()" style="padding:5px 12px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">清除</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px" id="ev-times-wrap">
+              ${TIMES.map(t=>`<div onclick="evToggleTime('${t}')" id="ev-t-${t.replace(':','-')}" style="${partTagStyle(window._evTimes.includes(t))}">${t}</div>`).join('')}
+            </div>
+          </div>`;
+        })()}
       </div>
 
       <!-- 治療師 -->
@@ -3278,6 +3318,8 @@ function naDayPick(y,m,d){
 
 function openNewEventOn(dateStr){
   window._evEditEid=null;
+  window._evKind='close';
+  window._evCustomOpen=false;
   const d=new Date(dateStr+'T00:00:00');
   _evCalY=d.getFullYear();_evCalM=d.getMonth();
   _evSelY=d.getFullYear();_evSelM=d.getMonth();_evSelD=d.getDate();
@@ -3286,9 +3328,11 @@ function openNewEventOn(dateStr){
 }
 function editEventOpen(id){
   const a=appointments.find(x=>x.id===id); if(!a)return;
-  const m=(a.note||'').match(/event:(\w+)/); if(!m)return;
-  const eid=m[1];
-  const rows=appointments.filter(x=>(x.note||'').includes('event:'+eid)&&x.status!=='cancelled');
+  const m=(a.note||'').match(/(event|memo):(\w+)/); if(!m)return;
+  const eid=m[2];
+  window._evKind=m[1]==='memo'?'memo':'close';
+  window._evEditKind=m[1];
+  const rows=appointments.filter(x=>(x.note||'').includes(m[1]+':'+eid)&&(m[1]==='memo'||x.status!=='cancelled'));
   const d=new Date(a.appointment_date+'T00:00:00');
   _evCalY=d.getFullYear();_evCalM=d.getMonth();
   _evSelY=d.getFullYear();_evSelM=d.getMonth();_evSelD=d.getDate();
@@ -3296,6 +3340,7 @@ function editEventOpen(id){
   const ths=[...new Set(rows.map(r=>r.therapist_id))];
   window._evThs=ths.includes(null)?['all']:ths;
   window._evEditEid=eid;
+  window._evCustomOpen=false;
   _renderEventModal();
   document.getElementById('ev-title').value=a.patient_name||'';
   document.getElementById('ev-note').value=a.service||'';
@@ -3340,6 +3385,8 @@ async function submitNewEvent(){
   if(!title||!date||!window._evTimes.length){showToast('請填寫名稱並選擇時段');return;}
   if(!window._evThs.length){showToast('請選擇影響治療師（或按「全部」）');return;}
   const eventId=_genEventId();
+  const evPfx=window._evKind==='memo'?'memo':'event';
+  const evSt=window._evKind==='memo'?'cancelled':'confirmed';   /* 活動用cancelled=不擋前台預約,純顯示 */
   const isAll=window._evThs.includes('all');
   const thIds=isAll?[null]:window._evThs;
   const rows=[];
@@ -3354,30 +3401,34 @@ async function submitNewEvent(){
         type:'new',
         service:note||'',
         symptoms:'',
-        note:`event:${eventId}`,
-        status:'confirmed',
+        note:`${evPfx}:${eventId}`,
+        status:evSt,
         line_user_id:null,
         therapist_name:isAll?'全部':(therapists.find(x=>x.id===thId)?.name||null)
       });
     }
   }
   if(window._evEditEid){
-    const{error:e0}=await sb.from('appointments').update({status:'cancelled'}).like('note',`event:${window._evEditEid}%`);
+    let e0;
+    if(window._evEditKind==='memo'){ ({error:e0}=await sb.from('appointments').delete().like('note',`memo:${window._evEditEid}%`)); }
+    else { ({error:e0}=await sb.from('appointments').update({status:'cancelled'}).like('note',`event:${window._evEditEid}%`)); }
     if(e0){showToast('更新失敗：'+e0.message);return;}
   }
   const{error}=await sb.from('appointments').insert(rows);
   if(error){showToast((window._evEditEid?'更新':'新增')+'失敗：'+error.message);return;}
-  closeModal();showToast(window._evEditEid?'活動已更新':'活動已新增');window._evEditEid=null;_invalidateCache();await loadData();
+  const _kw=window._evKind==='memo'?'活動':'休診';closeModal();showToast(window._evEditEid?_kw+'已更新':_kw+'已新增');window._evEditEid=null;window._evEditKind=null;_invalidateCache();await loadData();
 }
 
 async function deleteEvent(id){
   const a=appointments.find(x=>x.id===id);
   if(!a)return;
   if(!confirm('確定刪除此活動？所有相關時段都會一併移除'))return;
-  const m=(a.note||'').match(/event:(\w+)/);
+  const m=(a.note||'').match(/(event|memo):(\w+)/);
   let error;
-  if(m){
-    ({error}=await sb.from('appointments').update({status:'cancelled'}).like('note',`event:${m[1]}%`));
+  if(m&&m[1]==='memo'){
+    ({error}=await sb.from('appointments').delete().like('note',`memo:${m[2]}%`));
+  } else if(m){
+    ({error}=await sb.from('appointments').update({status:'cancelled'}).like('note',`event:${m[2]}%`));
   } else {
     ({error}=await sb.from('appointments').update({status:'cancelled'}).eq('id',id));
   }

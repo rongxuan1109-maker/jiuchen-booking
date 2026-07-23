@@ -59,13 +59,13 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
     if (!g[k]) g[k] = {date: r.appointment_date, th: r.therapist_id, title: r.title, times: []};
     g[k].times.push(r.appointment_time.slice(0,5));
   });
-  const list = Object.values(g).sort((a,b) => a.date.localeCompare(b.date));
-  if (!list.length) {
+  if (!Object.keys(g).length) {
     el.innerHTML = '<div class="card"><h2><span class="tag">近期公告</span></h2><p>目前沒有臨時休診，各治療師依班表正常看診 😊</p></div>';
     return;
   }
-  // 依實際勾選時段顯示:45格以上=整天;否則列出各連續段
-  list.forEach(ev => {
+  // 每組算出時段文字:45格=整天;否則列出各連續段
+  const entries = Object.values(g);
+  entries.forEach(ev => {
     ev.times.sort();
     if (ev.times.length >= 45) ev.range = '整天';
     else {
@@ -79,23 +79,37 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
       ev.range = segs.join('、');
     }
   });
-  // 連續多天且內容相同 → 合併成一張卡(出國/長假)
   const nextDay = iso => { const [y,m,d] = iso.split('-').map(Number); const t = new Date(y, m-1, d+1); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); };
-  const merged = [];
-  for (const ev of list) {
-    const last = merged[merged.length-1];
+  // ① 先按治療師→標題→日期排,讓同一人的連續日子相鄰
+  entries.sort((a,b) => ('' + (a.th ?? '~')).localeCompare('' + (b.th ?? '~')) || (a.title||'').localeCompare(b.title||'') || a.date.localeCompare(b.date));
+  // ② 連續多天(同人+同標題+同時段)→併成一個日期區間
+  const ranges = [];
+  for (const ev of entries) {
+    const last = ranges[ranges.length-1];
     if (last && last.th === ev.th && last.title === ev.title && last.range === ev.range && nextDay(last.dateEnd) === ev.date) last.dateEnd = ev.date;
-    else merged.push(Object.assign({}, ev, {dateEnd: ev.date}));
+    else ranges.push({th: ev.th, title: ev.title, range: ev.range, date: ev.date, dateEnd: ev.date});
   }
-  el.innerHTML = merged.map(ev => {
-    const who = ev.th == null ? '<span class="tag rose">全院休診</span>' : '<span class="tag amber">' + (TH[ev.th] || '治療師') + ' 治療師休診</span>';
+  // ③ 多位治療師、同區間同內容→併成一張卡(列多個名字)
+  const cards = [];
+  for (const r of ranges) {
+    const same = cards.find(c => c.date === r.date && c.dateEnd === r.dateEnd && c.title === r.title && c.range === r.range && (c.ths[0]==null)===(r.th==null));
+    if (same) same.ths.push(r.th);
+    else cards.push({date: r.date, dateEnd: r.dateEnd, title: r.title, range: r.range, ths: [r.th]});
+  }
+  cards.sort((a,b) => a.date.localeCompare(b.date) || a.dateEnd.localeCompare(b.dateEnd));
+  const NTH = Object.keys(TH).length;
+  el.innerHTML = cards.map(c => {
+    const allClosure = c.ths[0] == null || c.ths.length >= NTH;   // 全院 或 全員都休=視為全院
+    const who = allClosure
+      ? '<span class="tag rose">全院休診</span>'
+      : '<span class="tag amber">' + c.ths.map(id => TH[id] || '治療師').join('、') + ' 治療師休診</span>';
     const notes = [];
-    if (ev.range !== '整天') notes.push('其餘時段照常看診');
-    if (ev.th != null) notes.push('其他治療師照常看診');
+    if (c.range !== '整天') notes.push('其餘時段照常看診');
+    if (!allClosure) notes.push('其他治療師照常看診');
     const extra = notes.length ? '<p class="muted">' + notes.join('・') + '</p>' : '';
-    const ttl = ev.title && !/^(公休|休診|請假)$/.test(ev.title) ? '（' + ev.title + '）' : '';
-    const dateTxt = fmtDate(ev.date) + (ev.dateEnd !== ev.date ? ' ～ ' + fmtDate(ev.dateEnd) : '');
-    return '<div class="card"><h2>' + who + '</h2><p><span class="date">' + dateTxt + '</span>　' + ev.range + ttl + '</p>' + extra + '</div>';
+    const ttl = c.title && !/^(公休|休診|請假)$/.test(c.title) ? '（' + c.title + '）' : '';
+    const dateTxt = fmtDate(c.date) + (c.dateEnd !== c.date ? ' ～ ' + fmtDate(c.dateEnd) : '');
+    return '<div class="card"><h2>' + who + '</h2><p><span class="date">' + dateTxt + '</span>　' + c.range + ttl + '</p>' + extra + '</div>';
   }).join('');
 }).catch(() => {
   document.getElementById('live').innerHTML = '<div class="card"><p class="muted">公告載入失敗，請稍後再試，或直接來電確認。</p></div>';

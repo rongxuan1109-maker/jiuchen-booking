@@ -24,7 +24,7 @@
   .b-rest{background:#E8556D;}
   .b-open{background:#3E9B4F;}
   .dline{font-weight:900;font-size:15px;color:#2E3644;margin:12px 0 4px;}
-  .sline{margin:3px 0;font-size:14px;color:#3A3226;}
+  .sline{margin:3px 0;font-size:14px;color:#3A3226;white-space:nowrap;}
   a.tel{color:#E8556D;font-weight:900;text-decoration:none;}
   .foot{text-align:center;margin-top:22px;font-size:13px;color:#8a7a5c;}
   .loading{text-align:center;padding:18px;color:#8a7a5c;font-size:14px;}
@@ -37,6 +37,9 @@
     <div class="title-today" id="today"></div>
   </div>
 
+  <div style="text-align:center;color:#8a7a5c;font-size:12px;margin:2px 4px 14px;line-height:1.9">
+    <b style="color:#6b5a45">診次時間</b>　早診 09:00–11:00　午診 15:00–17:00　晚診 18:00–20:00
+  </div>
   <div id="live"><div class="card"><div class="loading">查詢最新休診公告中…</div></div></div>
 
   <div class="foot" style="line-height:2">
@@ -89,7 +92,7 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
     const cset = new Set(); closed.forEach(sh=>sh.slots.forEach(x=>cset.add(x)));
     const shiftBased = closed.length>0 && [...set].every(x=>cset.has(x));
     if (shiftBased) {
-      const range = closed.map(sh=>sh.label+' '+sh.disp).join('、');
+      const range = closed.map(sh=>sh.label).join('、');   // 只用診次名,時間看上方對照表
       const openShifts = SHIFTS.filter(sh=>!closed.includes(sh));
       return {range, openText: openShifts.map(sh=>sh.label).join('、')};
     }

@@ -150,7 +150,7 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
     }).join('');
     // 其他治療師照常:每張卡都放(全院除外),低調灰字,不用休/開徽章
     const foot = !c.all ? '<p class="muted" style="margin-top:9px">🙂 其他治療師照常看診</p>' : '';
-    return '<div class="card">'+who+lines+foot+'</div>';
+    return '<div class="card"><h2>'+who+'</h2>'+lines+foot+'</div>';
   }).join('');
 }).catch(() => {
   document.getElementById('live').innerHTML = '<div class="card"><p class="muted">公告載入失敗，請稍後再試，或直接來電確認。</p></div>';

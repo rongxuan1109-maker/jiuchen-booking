@@ -130,12 +130,12 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
   cards.forEach(c => c.items.sort((a,b)=>a.date.localeCompare(b.date)||a.dateEnd.localeCompare(b.dateEnd)));
   cards.sort((a,b)=>a.items[0].date.localeCompare(b.items[0].date));
   el.innerHTML = cards.map(c => {
-    // 治療師=彩色粗體字(不填色塊),紅綠專留給休/開狀態
-    let hcolor, label;
-    if (c.all) { hcolor = '#E8556D'; label = '全院休診'; }
-    else if (c.ths.length >= 2) { hcolor = '#E8556D'; label = c.ths.map(id=>TH[id]||'治療師').join('、') + ' 治療師休診'; }
-    else { hcolor = TH_COLOR[c.ths[0]] || '#c08a52'; label = (TH[c.ths[0]]||'治療師') + ' 治療師休診'; }
-    const who = '<div style="font-size:16px;font-weight:900;color:'+hcolor+';margin-bottom:2px">'+label+'</div>';
+    // 治療師=小色點(身分,低調)+深色名字;紅綠專留給休/開狀態
+    let dot, label;
+    if (c.all) { dot = '#E8556D'; label = '全院休診'; }
+    else if (c.ths.length >= 2) { dot = '#E8556D'; label = c.ths.map(id=>TH[id]||'治療師').join('、') + ' 治療師休診'; }
+    else { dot = TH_COLOR[c.ths[0]] || '#c08a52'; label = (TH[c.ths[0]]||'治療師') + ' 治療師休診'; }
+    const who = '<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span style="width:11px;height:11px;border-radius:50%;background:'+dot+';flex-shrink:0"></span><span style="font-size:16px;font-weight:900;color:#2E3644">'+label+'</span></div>';
     const lines = c.items.map(it => {
       const ttl = it.title && !/^(公休|休診|請假)$/.test(it.title) ? '<span style="color:#8a7a5c;font-weight:400;font-size:13px">（'+it.title+'）</span>' : '';
       const dateTxt = fmtDate(it.date) + (it.dateEnd!==it.date ? ' ～ '+fmtDate(it.dateEnd) : '');

@@ -72,20 +72,30 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
   }
   // 每組算出時段文字:45格=整天;否則列出各連續段
   const entries = Object.values(g);
-  entries.forEach(ev => {
-    ev.times.sort();
-    if (ev.times.length >= 45) ev.range = '整天';
-    else {
-      const f = t => t.replace(/^0/,'');
-      const segs = []; let st = ev.times[0], pv = ev.times[0];
-      for (let k = 1; k <= ev.times.length; k++) {
-        const c = ev.times[k];
-        if (c !== addMin(pv, 30)) { segs.push(f(st) + '–' + f(addMin(pv, 30))); st = c; }
-        pv = c;
-      }
-      ev.range = segs.join('、');
+  const SHIFTS = [
+    {label:'早診', disp:'9:00–11:30', slots:['09:00','09:30','10:00','10:30','11:00']},
+    {label:'午診', disp:'15:00–17:30', slots:['15:00','15:30','16:00','16:30','17:00']},
+    {label:'晚診', disp:'18:00–20:30', slots:['18:00','18:30','19:00','19:30','20:00']},
+  ];
+  function describe(times) {
+    if (times.length >= 45) return {range:'整天', open:''};
+    const set = new Set(times.map(t=>t.slice(0,5)));
+    const closed = SHIFTS.filter(sh => sh.slots.every(x=>set.has(x)));
+    const cset = new Set(); closed.forEach(sh=>sh.slots.forEach(x=>cset.add(x)));
+    const shiftBased = closed.length>0 && [...set].every(x=>cset.has(x));
+    if (shiftBased) {
+      const range = closed.map(sh=>sh.label+' '+sh.disp).join('、');
+      const openShifts = SHIFTS.filter(sh=>!closed.includes(sh));
+      const open = openShifts.length ? openShifts.map(sh=>sh.label).join('、')+'正常' : '';
+      return {range, open};
     }
-  });
+    // 非整診次(自訂時段)→原始連續段+其餘照常
+    const arr = [...set].sort(); const f = t => t.replace(/^0/,'');
+    const segs = []; let st = arr[0], pv = arr[0];
+    for (let k=1;k<=arr.length;k++){const c=arr[k];if(c!==addMin(pv,30)){segs.push(f(st)+'–'+f(addMin(pv,30)));st=c;}pv=c;}
+    return {range: segs.join('、'), open:'其餘時段照常'};
+  }
+  entries.forEach(ev => { ev.times.sort(); const d = describe(ev.times); ev.range = d.range; ev.open = d.open; });
   const nextDay = iso => { const [y,m,d] = iso.split('-').map(Number); const t = new Date(y, m-1, d+1); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); };
   // ① 先按治療師→標題→日期排,讓同一人的連續日子相鄰
   entries.sort((a,b) => ('' + (a.th ?? '~')).localeCompare('' + (b.th ?? '~')) || (a.title||'').localeCompare(b.title||'') || a.date.localeCompare(b.date));
@@ -94,14 +104,14 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
   for (const ev of entries) {
     const last = ranges[ranges.length-1];
     if (last && last.th === ev.th && last.title === ev.title && last.range === ev.range && nextDay(last.dateEnd) === ev.date) last.dateEnd = ev.date;
-    else ranges.push({th: ev.th, title: ev.title, range: ev.range, date: ev.date, dateEnd: ev.date});
+    else ranges.push({th: ev.th, title: ev.title, range: ev.range, open: ev.open, date: ev.date, dateEnd: ev.date});
   }
 // ③ 多位治療師、同區間同內容→視為同一筆休診(集合治療師名字)
   const leaves = [];
   for (const r of ranges) {
     const same = leaves.find(l => l.date===r.date && l.dateEnd===r.dateEnd && l.title===r.title && l.range===r.range && (l.ths[0]==null)===(r.th==null));
     if (same) same.ths.push(r.th);
-    else leaves.push({date:r.date, dateEnd:r.dateEnd, title:r.title, range:r.range, ths:[r.th]});
+    else leaves.push({date:r.date, dateEnd:r.dateEnd, title:r.title, range:r.range, open:r.open, ths:[r.th]});
   }
   const NTH = Object.keys(TH).length;
   const setKey = ths => (ths[0]==null || ths.length>=NTH) ? 'ALL' : ths.slice().sort((a,b)=>a-b).join(',');
@@ -110,7 +120,7 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
   for (const lv of leaves) {
     const k = setKey(lv.ths);
     if (!cardMap[k]) cardMap[k] = { ths: lv.ths, all: k==='ALL', items: [] };
-    cardMap[k].items.push({date:lv.date, dateEnd:lv.dateEnd, title:lv.title, range:lv.range});
+    cardMap[k].items.push({date:lv.date, dateEnd:lv.dateEnd, title:lv.title, range:lv.range, open:lv.open});
   }
   const cards = Object.values(cardMap);
   cards.forEach(c => c.items.sort((a,b)=>a.date.localeCompare(b.date)||a.dateEnd.localeCompare(b.dateEnd)));
@@ -129,7 +139,7 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
     const lines = c.items.map(it => {
       const ttl = it.title && !/^(公休|休診|請假)$/.test(it.title) ? '（'+it.title+'）' : '';
       const dateTxt = fmtDate(it.date) + (it.dateEnd!==it.date ? ' ～ '+fmtDate(it.dateEnd) : '');
-      const partial = it.range!=='整天' ? '<span style="color:#a08b76">・其餘時段照常</span>' : '';
+      const partial = it.open ? '<span style="color:#a08b76">・'+it.open+'</span>' : '';
       return '<p style="margin:5px 0"><span class="date">'+dateTxt+'</span>　'+it.range+ttl+partial+'</p>';
     }).join('');
     const foot = !c.all ? '<p class="muted" style="margin-top:6px">其他治療師照常看診</p>' : '';

@@ -149,7 +149,7 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
       return '<p class="dline">'+dateTxt+' '+ttl+'</p><p class="sline"><span class="b b-rest">休</span>'+it.range+openPart+'</p>';
     }).join('');
     // 其他治療師照常:每張卡都放(全院除外),低調灰字,不用休/開徽章
-    const foot = !c.all ? '<p class="muted" style="margin-top:9px">🙂 其他治療師照常看診</p>' : '';
+    const foot = !c.all ? '<p style="text-align:center;color:#8a7a5c;font-size:12.5px;margin:12px -20px -18px;padding:11px 0;border-top:1px solid #f0e6da;border-radius:0 0 17px 17px">🙂 其他治療師照常看診</p>' : '';
     return '<div class="card"><h2>'+who+'</h2>'+lines+foot+'</div>';
   }).join('');
 }).catch(() => {

@@ -145,8 +145,10 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
       const openPart = it.openText ? '　<span class="b b-open">開</span>'+it.openText : '';
       return '<p class="dline">'+dateTxt+' '+ttl+'</p><p class="sline"><span class="b b-rest">休</span>'+it.range+openPart+'</p>';
     }).join('');
-    return '<div class="card">'+who+lines+'</div>';
-  }).join('') + '<p style="text-align:center;color:#8a7a5c;font-size:12.5px;margin:16px 6px 0;line-height:1.8">上方未列出的治療師與時段，皆正常看診 🙂</p>';
+    // 其他治療師照常:每張卡都放(全院除外),低調灰字,不用休/開徽章
+    const foot = !c.all ? '<p class="muted" style="margin-top:9px">🙂 其他治療師照常看診</p>' : '';
+    return '<div class="card">'+who+lines+foot+'</div>';
+  }).join('');
 }).catch(() => {
   document.getElementById('live').innerHTML = '<div class="card"><p class="muted">公告載入失敗，請稍後再試，或直接來電確認。</p></div>';
 });

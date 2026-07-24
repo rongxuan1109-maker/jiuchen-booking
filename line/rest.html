@@ -8,8 +8,10 @@
   body{margin:0;background:#FFF6DF;font-family:'Noto Sans TC',-apple-system,sans-serif;color:#2E3644;}
   .wrap{max-width:560px;margin:0 auto;padding:18px 16px 40px;}
   .title{background:#fff;border:3px solid #2E3644;border-radius:20px;padding:16px 22px;font-size:22px;
-    font-weight:900;box-shadow:4px 4px 0 #E8556D;display:flex;align-items:center;gap:8px;}
+    font-weight:900;box-shadow:4px 4px 0 #E8556D;}
+  .title-row{display:flex;align-items:center;gap:8px;}
   .title small{color:#E8556D;font-weight:900;}
+  .title-today{font-size:13px;font-weight:400;color:#a08b76;margin-top:7px;}
   .card{background:#fff;border:3px solid #2E3644;border-radius:20px;padding:18px 20px;margin-top:16px;box-shadow:4px 4px 0 rgba(46,54,68,.15);}
   .card h2{margin:0 0 8px;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .card p{margin:6px 0;font-size:15px;line-height:1.8;}
@@ -25,7 +27,10 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="title">🕐 休診資訊 <small>!!</small><span style="margin-left:auto;background:#FFE3E8;color:#E8556D;border-radius:99px;padding:3px 12px;font-size:12px;font-weight:900;white-space:nowrap">週日固定公休</span></div>
+  <div class="title">
+    <div class="title-row">🕐 休診資訊 <small>!!</small><span style="margin-left:auto;background:#FFE3E8;color:#E8556D;border-radius:99px;padding:3px 12px;font-size:12px;font-weight:900;white-space:nowrap">週日固定公休</span></div>
+    <div class="title-today" id="today"></div>
+  </div>
 
   <div id="live"><div class="card"><div class="loading">查詢最新休診公告中…</div></div></div>
 
@@ -42,6 +47,7 @@ const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
 const TH = {1:'徐若椏', 2:'劉恕愷', 3:'張維庭', 4:'江榮軒'};
 const TH_COLOR = {1:'#E8710A', 2:'#0B8043', 3:'#616161', 4:'#039BE5'};   // 跟後台一致:椏橘 愷綠 維灰 軒藍
 const WD = '日一二三四五六';
+(function(){ var n=new Date(); var el=document.getElementById('today'); if(el) el.textContent='今天 '+(n.getMonth()+1)+'/'+n.getDate()+'（'+WD[n.getDay()]+'）'; })();
 
 function addMin(hm, m){ const [h, mm] = hm.split(':').map(Number); const t = h*60+mm+m; return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }
 function fmtDate(iso){ const [y,m,d] = iso.split('-').map(Number); return m+'/'+d+'（'+WD[new Date(y,m-1,d).getDay()]+'）'; }

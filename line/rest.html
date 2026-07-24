@@ -40,6 +40,7 @@
 const SB = 'https://vmkdawpukwpsifqguljy.supabase.co';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZta2Rhd3B1a3dwc2lmcWd1bGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjE2MDUsImV4cCI6MjA5NTQzNzYwNX0.hq8rbjKe3NOUhV1sbViBtuQLSzQuWCnK1_4QSrCy2xM';
 const TH = {1:'徐若椏', 2:'劉恕愷', 3:'張維庭', 4:'江榮軒'};
+const TH_COLOR = {1:'#E8710A', 2:'#0B8043', 3:'#616161', 4:'#039BE5'};   // 跟後台一致:椏橘 愷綠 維灰 軒藍
 const WD = '日一二三四五六';
 
 function addMin(hm, m){ const [h, mm] = hm.split(':').map(Number); const t = h*60+mm+m; return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }
@@ -109,9 +110,15 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
   cards.forEach(c => c.items.sort((a,b)=>a.date.localeCompare(b.date)||a.dateEnd.localeCompare(b.dateEnd)));
   cards.sort((a,b)=>a.items[0].date.localeCompare(b.items[0].date));
   el.innerHTML = cards.map(c => {
-    const who = c.all
-      ? '<span class="tag rose">全院休診</span>'
-      : '<span class="tag amber">' + c.ths.map(id=>TH[id]||'治療師').join('、') + ' 治療師休診</span>';
+    let who;
+    if (c.all) {
+      who = '<span class="tag rose">全院休診</span>';
+    } else {
+      const names = c.ths.map(id=>TH[id]||'治療師').join('、');
+      const cols = c.ths.map(id=>TH_COLOR[id]||'#c08a52');
+      const bg = cols.length===1 ? cols[0] : 'linear-gradient(90deg,'+cols.join(',')+')';
+      who = '<span class="tag" style="background:'+bg+'">' + names + ' 治療師休診</span>';
+    }
     const lines = c.items.map(it => {
       const ttl = it.title && !/^(公休|休診|請假)$/.test(it.title) ? '（'+it.title+'）' : '';
       const dateTxt = fmtDate(it.date) + (it.dateEnd!==it.date ? ' ～ '+fmtDate(it.dateEnd) : '');

@@ -57,7 +57,7 @@ fetch(SB + '/rest/v1/rpc/get_closures', {
   rows.forEach(r => {
     const k = r.appointment_date + '|' + (r.therapist_id ?? 'all') + '|' + r.title;
     if (!g[k]) g[k] = {date: r.appointment_date, th: r.therapist_id, title: r.title, times: []};
-    g[k].times.push(r.appointment_time.slice(0,5));
+    (r.times || []).forEach(t => g[k].times.push(t));   // get_closures 已彙總:每列一個 times 陣列
   });
   if (!Object.keys(g).length) {
     el.innerHTML = '<div class="card"><h2><span class="tag">近期公告</span></h2><p>目前沒有臨時休診，各治療師依班表正常看診 😊</p></div>';

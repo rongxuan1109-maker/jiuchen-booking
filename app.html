@@ -113,6 +113,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
 .week-day .cnt{font-size:12px;color:var(--sub)}
 .week-day .bars{display:flex;gap:4px;flex-wrap:wrap}
 .wbar{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--glow);color:var(--warm-d)}
+.wbar .wdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:0.5px}
 .wbar.ev{background:rgba(138,127,176,.15);color:var(--event)}
 .wbar.today{background:var(--warm);color:#fff}
 
@@ -461,7 +462,7 @@ async function renderWeek(){
     const ds=fmtDate(d); const dayRows=byDay[ds]||[];
     const groups=groupAppts(dayRows); const events=dayRows.filter(isEvent);
     const isT=ds===tstr;
-    let bars=groups.slice(0,8).map(g=>`<span class="wbar ${isT?'today':''}">${g.length*30>30?'●':''}${esc((g[0].patient_name||'').slice(0,4))}</span>`).join('');
+    let bars=groups.slice(0,8).map(g=>`<span class="wbar ${isT?'today':''}"><span class="wdot" style="background:${thColor(g[0].therapist_id)}"></span>${esc((g[0].patient_name||'').slice(0,4))}</span>`).join('');
     events.forEach(e=>bars+=`<span class="wbar ev">🚫${e.therapist_id==null?'全院':esc(thName(e.therapist_id).slice(0,3))}</span>`);
     if(!groups.length&&!events.length) bars='<span class="cnt">—</span>';
     return `<div class="week-day" onclick="jumpDay('${ds}')">

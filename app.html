@@ -622,6 +622,8 @@ function refreshTimeChips(){
 }
 async function saveForm(){
   const btn=$('saveBtn'); if(btn){btn.textContent='儲存中…';btn.style.opacity=.6;}
+  // 儲存前直接從畫面欄位再同步一次（iOS 自動帶入/某些輸入法不觸發 oninput，會漏同步）
+  [['fName','name'],['fPhone','phone'],['fBirth','birth'],['fArea','area'],['fDur','dur'],['fPrev','prevpt'],['fNote','note']].forEach(([id,k])=>{ const el=$(id); if(el)form[k]=el.value; });
   const name=(form.name||'').trim(); const phone=(form.phone||'').trim();
   if(!name){ toast('請填姓名'); resetSaveBtn(); return; }
   if(form.type==='new'&&!phone){ toast('初診請填電話'); resetSaveBtn(); return; }

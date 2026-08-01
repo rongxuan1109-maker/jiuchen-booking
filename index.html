@@ -1052,6 +1052,20 @@ async function submitBooking() {
         render();
         return;
       }
+      // 防亂約：同一人同一天已有預約
+      if ((error.message||'').includes('DAILY_LIMIT')) {
+        alert('你這一天已經有一筆預約囉 😊\n如需調整時間，請到 LINE 選單「預約資訊」查詢或取消原本的預約，\n或直接在聊天室留言，我們幫你安排。');
+        btn.disabled = false;
+        btn.innerHTML = '<span>確認送出</span>';
+        return;
+      }
+      // 防亂約：同一電話未來有效預約已達上限
+      if ((error.message||'').includes('BOOKING_LIMIT')) {
+        alert('你目前已有 3 筆預約囉 😊\n如需安排更多時段，歡迎直接在聊天室留言，我們幫你處理。');
+        btn.disabled = false;
+        btn.innerHTML = '<span>確認送出</span>';
+        return;
+      }
       throw error;
     }
 

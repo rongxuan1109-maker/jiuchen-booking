@@ -603,7 +603,8 @@ async function openEdit(id){
   const ds=fmtDate(curDate); const rows=await loadDay(ds);
   const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id))||rows.filter(x=>x.id===id);
   const a=g[0]; const dur=g.length*30;
-  form={mode:'edit',id:a.id,groupIds:g.map(x=>x.id),date:a.appointment_date,time:hm(a.appointment_time),end:addMin(hm(a.appointment_time),dur),therapist_id:a.therapist_id==null?'':a.therapist_id,type:a.type||'return',name:a.patient_name||'',phone:a.patient_phone||'',note:a.note||'',birth:'',area:a.symptoms||'',dur:'',prevpt:''};
+  const keepLine=(g.find(x=>x.line_user_id)||{}).line_user_id||null;   // 編輯前先留住LINE綁定,重建新列要帶回去
+  form={mode:'edit',id:a.id,groupIds:g.map(x=>x.id),line_user_id:keepLine,date:a.appointment_date,time:hm(a.appointment_time),end:addMin(hm(a.appointment_time),dur),therapist_id:a.therapist_id==null?'':a.therapist_id,type:a.type||'return',name:a.patient_name||'',phone:a.patient_phone||'',note:a.note||'',birth:'',area:a.symptoms||'',dur:'',prevpt:''};
   renderForm();
 }
 /* 30分鐘間隔時間下拉（iOS的time輸入會無視step,改用select原生轉盤強制半點） */
@@ -712,7 +713,7 @@ async function saveForm(){
       // 先刪舊組（改 cancelled），再重建（簡單可靠）
       await sb.from('appointments').update({status:'cancelled',line_user_id:null}).in('id',form.groupIds);
     }
-    const rows=times.map((t,i)=>({therapist_id:thId,patient_name:name,patient_phone:phone,appointment_date:form.date,appointment_time:t+':00',type:form.type,service:i===0?svc:svc+'（續）',symptoms:form.area||'',note:form.note||'',status:'confirmed',therapist_name:thId==null?'不指定':thName(thId)}));
+    const rows=times.map((t,i)=>({therapist_id:thId,patient_name:name,patient_phone:phone,appointment_date:form.date,appointment_time:t+':00',type:form.type,service:i===0?svc:svc+'（續）',symptoms:form.area||'',note:form.note||'',status:'confirmed',line_user_id:form.line_user_id||null,therapist_name:thId==null?'不指定':thName(thId)}));
     const {data:ins,error}=await sb.from('appointments').insert(rows).select();
     if(error)throw error;
     if(form.type==='new'&&ins&&ins[0]){
@@ -731,7 +732,7 @@ let rs={};
 async function openReschedule(id){
   const ds=fmtDate(curDate); const rows=await loadDay(ds);
   const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id)); if(!g)return;
-  rs={groupIds:g.map(x=>x.id),len:g.length,therapist_id:g[0].therapist_id,name:g[0].patient_name,phone:g[0].patient_phone,type:g[0].type,service:g[0].service,note:g[0].note,symptoms:g[0].symptoms,date:g[0].appointment_date,time:hm(g[0].appointment_time),calM:parseDate(g[0].appointment_date)};
+  rs={groupIds:g.map(x=>x.id),len:g.length,line_user_id:(g.find(x=>x.line_user_id)||{}).line_user_id||null,therapist_id:g[0].therapist_id,name:g[0].patient_name,phone:g[0].patient_phone,type:g[0].type,service:g[0].service,note:g[0].note,symptoms:g[0].symptoms,date:g[0].appointment_date,time:hm(g[0].appointment_time),calM:parseDate(g[0].appointment_date)};
   renderReschedule();
 }
 function renderReschedule(){
@@ -752,7 +753,7 @@ async function saveReschedule(){
   const times=[rs.time]; if(rs.len===2)times.push(addMin(rs.time,30));
   try{
     await sb.from('appointments').update({status:'cancelled',line_user_id:null}).in('id',rs.groupIds);
-    const rows=times.map((t,i)=>({therapist_id:rs.therapist_id,patient_name:rs.name,patient_phone:rs.phone,appointment_date:rs.date,appointment_time:t+':00',type:rs.type,service:i===0?rs.service:rs.service,symptoms:rs.symptoms||'',note:rs.note||'',status:'confirmed',therapist_name:rs.therapist_id==null?'不指定':thName(rs.therapist_id)}));
+    const rows=times.map((t,i)=>({therapist_id:rs.therapist_id,patient_name:rs.name,patient_phone:rs.phone,appointment_date:rs.date,appointment_time:t+':00',type:rs.type,service:i===0?rs.service:rs.service,symptoms:rs.symptoms||'',note:rs.note||'',status:'confirmed',line_user_id:rs.line_user_id||null,therapist_name:rs.therapist_id==null?'不指定':thName(rs.therapist_id)}));
     const {error}=await sb.from('appointments').insert(rows); if(error)throw error;
     invalidate(); closeSheet(); toast('已改時間'); curDate=parseDate(rs.date); switchTab('today');
   }catch(e){ toast('改時間失敗：'+(e.message||e)); }

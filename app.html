@@ -156,9 +156,12 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
 .grid2 .field{min-width:0}
 .grid2 .field input{min-width:0;-webkit-appearance:none;appearance:none}
 .field input[type=date]{text-align:left}
-.type-groups{display:flex;gap:10px;flex-wrap:wrap}
-.tgroup{display:flex;gap:8px;align-items:center;padding:5px 8px;border:1.5px dashed var(--line);border-radius:14px}
-.tg-cap{font-size:11px;color:var(--sub);margin-right:2px}
+.type-groups{display:flex;gap:8px;flex-wrap:nowrap}
+.tgroup{flex:1;min-width:0;display:flex;gap:6px;align-items:center;padding:4px 6px;border:1.5px dashed var(--line);border-radius:14px}
+.tg-cap{font-size:11px;color:var(--sub);flex-shrink:0}
+.tgroup .chip{flex:1;min-width:0;text-align:center;padding:9px 4px;white-space:nowrap}
+.field>input[type=date]{width:100%;display:block;-webkit-appearance:none;appearance:none}
+input[type=date]::-webkit-date-and-time-value{text-align:left}
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .sheet-actions{display:flex;gap:10px;margin-top:20px}
 .btn{flex:1;padding:15px;border-radius:14px;font-size:16px;font-weight:600;text-align:center}

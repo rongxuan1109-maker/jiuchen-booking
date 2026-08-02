@@ -156,6 +156,9 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
 .grid2 .field{min-width:0}
 .grid2 .field input{min-width:0;-webkit-appearance:none;appearance:none}
 .field input[type=date]{text-align:left}
+.type-groups{display:flex;gap:10px;flex-wrap:wrap}
+.tgroup{display:flex;gap:8px;align-items:center;padding:5px 8px;border:1.5px dashed var(--line);border-radius:14px}
+.tg-cap{font-size:11px;color:var(--sub);margin-right:2px}
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .sheet-actions{display:flex;gap:10px;margin-top:20px}
 .btn{flex:1;padding:15px;border-radius:14px;font-size:16px;font-weight:600;text-align:center}
@@ -570,46 +573,67 @@ async function deleteEvent(eid){
 /* ============ 新增 / 編輯 表單 ============ */
 let form={}; // 暫存表單狀態
 function openNew(dateStr,time){
-  form={mode:'new',id:null,date:dateStr||fmtDate(curDate),time:time||'',therapist_id:'',type:'return',service:SERVICES[1].id,name:'',phone:'',note:'',birth:'',area:'',dur:'',prevpt:''};
+  form={mode:'new',id:null,date:dateStr||fmtDate(curDate),time:time||'',end:time?addMin(time,60):'',therapist_id:'',type:'return',name:'',phone:'',note:'',birth:'',area:'',dur:'',prevpt:''};
   renderForm();
 }
 async function openEdit(id){
   const ds=fmtDate(curDate); const rows=await loadDay(ds);
   const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id))||rows.filter(x=>x.id===id);
   const a=g[0]; const dur=g.length*30;
-  form={mode:'edit',id:a.id,groupIds:g.map(x=>x.id),date:a.appointment_date,time:hm(a.appointment_time),therapist_id:a.therapist_id==null?'':a.therapist_id,type:a.type||'return',service:dur===60?'s60':'s30',name:a.patient_name||'',phone:a.patient_phone||'',note:a.note||'',birth:'',area:a.symptoms||'',dur:'',prevpt:''};
+  form={mode:'edit',id:a.id,groupIds:g.map(x=>x.id),date:a.appointment_date,time:hm(a.appointment_time),end:addMin(hm(a.appointment_time),dur),therapist_id:a.therapist_id==null?'':a.therapist_id,type:a.type||'return',name:a.patient_name||'',phone:a.patient_phone||'',note:a.note||'',birth:'',area:a.symptoms||'',dur:'',prevpt:''};
   renderForm();
 }
 /* 30分鐘間隔時間下拉（iOS的time輸入會無視step,改用select原生轉盤強制半點） */
-function timeSel(id,val,onchange){
+function timeSel(id,val,onchange,fromMin,toMin){
   const opts=[];
-  for(let m=6*60;m<=21*60+30;m+=30){ opts.push(minT(m)); }
+  for(let m=(fromMin!=null?fromMin:6*60);m<=(toMin!=null?toMin:21*60+30);m+=30){ opts.push(minT(m)); }
   if(val&&!opts.includes(val))opts.push(val),opts.sort();
   return `<select id="${id}" onchange="${onchange}"><option value="" ${!val?'selected':''}>選時間</option>${opts.map(t=>`<option value="${t}" ${t===val?'selected':''}>${t}</option>`).join('')}</select>`;
 }
+/* 類型選擇：預約(複診/初診)與標記(活動/休診)分兩個區塊 */
+let sheetMode='';
+function typeGroups(cur){
+  return `<div class="type-groups">
+    <div class="tgroup"><span class="tg-cap">預約</span>
+      <div class="chip ${cur==='return'?'on':''}" onclick="switchToAppt('return')">複診</div>
+      <div class="chip ${cur==='new'?'on':''}" onclick="switchToAppt('new')">初診</div></div>
+    <div class="tgroup"><span class="tg-cap">標記</span>
+      <div class="chip ${cur==='act'?'on':''}" onclick="openEventKind('act')">活動</div>
+      <div class="chip ${cur==='rest'?'on':''}" onclick="openEventKind('rest')">休診</div></div>
+  </div>`;
+}
+function switchToAppt(t){
+  if(sheetMode!=='appt') openNew((evf&&evf.date)||fmtDate(curDate),'');
+  form.type=t;
+  if(form.time) form.end=addMin(form.time, t==='new'?30:60);
+  renderForm();
+}
+function onStartChange(v){
+  const prevDur=(form.time&&form.end)?(tMin(form.end)-tMin(form.time)):(form.type==='new'?30:60);
+  form.time=v;
+  form.end=v?minT(Math.min(22*60, tMin(v)+Math.max(30,prevDur))):'';
+  renderForm();
+}
 function renderForm(){
+  sheetMode='appt';
   const isNew=form.type==='new';
+  const endFrom=form.time?tMin(form.time)+30:6*60+30;
   openSheet(`<h2>${form.mode==='edit'?'編輯預約':'新增預約'}</h2><div class="sub">${form.date}${form.time?' · '+form.time:''}</div>
-    <div class="field"><label>類型</label><div class="chips">
-      <div class="chip ${form.type==='return'?'on':''}" onclick="setType('return')">複診</div>
-      <div class="chip ${form.type==='new'?'on':''}" onclick="setType('new')">初診</div>
-      <div class="chip" onclick="openEventKind('act')">活動</div>
-      <div class="chip" onclick="openEventKind('rest')">休診</div></div></div>
-    ${!isNew?`<div class="field"><label>服務時長</label><div class="chips">
-      ${SERVICES.map(s=>`<div class="chip ${form.service===s.id?'on':''}" onclick="setService('${s.id}')">${s.name.replace('複診','')}<br>${s.min}分</div>`).join('')}</div></div>`:''}
-    <div class="field"><label>治療師</label><select id="fTh" onchange="form.therapist_id=this.value">
-      <option value="" ${form.therapist_id===''?'selected':''}>不指定</option>
-      ${therapists.map(t=>`<option value="${t.id}" ${String(form.therapist_id)===String(t.id)?'selected':''}>${esc(t.name)}</option>`).join('')}
-    </select></div>
-    <div class="grid2">
-      <div class="field"><label>日期</label><input id="fDate" type="date" value="${form.date}" onchange="form.date=this.value"></div>
-      <div class="field"><label>開始時間</label>${timeSel('fTime',form.time,"form.time=this.value;updEndHint()")}</div>
-    </div>
-    <div class="sub" id="endHint" style="margin:-6px 2px 12px"></div>
     <div class="grid2">
       <div class="field"><label>姓名 *</label><input id="fName" value="${esc(form.name)}" oninput="form.name=this.value"></div>
       <div class="field"><label>電話${isNew?' *':''}</label><input id="fPhone" type="tel" value="${esc(form.phone)}" oninput="form.phone=this.value"></div>
     </div>
+    <div class="field"><label>類型</label>${typeGroups(form.type)}</div>
+    <div class="field"><label>治療師</label><select id="fTh" onchange="form.therapist_id=this.value">
+      <option value="" ${form.therapist_id===''?'selected':''}>不指定</option>
+      ${therapists.map(t=>`<option value="${t.id}" ${String(form.therapist_id)===String(t.id)?'selected':''}>${esc(t.name)}</option>`).join('')}
+    </select></div>
+    <div class="field"><label>日期</label><input id="fDate" type="date" value="${form.date}" onchange="form.date=this.value"></div>
+    <div class="grid2">
+      <div class="field"><label>開始時間</label>${timeSel('fTime',form.time,"onStartChange(this.value)")}</div>
+      <div class="field"><label>結束時間</label>${timeSel('fEnd',form.end||'',"form.end=this.value;updEndHint()",endFrom,22*60)}</div>
+    </div>
+    <div class="sub" id="endHint" style="margin:-6px 2px 12px"></div>
     ${isNew?`<div class="field"><label>生日</label><input id="fBirth" type="date" value="${form.birth}" oninput="form.birth=this.value"></div>
       <div class="field"><label>不適部位</label><input id="fArea" value="${esc(form.area)}" oninput="form.area=this.value" placeholder="如：下背、右肩"></div>
       <div class="field"><label>不適多久</label><input id="fDur" value="${esc(form.dur)}" oninput="form.dur=this.value" placeholder="如：兩週、一個月"></div>
@@ -618,25 +642,27 @@ function renderForm(){
     <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn primary" id="saveBtn" onclick="saveForm()">${form.mode==='edit'?'儲存變更':'確認新增'}</button></div>`);
   updEndHint();
 }
-function setType(t){ form.type=t; if(t==='new')form.service='s30'; renderForm(); }
-function setService(s){ form.service=s; renderForm(); }
 function updEndHint(){
   const el=$('endHint'); if(!el)return;
-  const dur=form.service==='s60'?60:30;
-  el.textContent=form.time?`${form.time} – ${addMin(form.time,dur)}（${dur} 分鐘）`:'';
+  if(form.time&&form.end){
+    const d=tMin(form.end)-tMin(form.time);
+    el.textContent=d>0?`${form.time} – ${form.end}（${d} 分鐘）`:'⚠️ 結束時間要晚於開始時間';
+  }else el.textContent='';
 }
 async function saveForm(){
   const btn=$('saveBtn'); if(btn){btn.textContent='儲存中…';btn.style.opacity=.6;}
   // 儲存前直接從畫面欄位再同步一次（iOS 自動帶入/某些輸入法不觸發 oninput，會漏同步）
-  [['fName','name'],['fPhone','phone'],['fBirth','birth'],['fArea','area'],['fDur','dur'],['fPrev','prevpt'],['fNote','note'],['fDate','date'],['fTime','time']].forEach(([id,k])=>{ const el=$(id); if(el&&el.value)form[k]=el.value; });
+  [['fName','name'],['fPhone','phone'],['fBirth','birth'],['fArea','area'],['fDur','dur'],['fPrev','prevpt'],['fNote','note'],['fDate','date'],['fTime','time'],['fEnd','end']].forEach(([id,k])=>{ const el=$(id); if(el&&el.value)form[k]=el.value; });
   const name=(form.name||'').trim(); const phone=(form.phone||'').trim();
   if(!name){ toast('請填姓名'); resetSaveBtn(); return; }
   if(form.type==='new'&&!phone){ toast('初診請填電話'); resetSaveBtn(); return; }
-  if(!form.time){ toast('請選時間'); resetSaveBtn(); return; }
+  if(!form.time){ toast('請選開始時間'); resetSaveBtn(); return; }
+  if(!form.end||tMin(form.end)<=tMin(form.time)){ toast('請選結束時間'); resetSaveBtn(); return; }
   const thId=form.therapist_id===''?null:parseInt(form.therapist_id);
-  const need=form.service==='s60'?2:1;
-  const times=[form.time]; if(need===2)times.push(addMin(form.time,30));
-  const svc=form.type==='new'?'初診評估':(SERVICES.find(s=>s.id===form.service)||{}).name;
+  const need=Math.round((tMin(form.end)-tMin(form.time))/30);
+  if(need>8){ toast('單筆最長 4 小時'); resetSaveBtn(); return; }
+  const times=[]; for(let i=0;i<need;i++)times.push(addMin(form.time,i*30));
+  const svc=form.type==='new'?'初診評估':(need===1?SERVICES[0].name:need===2?SERVICES[1].name:'複診 '+(need*30)+'分');
   // 撞號提醒（同治療師時間區間重疊 confirmed，排除自己；自由時間可能非整半點，用區間判斷）
   if(thId!=null){
     const dayRows=await loadDay(form.date,true);
@@ -703,22 +729,21 @@ async function saveReschedule(){
 /* ============ 公休/活動 ============ */
 let evf={};
 function openEventKind(kind){
-  evf={kind,date:form.date||fmtDate(curDate),dateEnd:form.date||fmtDate(curDate),therapist_id:'',slots:new Set(),whole:true,name:''};
+  if(sheetMode==='event'){ evf.kind=kind; renderEventSheet(); return; }
+  evf={kind,date:(form&&form.date)||fmtDate(curDate),dateEnd:(form&&form.date)||fmtDate(curDate),therapist_id:'',timeStart:'09:00',timeEnd:'21:00',name:''};
   renderEventSheet();
 }
 function openEventSheet(){
-  evf={kind:'rest',date:fmtDate(curDate),dateEnd:fmtDate(curDate),therapist_id:'',slots:new Set(),whole:true,name:''};
+  evf={kind:'rest',date:fmtDate(curDate),dateEnd:fmtDate(curDate),therapist_id:'',timeStart:'09:00',timeEnd:'21:00',name:''};
   renderEventSheet();
 }
 function renderEventSheet(){
+  sheetMode='event';
   const isAct=evf.kind==='act';
-  const slotChips=ALL_SLOTS.map(t=>`<div class="chip ${evf.slots.has(t)?'on':''}" onclick="toggleEvSlot('${t}')">${t}</div>`).join('');
   const multi=evf.dateEnd&&evf.dateEnd!==evf.date;
   openSheet(`<h2>${isAct?'標記活動':'標記休診'}</h2><div class="sub">把時段標成不可約，會顯示在班表與 LINE 休診公告</div>
-    <div class="field"><label>類型</label><div class="chips">
-      <div class="chip ${isAct?'on':''}" onclick="evf.kind='act';renderEventSheet()">活動</div>
-      <div class="chip ${!isAct?'on':''}" onclick="evf.kind='rest';renderEventSheet()">休診</div></div></div>
     <div class="field"><label>名稱</label><input id="evName" value="${esc(evf.name||'')}" oninput="evf.name=this.value" placeholder="${isAct?'如：上課、教育訓練':'如：國定假日、出國'}"></div>
+    <div class="field"><label>類型</label>${typeGroups(evf.kind)}</div>
     <div class="field"><label>對象</label><select onchange="evf.therapist_id=this.value">
       <option value="" ${evf.therapist_id===''?'selected':''}>全院</option>${therapists.map(t=>`<option value="${t.id}" ${String(evf.therapist_id)===String(t.id)?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
     <div class="grid2">
@@ -726,20 +751,21 @@ function renderEventSheet(){
       <div class="field"><label>結束日期</label><input type="date" value="${evf.dateEnd}" min="${evf.date}" onchange="evf.dateEnd=this.value;renderEventSheet()"></div>
     </div>
     ${multi?`<div class="sub" style="margin:-6px 2px 12px">${evf.date} ～ ${evf.dateEnd}，每天都會標記</div>`:''}
-    <div class="field"><label>範圍</label><div class="chips">
-      <div class="chip ${evf.whole?'on':''}" onclick="evf.whole=true;renderEventSheet()">整天</div>
-      <div class="chip ${!evf.whole?'on':''}" onclick="evf.whole=false;renderEventSheet()">選特定時段</div></div></div>
-    ${!evf.whole?`<div class="field"><label>時段（可多選）</label><div class="chips">${slotChips}</div></div>`:''}
+    <div class="grid2">
+      <div class="field"><label>開始時間</label>${timeSel('evT1',evf.timeStart,"evf.timeStart=this.value;renderEventSheet()",9*60,20*60+30)}</div>
+      <div class="field"><label>結束時間</label>${timeSel('evT2',evf.timeEnd,"evf.timeEnd=this.value",tMin(evf.timeStart)+30,21*60)}</div>
+    </div>
+    <div class="sub" style="margin:-6px 2px 12px">整天＝09:00 – 21:00（預設）</div>
     <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn primary" onclick="saveEvent()">確認標記</button></div>`);
 }
-function toggleEvSlot(t){ if(evf.slots.has(t))evf.slots.delete(t); else evf.slots.add(t); renderEventSheet(); }
 async function saveEvent(){
   const el=$('evName'); if(el)evf.name=el.value;
   const name=(evf.name||'').trim()||(evf.kind==='act'?'活動':'休診');
   const eid='ev'+Date.now().toString(36);
   const thId=evf.therapist_id===''?null:parseInt(evf.therapist_id);
-  const times=evf.whole?ALL_SLOTS:[...evf.slots];
-  if(!times.length){ toast('請選至少一個時段'); return; }
+  if(!evf.timeEnd||tMin(evf.timeEnd)<=tMin(evf.timeStart)){ toast('結束時間要晚於開始時間'); return; }
+  const times=ALL_SLOTS.filter(t=>tMin(t)>=tMin(evf.timeStart)&&tMin(t)<tMin(evf.timeEnd));
+  if(!times.length){ toast('這個時間範圍內沒有診所時段'); return; }
   let d=parseDate(evf.date); const end=parseDate(evf.dateEnd||evf.date);
   if(end<d){ toast('結束日期不能早於開始日期'); return; }
   if((end-d)/86400000>60){ toast('一次最多標 60 天'); return; }

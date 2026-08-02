@@ -153,6 +153,9 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
 .chip.on{border-color:var(--warm);background:var(--glow);color:var(--warm-d);font-weight:600}
 .chip.dis{opacity:.38}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2 .field{min-width:0}
+.grid2 .field input{min-width:0;-webkit-appearance:none;appearance:none}
+.field input[type=date]{text-align:left}
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .sheet-actions{display:flex;gap:10px;margin-top:20px}
 .btn{flex:1;padding:15px;border-radius:14px;font-size:16px;font-weight:600;text-align:center}
@@ -577,12 +580,21 @@ async function openEdit(id){
   form={mode:'edit',id:a.id,groupIds:g.map(x=>x.id),date:a.appointment_date,time:hm(a.appointment_time),therapist_id:a.therapist_id==null?'':a.therapist_id,type:a.type||'return',service:dur===60?'s60':'s30',name:a.patient_name||'',phone:a.patient_phone||'',note:a.note||'',birth:'',area:a.symptoms||'',dur:'',prevpt:''};
   renderForm();
 }
+/* 30分鐘間隔時間下拉（iOS的time輸入會無視step,改用select原生轉盤強制半點） */
+function timeSel(id,val,onchange){
+  const opts=[];
+  for(let m=6*60;m<=21*60+30;m+=30){ opts.push(minT(m)); }
+  if(val&&!opts.includes(val))opts.push(val),opts.sort();
+  return `<select id="${id}" onchange="${onchange}"><option value="" ${!val?'selected':''}>選時間</option>${opts.map(t=>`<option value="${t}" ${t===val?'selected':''}>${t}</option>`).join('')}</select>`;
+}
 function renderForm(){
   const isNew=form.type==='new';
   openSheet(`<h2>${form.mode==='edit'?'編輯預約':'新增預約'}</h2><div class="sub">${form.date}${form.time?' · '+form.time:''}</div>
     <div class="field"><label>類型</label><div class="chips">
       <div class="chip ${form.type==='return'?'on':''}" onclick="setType('return')">複診</div>
-      <div class="chip ${form.type==='new'?'on':''}" onclick="setType('new')">初診</div></div></div>
+      <div class="chip ${form.type==='new'?'on':''}" onclick="setType('new')">初診</div>
+      <div class="chip" onclick="openEventKind('act')">活動</div>
+      <div class="chip" onclick="openEventKind('rest')">休診</div></div></div>
     ${!isNew?`<div class="field"><label>服務時長</label><div class="chips">
       ${SERVICES.map(s=>`<div class="chip ${form.service===s.id?'on':''}" onclick="setService('${s.id}')">${s.name.replace('複診','')}<br>${s.min}分</div>`).join('')}</div></div>`:''}
     <div class="field"><label>治療師</label><select id="fTh" onchange="form.therapist_id=this.value">
@@ -591,7 +603,7 @@ function renderForm(){
     </select></div>
     <div class="grid2">
       <div class="field"><label>日期</label><input id="fDate" type="date" value="${form.date}" onchange="form.date=this.value"></div>
-      <div class="field"><label>開始時間</label><input id="fTime" type="time" step="300" value="${form.time}" onchange="form.time=this.value;updEndHint()"></div>
+      <div class="field"><label>開始時間</label>${timeSel('fTime',form.time,"form.time=this.value;updEndHint()")}</div>
     </div>
     <div class="sub" id="endHint" style="margin:-6px 2px 12px"></div>
     <div class="grid2">
@@ -672,7 +684,7 @@ function renderReschedule(){
     cal+=`<div class="mc-d ${past?'dis':''} ${sel?'sel':''} ${ds===t&&!sel?'today':''}" ${past?'':`onclick="rs.date='${ds}';rs.time='';renderReschedule()"`}>${d}</div>`; }
   cal+='</div>';
   openSheet(`<h2>改時間</h2><div class="sub">${esc(rs.name)} · ${rs.len*30} 分鐘</div>${cal}
-    <div class="field" style="margin-top:16px"><label>新開始時間（${rs.date}）</label><input id="rsTime" type="time" step="300" value="${rs.time||''}" onchange="rs.time=this.value"></div>
+    <div class="field" style="margin-top:16px"><label>新開始時間（${rs.date}）</label>${timeSel('rsTime',rs.time||'',"rs.time=this.value")}</div>
     <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn primary" onclick="saveReschedule()">確認改時間</button></div>`);
 }
 function rsMonth(n){ rs.calM=new Date(rs.calM.getFullYear(),rs.calM.getMonth()+n,1); renderReschedule(); }
@@ -690,34 +702,56 @@ async function saveReschedule(){
 
 /* ============ 公休/活動 ============ */
 let evf={};
+function openEventKind(kind){
+  evf={kind,date:form.date||fmtDate(curDate),dateEnd:form.date||fmtDate(curDate),therapist_id:'',slots:new Set(),whole:true,name:''};
+  renderEventSheet();
+}
 function openEventSheet(){
-  evf={date:fmtDate(curDate),therapist_id:'',slots:new Set(),whole:true};
+  evf={kind:'rest',date:fmtDate(curDate),dateEnd:fmtDate(curDate),therapist_id:'',slots:new Set(),whole:true,name:''};
   renderEventSheet();
 }
 function renderEventSheet(){
+  const isAct=evf.kind==='act';
   const slotChips=ALL_SLOTS.map(t=>`<div class="chip ${evf.slots.has(t)?'on':''}" onclick="toggleEvSlot('${t}')">${t}</div>`).join('');
-  openSheet(`<h2>標記公休／活動</h2><div class="sub">在班表上把某時段標成不可約</div>
-    <div class="field"><label>日期</label><input type="date" value="${evf.date}" onchange="evf.date=this.value"></div>
+  const multi=evf.dateEnd&&evf.dateEnd!==evf.date;
+  openSheet(`<h2>${isAct?'標記活動':'標記休診'}</h2><div class="sub">把時段標成不可約，會顯示在班表與 LINE 休診公告</div>
+    <div class="field"><label>類型</label><div class="chips">
+      <div class="chip ${isAct?'on':''}" onclick="evf.kind='act';renderEventSheet()">活動</div>
+      <div class="chip ${!isAct?'on':''}" onclick="evf.kind='rest';renderEventSheet()">休診</div></div></div>
+    <div class="field"><label>名稱</label><input id="evName" value="${esc(evf.name||'')}" oninput="evf.name=this.value" placeholder="${isAct?'如：上課、教育訓練':'如：國定假日、出國'}"></div>
     <div class="field"><label>對象</label><select onchange="evf.therapist_id=this.value">
-      <option value="">全院公休</option>${therapists.map(t=>`<option value="${t.id}">${esc(t.name)} 請假</option>`).join('')}</select></div>
+      <option value="" ${evf.therapist_id===''?'selected':''}>全院</option>${therapists.map(t=>`<option value="${t.id}" ${String(evf.therapist_id)===String(t.id)?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
+    <div class="grid2">
+      <div class="field"><label>開始日期</label><input type="date" value="${evf.date}" onchange="evf.date=this.value;if(!evf.dateEnd||evf.dateEnd<evf.date)evf.dateEnd=evf.date;renderEventSheet()"></div>
+      <div class="field"><label>結束日期</label><input type="date" value="${evf.dateEnd}" min="${evf.date}" onchange="evf.dateEnd=this.value;renderEventSheet()"></div>
+    </div>
+    ${multi?`<div class="sub" style="margin:-6px 2px 12px">${evf.date} ～ ${evf.dateEnd}，每天都會標記</div>`:''}
     <div class="field"><label>範圍</label><div class="chips">
       <div class="chip ${evf.whole?'on':''}" onclick="evf.whole=true;renderEventSheet()">整天</div>
       <div class="chip ${!evf.whole?'on':''}" onclick="evf.whole=false;renderEventSheet()">選特定時段</div></div></div>
     ${!evf.whole?`<div class="field"><label>時段（可多選）</label><div class="chips">${slotChips}</div></div>`:''}
-    <div class="field"><label>名稱</label><input id="evName" placeholder="如：國定假日、教育訓練、請假"></div>
     <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn primary" onclick="saveEvent()">確認標記</button></div>`);
 }
 function toggleEvSlot(t){ if(evf.slots.has(t))evf.slots.delete(t); else evf.slots.add(t); renderEventSheet(); }
 async function saveEvent(){
-  const name=($('evName')&&$('evName').value.trim())||'公休';
+  const el=$('evName'); if(el)evf.name=el.value;
+  const name=(evf.name||'').trim()||(evf.kind==='act'?'活動':'休診');
   const eid='ev'+Date.now().toString(36);
   const thId=evf.therapist_id===''?null:parseInt(evf.therapist_id);
   const times=evf.whole?ALL_SLOTS:[...evf.slots];
   if(!times.length){ toast('請選至少一個時段'); return; }
-  const rows=times.map(t=>({therapist_id:thId,patient_name:name,patient_phone:'',appointment_date:evf.date,appointment_time:t+':00',type:'return',service:name,note:'event:'+eid,status:'cancelled',therapist_name:thId==null?'全部':thName(thId)}));
+  let d=parseDate(evf.date); const end=parseDate(evf.dateEnd||evf.date);
+  if(end<d){ toast('結束日期不能早於開始日期'); return; }
+  if((end-d)/86400000>60){ toast('一次最多標 60 天'); return; }
+  const rows=[];
+  while(d<=end){
+    const ds=fmtDate(d);
+    times.forEach(t=>rows.push({therapist_id:thId,patient_name:name,patient_phone:'',appointment_date:ds,appointment_time:t+':00',type:'return',service:name,note:'event:'+eid,status:'cancelled',therapist_name:thId==null?'全部':thName(thId)}));
+    d.setDate(d.getDate()+1);
+  }
   const {error}=await sb.from('appointments').insert(rows);
   if(error){ toast('標記失敗：'+error.message); return; }
-  invalidate(evf.date); closeSheet(); toast('已標記公休/活動'); curDate=parseDate(evf.date); if(curTab==='today')renderToday(); else if(curTab==='week')renderWeek();
+  invalidate(); closeSheet(); toast('已標記'+name); curDate=parseDate(evf.date); if(curTab==='today')renderToday(); else if(curTab==='week')renderWeek();
 }
 
 /* ============ 病人詳情 ============ */

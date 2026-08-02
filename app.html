@@ -615,7 +615,15 @@ function onStartChange(v){
   const prevDur=(form.time&&form.end)?(tMin(form.end)-tMin(form.time)):(form.type==='new'?30:60);
   form.time=v;
   form.end=v?minT(Math.min(22*60, tMin(v)+Math.max(30,prevDur))):'';
-  renderForm();
+  // 只就地更新結束時間選項，不重畫整張表單（避免畫面跳動）
+  const end=$('fEnd');
+  if(end){
+    const from=v?tMin(v)+30:6*60+30;
+    let html=`<option value="" ${!form.end?'selected':''}>選時間</option>`;
+    for(let m=from;m<=22*60;m+=30){ const t=minT(m); html+=`<option value="${t}" ${t===form.end?'selected':''}>${t}</option>`; }
+    end.innerHTML=html;
+  }
+  updEndHint();
 }
 function renderForm(){
   sheetMode='appt';
@@ -754,11 +762,21 @@ function renderEventSheet(){
     </div>
     ${multi?`<div class="sub" style="margin:-6px 2px 12px">${evf.date} ～ ${evf.dateEnd}，每天都會標記</div>`:''}
     <div class="grid2">
-      <div class="field"><label>開始時間</label>${timeSel('evT1',evf.timeStart,"evf.timeStart=this.value;renderEventSheet()",9*60,20*60+30)}</div>
+      <div class="field"><label>開始時間</label>${timeSel('evT1',evf.timeStart,"onEvStartChange(this.value)",9*60,20*60+30)}</div>
       <div class="field"><label>結束時間</label>${timeSel('evT2',evf.timeEnd,"evf.timeEnd=this.value",tMin(evf.timeStart)+30,21*60)}</div>
     </div>
     <div class="sub" style="margin:-6px 2px 12px">整天＝09:00 – 21:00（預設）</div>
     <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn primary" onclick="saveEvent()">確認標記</button></div>`);
+}
+async function onEvStartChange(v){
+  evf.timeStart=v;
+  if(evf.timeEnd&&tMin(evf.timeEnd)<=tMin(v)) evf.timeEnd=addMin(v,30);
+  const end=$('evT2');
+  if(end){
+    let html='';
+    for(let m=tMin(v)+30;m<=21*60;m+=30){ const t=minT(m); html+=`<option value="${t}" ${t===evf.timeEnd?'selected':''}>${t}</option>`; }
+    end.innerHTML=html;
+  }
 }
 async function saveEvent(){
   const el=$('evName'); if(el)evf.name=el.value;

@@ -536,15 +536,14 @@ async function openApptDetail(id){
   const ds=fmtDate(curDate); const rows=await loadDay(ds);
   const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id))||rows.filter(x=>x.id===id);
   if(!g.length)return; const a=g[0]; const dur=g.length*30; const t=hm(a.appointment_time);
-  openSheet(`<h2>${esc(a.patient_name||'（無名）')}</h2><div class="sub">${a.type==='new'?'初診':'複診'} · ${dur} 分鐘</div>
+  openSheet(`<h2>${esc(a.patient_name||'（無名）')}</h2>
+    <div class="sub">${a.type==='new'?'初診':'複診'} · ${dur} 分鐘 · ${a.line_user_id?'LINE ✅':'LINE —'}</div>
+    <div class="sub" id="pMeta" style="margin-top:2px">📞 ${esc(a.patient_phone||'—')}</div>
+    <div style="height:10px"></div>
     <div class="row-info"><span class="k">日期</span><span class="v">${a.appointment_date}（${WD[parseDate(a.appointment_date).getDay()]}）</span></div>
     <div class="row-info"><span class="k">時間</span><span class="v">${t} – ${addMin(t,dur)}</span></div>
     <div class="row-info"><span class="k">治療師</span><span class="v">${esc(thName(a.therapist_id))}</span></div>
-    <div class="row-info"><span class="k">電話</span><span class="v">${esc(a.patient_phone||'—')}</span></div>
-    ${a.service?`<div class="row-info"><span class="k">服務</span><span class="v">${esc(a.service)}</span></div>`:''}
     ${a.symptoms?`<div class="row-info"><span class="k">不適部位</span><span class="v">${esc(a.symptoms)}</span></div>`:''}
-    <div class="row-info"><span class="k">LINE</span><span class="v">${a.line_user_id?'✅ 已綁定（可收提醒）':'— 未綁定'}</span></div>
-    <div class="row-info" id="bdRow" hidden><span class="k">生日</span><span class="v" id="bdVal"></span></div>
     ${a.note?`<div class="row-info"><span class="k">備註</span><span class="v">${esc(a.note)}</span></div>`:''}
     <div class="sheet-actions"><button class="btn ghost" onclick='openEdit(${a.id})'>編輯</button><button class="btn primary" onclick='openReschedule(${a.id})'>改時間</button></div>
     <div class="sheet-actions"><button class="btn danger" onclick='cancelGroup(${a.id})'>取消預約</button></div>`);
@@ -560,7 +559,7 @@ async function openApptDetail(id){
         bd=pp&&pp[0]&&pp[0].birthday;
       }
     }catch(e){}
-    const row=$('bdRow'); if(row&&bd){ $('bdVal').textContent=bd; row.hidden=false; }
+    const meta=$('pMeta'); if(meta&&bd) meta.textContent+=' · 🎂 '+bd;
   })();
 }
 async function openEventDetail(id){

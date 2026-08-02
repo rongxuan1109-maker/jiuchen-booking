@@ -606,6 +606,7 @@ function updateBirth(){
 
 const LIFF_ID = '2010100504-7lHo8M0R';
 let lineUserId = null;
+let lineDisplayName = null, linePictureUrl = null;   // 通知卡認人用（頭貼＋LINE名稱）
 
 async function initLiff() {
   try {
@@ -613,6 +614,8 @@ async function initLiff() {
     if (liff.isLoggedIn()) {
       const profile = await liff.getProfile();
       lineUserId = profile.userId;
+      lineDisplayName = profile.displayName || null;
+      linePictureUrl = profile.pictureUrl || null;
     } else if (liff.isInClient()) {
       // 只有在 LINE App 內開啟時才自動登入（才能綁 line_user_id 收推播）；
       // 一般瀏覽器(Google 搜到、朋友轉貼) 直接匿名預約，不強迫登入 LINE
@@ -1029,6 +1032,8 @@ async function submitBooking() {
         symptoms: state.discomfortArea || '',
         note: state.otherNotes || '',
         line_user_id: lineUserId || null,
+        line_display_name: lineDisplayName || null,
+        line_picture_url: linePictureUrl || null,
         therapist_name: state.therapistId === 0 ? '不指定' : (state.therapistName || null)
       });
     }

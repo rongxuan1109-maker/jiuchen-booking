@@ -1,5 +1,5 @@
 // 九辰後台 App — Service Worker（外殼快取，讓 App 秒開；有網路時背景更新）
-const CACHE='jiuchen-app-v12';
+const CACHE='jiuchen-app-v13';
 const SHELL=['app.html','manifest.webmanifest'];
 
 self.addEventListener('install',e=>{
@@ -18,10 +18,12 @@ self.addEventListener('fetch',e=>{
   // Supabase API / 認證：一律走網路（不可快取即時資料）
   if(url.hostname.endsWith('supabase.co')) return;
   // App 外殼與 CDN：stale-while-revalidate（先給快取、背景更新）
+  // 自家檔案帶 no-cache 跟伺服器確認版本，避免被 GitHub Pages 的 10 分鐘 HTTP 快取卡住舊版
+  const opts=url.origin===location.origin?{cache:'no-cache'}:{};
   e.respondWith(
     caches.open(CACHE).then(async cache=>{
       const cached=await cache.match(req);
-      const network=fetch(req).then(res=>{ if(res&&res.status===200) cache.put(req,res.clone()); return res; }).catch(()=>cached);
+      const network=fetch(req,opts).then(res=>{ if(res&&res.status===200) cache.put(req,res.clone()); return res; }).catch(()=>cached);
       return cached||network;
     })
   );

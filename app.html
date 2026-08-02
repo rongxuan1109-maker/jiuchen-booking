@@ -559,7 +559,8 @@ async function openApptDetail(id){
         bd=pp&&pp[0]&&pp[0].birthday;
       }
     }catch(e){}
-    const meta=$('pMeta'); if(meta&&bd) meta.textContent+=' · 🎂 '+bd;
+    const meta=$('pMeta');
+    if(meta&&bd){ const [y,m,d]=bd.split('-'); meta.textContent+=` · 🎂 民國${+y-1911}.${m}.${d}`; }
   })();
 }
 async function openEventDetail(id){

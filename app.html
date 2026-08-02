@@ -611,6 +611,8 @@ function switchToAppt(t){
   if(form.time&&!form.end) form.end=addMin(form.time, t==='new'?30:60);
   renderForm();
 }
+/* 行內事件不能直接寫 form.x（瀏覽器會把 form 解析成 element.form=null），統一走這個安全入口 */
+function setF(k,v){ form[k]=v; if(k==='end'||k==='time')updEndHint(); }
 function onStartChange(v){
   const prevDur=(form.time&&form.end)?(tMin(form.end)-tMin(form.time)):(form.type==='new'?30:60);
   form.time=v;
@@ -631,25 +633,25 @@ function renderForm(){
   const endFrom=form.time?tMin(form.time)+30:6*60+30;
   openSheet(`<h2>${form.mode==='edit'?'編輯預約':'新增預約'}</h2><div class="sub">${form.date}${form.time?' · '+form.time:''}</div>
     <div class="grid2">
-      <div class="field"><label>姓名 *</label><input id="fName" value="${esc(form.name)}" oninput="form.name=this.value"></div>
-      <div class="field"><label>電話${isNew?' *':''}</label><input id="fPhone" type="tel" value="${esc(form.phone)}" oninput="form.phone=this.value"></div>
+      <div class="field"><label>姓名 *</label><input id="fName" value="${esc(form.name)}" oninput="setF('name',this.value)"></div>
+      <div class="field"><label>電話${isNew?' *':''}</label><input id="fPhone" type="tel" value="${esc(form.phone)}" oninput="setF('phone',this.value)"></div>
     </div>
     <div class="field"><label>類型</label>${typeGroups(form.type)}</div>
-    <div class="field"><label>治療師</label><select id="fTh" onchange="form.therapist_id=this.value">
+    <div class="field"><label>治療師</label><select id="fTh" onchange="setF('therapist_id',this.value)">
       <option value="" ${form.therapist_id===''?'selected':''}>不指定</option>
       ${therapists.map(t=>`<option value="${t.id}" ${String(form.therapist_id)===String(t.id)?'selected':''}>${esc(t.name)}</option>`).join('')}
     </select></div>
-    <div class="field"><label>日期</label><input id="fDate" type="date" value="${form.date}" onchange="form.date=this.value"></div>
+    <div class="field"><label>日期</label><input id="fDate" type="date" value="${form.date}" onchange="setF('date',this.value)"></div>
     <div class="grid2">
       <div class="field"><label>開始時間</label>${timeSel('fTime',form.time,"onStartChange(this.value)")}</div>
-      <div class="field"><label>結束時間</label>${timeSel('fEnd',form.end||'',"form.end=this.value;updEndHint()",endFrom,22*60)}</div>
+      <div class="field"><label>結束時間</label>${timeSel('fEnd',form.end||'',"setF('end',this.value)",endFrom,22*60)}</div>
     </div>
     <div class="sub" id="endHint" style="margin:-6px 2px 12px"></div>
-    ${isNew?`<div class="field"><label>生日</label><input id="fBirth" type="date" value="${form.birth}" oninput="form.birth=this.value"></div>
-      <div class="field"><label>不適部位</label><input id="fArea" value="${esc(form.area)}" oninput="form.area=this.value" placeholder="如：下背、右肩"></div>
-      <div class="field"><label>不適多久</label><input id="fDur" value="${esc(form.dur)}" oninput="form.dur=this.value" placeholder="如：兩週、一個月"></div>
-      <div class="field"><label>之前做過復健？</label><input id="fPrev" value="${esc(form.prevpt)}" oninput="form.prevpt=this.value" placeholder="有／沒有"></div>`:''}
-    <div class="field"><label>備註</label><textarea id="fNote" oninput="form.note=this.value" placeholder="代約請寫：代約:治療師名">${esc(form.note)}</textarea></div>
+    ${isNew?`<div class="field"><label>生日</label><input id="fBirth" type="date" value="${form.birth}" oninput="setF('birth',this.value)"></div>
+      <div class="field"><label>不適部位</label><input id="fArea" value="${esc(form.area)}" oninput="setF('area',this.value)" placeholder="如：下背、右肩"></div>
+      <div class="field"><label>不適多久</label><input id="fDur" value="${esc(form.dur)}" oninput="setF('dur',this.value)" placeholder="如：兩週、一個月"></div>
+      <div class="field"><label>之前做過復健？</label><input id="fPrev" value="${esc(form.prevpt)}" oninput="setF('prevpt',this.value)" placeholder="有／沒有"></div>`:''}
+    <div class="field"><label>備註</label><textarea id="fNote" oninput="setF('note',this.value)" placeholder="代約請寫：代約:治療師名">${esc(form.note)}</textarea></div>
     <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn primary" id="saveBtn" onclick="saveForm()">${form.mode==='edit'?'儲存變更':'確認新增'}</button></div>`);
   updEndHint();
 }

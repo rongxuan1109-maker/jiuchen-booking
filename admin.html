@@ -2262,6 +2262,8 @@ let _calSel=null;
 function calSelStart(e, container, date){
   if(e.button!==0) return;
   if(e.target.closest('.appt-block')) return;   // 點在預約上 → 交給拖移，不開新範圍
+  // 點空白處 → 把先前被點浮起的卡片全部歸位
+  document.querySelectorAll('.appt-block').forEach(b=>{ if(b.dataset.bz!==undefined){ b.style.zIndex=b.dataset.bz; delete b.dataset.bz; } });
   const i=Math.floor((e.clientY-container.getBoundingClientRect().top)/SLOT_H);
   if(i<0||i>=TIMES.length) return;
   _calSel={cont:container, date, a:i, b:i, moved:false};

@@ -605,7 +605,7 @@ function typeGroups(cur){
 function switchToAppt(t){
   if(sheetMode!=='appt') openNew((evf&&evf.date)||fmtDate(curDate),'');
   form.type=t;
-  if(form.time) form.end=addMin(form.time, t==='new'?30:60);
+  if(form.time&&!form.end) form.end=addMin(form.time, t==='new'?30:60);
   renderForm();
 }
 function onStartChange(v){
@@ -660,7 +660,6 @@ async function saveForm(){
   if(!form.end||tMin(form.end)<=tMin(form.time)){ toast('請選結束時間'); resetSaveBtn(); return; }
   const thId=form.therapist_id===''?null:parseInt(form.therapist_id);
   const need=Math.round((tMin(form.end)-tMin(form.time))/30);
-  if(need>8){ toast('單筆最長 4 小時'); resetSaveBtn(); return; }
   const times=[]; for(let i=0;i<need;i++)times.push(addMin(form.time,i*30));
   const svc=form.type==='new'?'初診評估':(need===1?SERVICES[0].name:need===2?SERVICES[1].name:'複診 '+(need*30)+'分');
   // 撞號提醒（同治療師時間區間重疊 confirmed，排除自己；自由時間可能非整半點，用區間判斷）

@@ -156,6 +156,8 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
 .grid2 .field{min-width:0}
 .grid2 .field input{min-width:0;-webkit-appearance:none;appearance:none}
 .field input[type=date]{text-align:left}
+.typebadge{display:inline-block;font-size:14px;font-weight:700;padding:3px 12px;border-radius:9px;margin-left:8px;vertical-align:4px;background:var(--warm);color:#fff}
+.typebadge.new{background:#e8556d}
 .type-groups{display:flex;gap:8px;flex-wrap:nowrap}
 .tgroup{flex:1;min-width:0;display:flex;gap:6px;align-items:center;padding:4px 6px;border:1.5px dashed var(--line);border-radius:14px}
 .tg-cap{font-size:11px;color:var(--sub);flex-shrink:0}
@@ -536,8 +538,8 @@ async function openApptDetail(id){
   const ds=fmtDate(curDate); const rows=await loadDay(ds);
   const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id))||rows.filter(x=>x.id===id);
   if(!g.length)return; const a=g[0]; const dur=g.length*30; const t=hm(a.appointment_time);
-  openSheet(`<h2>${esc(a.patient_name||'（無名）')}</h2>
-    <div class="sub">${a.type==='new'?'初診':'複診'} · ${dur} 分鐘 · ${a.line_user_id?'LINE ✅':'LINE —'}</div>
+  openSheet(`<h2>${esc(a.patient_name||'（無名）')}<span class="typebadge ${a.type==='new'?'new':''}">${a.type==='new'?'初診':'複診'}</span></h2>
+    <div class="sub">${dur} 分鐘 · ${a.line_user_id?'LINE ✅':'LINE —'}</div>
     <div class="sub" id="pMeta" style="margin-top:2px">📞 ${esc(a.patient_phone||'—')}</div>
     <div style="height:10px"></div>
     <div class="row-info"><span class="k">日期</span><span class="v">${a.appointment_date}（${WD[parseDate(a.appointment_date).getDay()]}）</span></div>

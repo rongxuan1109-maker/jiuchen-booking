@@ -440,13 +440,13 @@ function renderTodayList(rows){
   list.innerHTML=`<div class="tl" style="height:${totH+TL_PAD*2}px">${grid}<div class="tl-canvas" style="top:${TL_PAD}px;height:${totH}px" onclick="tlTap(event)">${inner}${nowLine}</div></div>`;
   $('topSub').textContent=groups.length?`${groups.length} 筆預約`:'';
 }
-/* 點時間軸空白處 → 直接開新增表單（帶入點到的時段） */
+/* 點時間軸空白處 → 吸附到最近半點，直接開新增表單帶入時間 */
 function tlTap(ev){
   if(ev.target!==ev.currentTarget)return;
   const rect=ev.currentTarget.getBoundingClientRect();
-  const m=TL_START+Math.floor(((ev.clientY-rect.top)/TL_PXM)/30)*30;
-  const t=minT(m);
-  openNew(fmtDate(curDate), ALL_SLOTS.includes(t)?t:'');
+  let m=TL_START+Math.round(((ev.clientY-rect.top)/TL_PXM)/30)*30;
+  m=Math.max(0,Math.min(23*60+30,m));
+  openNew(fmtDate(curDate), minT(m));
 }
 
 /* ============ 週檢視 ============ */
@@ -589,8 +589,11 @@ function renderForm(){
       <option value="" ${form.therapist_id===''?'selected':''}>不指定</option>
       ${therapists.map(t=>`<option value="${t.id}" ${String(form.therapist_id)===String(t.id)?'selected':''}>${esc(t.name)}</option>`).join('')}
     </select></div>
-    <div class="field"><label>日期</label><input id="fDate" type="date" value="${form.date}" onchange="form.date=this.value;refreshTimeChips()"></div>
-    <div class="field"><label>時段</label><div class="chips" id="timeChips"></div></div>
+    <div class="grid2">
+      <div class="field"><label>日期</label><input id="fDate" type="date" value="${form.date}" onchange="form.date=this.value"></div>
+      <div class="field"><label>開始時間</label><input id="fTime" type="time" step="300" value="${form.time}" onchange="form.time=this.value;updEndHint()"></div>
+    </div>
+    <div class="sub" id="endHint" style="margin:-6px 2px 12px"></div>
     <div class="grid2">
       <div class="field"><label>姓名 *</label><input id="fName" value="${esc(form.name)}" oninput="form.name=this.value"></div>
       <div class="field"><label>電話${isNew?' *':''}</label><input id="fPhone" type="tel" value="${esc(form.phone)}" oninput="form.phone=this.value"></div>
@@ -601,45 +604,37 @@ function renderForm(){
       <div class="field"><label>之前做過復健？</label><input id="fPrev" value="${esc(form.prevpt)}" oninput="form.prevpt=this.value" placeholder="有／沒有"></div>`:''}
     <div class="field"><label>備註</label><textarea id="fNote" oninput="form.note=this.value" placeholder="代約請寫：代約:治療師名">${esc(form.note)}</textarea></div>
     <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn primary" id="saveBtn" onclick="saveForm()">${form.mode==='edit'?'儲存變更':'確認新增'}</button></div>`);
-  refreshTimeChips();
+  updEndHint();
 }
 function setType(t){ form.type=t; if(t==='new')form.service='s30'; renderForm(); }
 function setService(s){ form.service=s; renderForm(); }
-function slotsForTherapist(dateStr){
-  const th=form.therapist_id;
-  if(th===''||th==null) return ALL_SLOTS.slice();
-  const wd=String(parseDate(dateStr).getDay());
-  const blocks=(schedules[th]&&schedules[th][wd])||[];
-  const s=new Set(); blocks.forEach(b=>(SHIFT_SLOTS[b]||[]).forEach(x=>s.add(x)));
-  return [...s].sort();
-}
-function refreshTimeChips(){
-  const box=$('timeChips'); if(!box)return;
-  const slots=slotsForTherapist(form.date);
-  const need=form.service==='s60'?2:1;
-  box.innerHTML=slots.length?slots.map(t=>{
-    let ok=true;
-    if(need===2){ const nx=addMin(t,30); if(!slots.includes(nx))ok=false; }
-    return `<div class="chip ${form.time===t?'on':''} ${ok?'':'dis'}" onclick="${ok?`form.time='${t}';refreshTimeChips()`:''}">${t}</div>`;
-  }).join(''):'<span class="sub">這天這位治療師沒有排班</span>';
+function updEndHint(){
+  const el=$('endHint'); if(!el)return;
+  const dur=form.service==='s60'?60:30;
+  el.textContent=form.time?`${form.time} – ${addMin(form.time,dur)}（${dur} 分鐘）`:'';
 }
 async function saveForm(){
   const btn=$('saveBtn'); if(btn){btn.textContent='儲存中…';btn.style.opacity=.6;}
   // 儲存前直接從畫面欄位再同步一次（iOS 自動帶入/某些輸入法不觸發 oninput，會漏同步）
-  [['fName','name'],['fPhone','phone'],['fBirth','birth'],['fArea','area'],['fDur','dur'],['fPrev','prevpt'],['fNote','note']].forEach(([id,k])=>{ const el=$(id); if(el)form[k]=el.value; });
+  [['fName','name'],['fPhone','phone'],['fBirth','birth'],['fArea','area'],['fDur','dur'],['fPrev','prevpt'],['fNote','note'],['fDate','date'],['fTime','time']].forEach(([id,k])=>{ const el=$(id); if(el&&el.value)form[k]=el.value; });
   const name=(form.name||'').trim(); const phone=(form.phone||'').trim();
   if(!name){ toast('請填姓名'); resetSaveBtn(); return; }
   if(form.type==='new'&&!phone){ toast('初診請填電話'); resetSaveBtn(); return; }
-  if(!form.time){ toast('請選時段'); resetSaveBtn(); return; }
+  if(!form.time){ toast('請選時間'); resetSaveBtn(); return; }
   const thId=form.therapist_id===''?null:parseInt(form.therapist_id);
   const need=form.service==='s60'?2:1;
   const times=[form.time]; if(need===2)times.push(addMin(form.time,30));
   const svc=form.type==='new'?'初診評估':(SERVICES.find(s=>s.id===form.service)||{}).name;
-  // 撞號提醒（同治療師同時段 confirmed，排除自己）
+  // 撞號提醒（同治療師時間區間重疊 confirmed，排除自己；自由時間可能非整半點，用區間判斷）
   if(thId!=null){
     const dayRows=await loadDay(form.date,true);
     const selfIds=form.groupIds||[];
-    const clash=dayRows.some(a=>a.status==='confirmed'&&a.therapist_id===thId&&times.includes(hm(a.appointment_time))&&!selfIds.includes(a.id));
+    const ns=tMin(form.time), ne=ns+need*30;
+    const clash=dayRows.some(a=>{
+      if(a.status!=='confirmed'||a.therapist_id!==thId||selfIds.includes(a.id))return false;
+      const s=tMin(hm(a.appointment_time));
+      return s<ne&&ns<s+30;
+    });
     if(clash&&!confirm('這位治療師該時段已有預約，仍要新增嗎？')){ resetSaveBtn(); return; }
   }
   try{
@@ -676,21 +671,14 @@ function renderReschedule(){
   for(let d=1;d<=dim;d++){ const dd=new Date(y,mo,d); const ds=fmtDate(dd); const past=ds<t; const sel=ds===rs.date;
     cal+=`<div class="mc-d ${past?'dis':''} ${sel?'sel':''} ${ds===t&&!sel?'today':''}" ${past?'':`onclick="rs.date='${ds}';rs.time='';renderReschedule()"`}>${d}</div>`; }
   cal+='</div>';
-  const slots=rsSlots();
   openSheet(`<h2>改時間</h2><div class="sub">${esc(rs.name)} · ${rs.len*30} 分鐘</div>${cal}
-    <div class="field" style="margin-top:16px"><label>新時段（${rs.date}）</label><div class="chips">${slots.length?slots.map(x=>`<div class="chip ${rs.time===x?'on':''} ${x.ok?'':'dis'}" onclick="${x.ok?`rs.time='${x.t}';renderReschedule()`:''}">${x.t}</div>`).join(''):'<span class="sub">這天這位治療師沒排班</span>'}</div></div>
+    <div class="field" style="margin-top:16px"><label>新開始時間（${rs.date}）</label><input id="rsTime" type="time" step="300" value="${rs.time||''}" onchange="rs.time=this.value"></div>
     <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn primary" onclick="saveReschedule()">確認改時間</button></div>`);
 }
 function rsMonth(n){ rs.calM=new Date(rs.calM.getFullYear(),rs.calM.getMonth()+n,1); renderReschedule(); }
-function rsSlots(){
-  let base;
-  const th=rs.therapist_id;
-  if(th==null){ base=ALL_SLOTS.slice(); }
-  else { const wd=String(parseDate(rs.date).getDay()); const blocks=(schedules[th]&&schedules[th][wd])||[]; const s=new Set(); blocks.forEach(b=>(SHIFT_SLOTS[b]||[]).forEach(x=>s.add(x))); base=[...s].sort(); }
-  return base.map(t=>{ let ok=true; if(rs.len===2){const nx=addMin(t,30); if(!base.includes(nx))ok=false;} return {t,ok}; });
-}
 async function saveReschedule(){
-  if(!rs.time){ toast('請選新時段'); return; }
+  const el=$('rsTime'); if(el&&el.value)rs.time=el.value;
+  if(!rs.time){ toast('請選新時間'); return; }
   const times=[rs.time]; if(rs.len===2)times.push(addMin(rs.time,30));
   try{
     await sb.from('appointments').update({status:'cancelled',line_user_id:null}).in('id',rs.groupIds);

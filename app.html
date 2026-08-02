@@ -542,6 +542,8 @@ async function openApptDetail(id){
     <div class="row-info"><span class="k">治療師</span><span class="v">${esc(thName(a.therapist_id))}</span></div>
     <div class="row-info"><span class="k">電話</span><span class="v">${esc(a.patient_phone||'—')}</span></div>
     ${a.service?`<div class="row-info"><span class="k">服務</span><span class="v">${esc(a.service)}</span></div>`:''}
+    ${a.symptoms?`<div class="row-info"><span class="k">不適部位</span><span class="v">${esc(a.symptoms)}</span></div>`:''}
+    <div class="row-info"><span class="k">LINE</span><span class="v">${a.line_user_id?'✅ 已綁定（可收提醒）':'— 未綁定'}</span></div>
     ${a.note?`<div class="row-info"><span class="k">備註</span><span class="v">${esc(a.note)}</span></div>`:''}
     <div class="sheet-actions"><button class="btn ghost" onclick='openEdit(${a.id})'>編輯</button><button class="btn primary" onclick='openReschedule(${a.id})'>改時間</button></div>
     <div class="sheet-actions"><button class="btn danger" onclick='cancelGroup(${a.id})'>取消預約</button></div>`);

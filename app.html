@@ -353,6 +353,27 @@ async function enterApp(){
   $('login').style.display='none'; $('app').style.display='flex';
   try{ await loadTherapists(); }catch(e){ return; }
   curDate=new Date(); switchTab('today');
+  startRealtime();
+}
+
+/* ============ 即時同步（Google式：別台裝置改了,這裡幾秒內自動更新） ============ */
+let _rtTimer=null,_rtPending=false,_rtOn=false;
+function sheetIsOpen(){ return !!$('sheetHost').querySelector('.sheet-bg'); }
+function rtRender(){ if(curTab==='today')renderToday(); else if(curTab==='week')renderWeek(); }
+function rtRefresh(){
+  invalidate();
+  if(sheetIsOpen()){ _rtPending=true; return; }   // 表單開著先不打擾,關掉再刷
+  rtRender();
+}
+function startRealtime(){
+  if(_rtOn)return; _rtOn=true;
+  try{
+    sb.channel('appt-rt').on('postgres_changes',{event:'*',schema:'public',table:'appointments'},()=>{
+      clearTimeout(_rtTimer); _rtTimer=setTimeout(rtRefresh,600);   // 一批變動只刷一次
+    }).subscribe();
+  }catch(e){}
+  // App 從背景回到前景也刷一次(訂閱可能在休眠時斷線)
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) rtRefresh(); });
 }
 
 /* ============ Tab 切換 ============ */
@@ -532,7 +553,7 @@ function openSheet(html){
   host.innerHTML=`<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet"><div class="grip"></div>${html}</div></div>`;
   requestAnimationFrame(()=>host.querySelector('.sheet-bg').classList.add('on'));
 }
-function closeSheet(){ const bg=$('sheetHost').querySelector('.sheet-bg'); if(!bg)return; bg.classList.remove('on'); setTimeout(()=>$('sheetHost').innerHTML='',260); }
+function closeSheet(){ const bg=$('sheetHost').querySelector('.sheet-bg'); if(!bg)return; bg.classList.remove('on'); setTimeout(()=>{$('sheetHost').innerHTML=''; if(_rtPending){_rtPending=false; rtRender();}},260); }
 
 /* ============ 預約詳情 ============ */
 async function openApptDetail(id){

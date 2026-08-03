@@ -569,7 +569,7 @@ async function openApptDetail(id){
     <div class="row-info"><span class="k">治療師</span><span class="v">${esc(thName(a.therapist_id))}</span></div>
     ${a.symptoms?`<div class="row-info"><span class="k">不適部位</span><span class="v">${esc(a.symptoms)}</span></div>`:''}
     ${a.note?`<div class="row-info"><span class="k">備註</span><span class="v">${esc(a.note)}</span></div>`:''}
-    <div class="sheet-actions"><button class="btn ghost" onclick='openEdit(${a.id})'>編輯</button><button class="btn primary" onclick='openReschedule(${a.id})'>改時間</button></div>
+    <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">關閉</button><button class="btn primary" onclick='openEdit(${a.id})'>編輯</button></div>
     <div class="sheet-actions"><button class="btn danger" onclick='cancelGroup(${a.id})'>取消預約</button></div>`);
   // 生日背景撈取：先找這筆的初診問卷，再退而求其次查病歷表
   (async()=>{
@@ -753,43 +753,6 @@ async function saveForm(){
   }catch(e){ toast('儲存失敗：'+(e.message||e)); resetSaveBtn(); }
 }
 function resetSaveBtn(){ const b=$('saveBtn'); if(b){b.textContent=form.mode==='edit'?'儲存變更':'確認新增';b.style.opacity=1;} }
-
-/* ============ 改時間 ============ */
-let rs={};
-async function openReschedule(id){
-  const ds=fmtDate(curDate); const rows=await loadDay(ds);
-  const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id)); if(!g)return;
-  rs={groupIds:g.map(x=>x.id),len:g.length,line_user_id:(g.find(x=>x.line_user_id)||{}).line_user_id||null,therapist_id:g[0].therapist_id,name:g[0].patient_name,phone:g[0].patient_phone,type:g[0].type,service:g[0].service,note:g[0].note,symptoms:g[0].symptoms,date:g[0].appointment_date,time:hm(g[0].appointment_time),calM:parseDate(g[0].appointment_date)};
-  renderReschedule();
-}
-function renderReschedule(){
-  const m=rs.calM; const y=m.getFullYear(),mo=m.getMonth();
-  const first=new Date(y,mo,1).getDay(); const dim=new Date(y,mo+1,0).getDate(); const t=todayStr();
-  let cal=`<div class="mc-nav"><button onclick="rsMonth(-1)">‹</button><div class="m">${y}年${mo+1}月</div><button onclick="rsMonth(1)">›</button></div><div class="mini-cal">${WD.map(w=>`<div class="mc-h">${w}</div>`).join('')}${Array(first).fill('<div></div>').join('')}`;
-  for(let d=1;d<=dim;d++){ const dd=new Date(y,mo,d); const ds=fmtDate(dd); const past=ds<t; const sel=ds===rs.date;
-    cal+=`<div class="mc-d ${past?'dis':''} ${sel?'sel':''} ${ds===t&&!sel?'today':''}" ${past?'':`onclick="rs.date='${ds}';rs.time='';renderReschedule()"`}>${d}</div>`; }
-  cal+='</div>';
-  openSheet(`<h2>改時間</h2><div class="sub">${esc(rs.name)} · ${rs.len*30} 分鐘</div>${cal}
-    <div class="field" style="margin-top:16px"><label>新開始時間（${rs.date}）</label>${timeSel('rsTime',rs.time||'',"rs.time=this.value")}</div>
-    <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn primary" onclick="saveReschedule()">確認改時間</button></div>`);
-}
-function rsMonth(n){ rs.calM=new Date(rs.calM.getFullYear(),rs.calM.getMonth()+n,1); renderReschedule(); }
-async function saveReschedule(){
-  const el=$('rsTime'); if(el&&el.value)rs.time=el.value;
-  if(!rs.time){ toast('請選新時間'); return; }
-  const times=[rs.time]; if(rs.len===2)times.push(addMin(rs.time,30));
-  try{
-    const {data:cur}=await sb.from('appointments').select('id,status').in('id',rs.groupIds);
-    if(!cur||cur.filter(x=>x.status==='confirmed').length!==rs.groupIds.length){
-      toast('這筆預約剛被其他裝置修改過，請重新點開再操作'); invalidate(); closeSheet();
-      if(curTab==='today')renderToday(); return;
-    }
-    await sb.from('appointments').update({status:'cancelled',line_user_id:null}).in('id',rs.groupIds);
-    const rows=times.map((t,i)=>({therapist_id:rs.therapist_id,patient_name:rs.name,patient_phone:rs.phone,appointment_date:rs.date,appointment_time:t+':00',type:rs.type,service:i===0?rs.service:rs.service,symptoms:rs.symptoms||'',note:rs.note||'',status:'confirmed',line_user_id:rs.line_user_id||null,therapist_name:rs.therapist_id==null?'不指定':thName(rs.therapist_id)}));
-    const {error}=await sb.from('appointments').insert(rows); if(error)throw error;
-    invalidate(); closeSheet(); toast('已改時間'); curDate=parseDate(rs.date); switchTab('today');
-  }catch(e){ toast('改時間失敗：'+(e.message||e)); }
-}
 
 /* ============ 公休/活動 ============ */
 let evf={};

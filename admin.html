@@ -3060,6 +3060,14 @@ async function submitEditAppt(id){
       .sort((x,y)=>x.appointment_time.localeCompare(y.appointment_time));
   }
   if(!await checkOverlapConfirm(date, thId, slots, oldGroup.map(x=>x.id))) return;   // 重疊提醒（排除自己）
+  // 防撞車:存檔前跟資料庫核對這組還健在(可能剛被手機App等其他裝置改掉,本機畫面已過時)
+  if(a&&oldGroup.length){
+    const {data:_cur}=await sb.from('appointments').select('id,status').in('id',oldGroup.map(x=>x.id));
+    if(!_cur||_cur.filter(x=>x.status==='confirmed').length!==oldGroup.length){
+      showToast('這筆預約剛被其他裝置修改過，已重新載入，請再操作一次');
+      closeModal(); _invalidateCache(); await loadData(); return;
+    }
+  }
   // 對齊到新時段：能更新就更新、不夠就新增、多出來就軟刪
   for(let i=0;i<Math.max(oldGroup.length,slots.length);i++){
     if(i<slots.length){

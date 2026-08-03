@@ -710,6 +710,12 @@ async function saveForm(){
   }
   try{
     if(form.mode==='edit'){
+      // 防撞車:存檔前跟資料庫核對這組還在不在(可能剛被別台裝置改掉)
+      const {data:cur}=await sb.from('appointments').select('id,status').in('id',form.groupIds);
+      if(!cur||cur.filter(x=>x.status==='confirmed').length!==form.groupIds.length){
+        toast('這筆預約剛被其他裝置修改過，請重新點開再操作'); invalidate(form.date); closeSheet();
+        if(curTab==='today')renderToday(); resetSaveBtn(); return;
+      }
       // 先刪舊組（改 cancelled），再重建（簡單可靠）
       await sb.from('appointments').update({status:'cancelled',line_user_id:null}).in('id',form.groupIds);
     }
@@ -752,6 +758,11 @@ async function saveReschedule(){
   if(!rs.time){ toast('請選新時間'); return; }
   const times=[rs.time]; if(rs.len===2)times.push(addMin(rs.time,30));
   try{
+    const {data:cur}=await sb.from('appointments').select('id,status').in('id',rs.groupIds);
+    if(!cur||cur.filter(x=>x.status==='confirmed').length!==rs.groupIds.length){
+      toast('這筆預約剛被其他裝置修改過，請重新點開再操作'); invalidate(); closeSheet();
+      if(curTab==='today')renderToday(); return;
+    }
     await sb.from('appointments').update({status:'cancelled',line_user_id:null}).in('id',rs.groupIds);
     const rows=times.map((t,i)=>({therapist_id:rs.therapist_id,patient_name:rs.name,patient_phone:rs.phone,appointment_date:rs.date,appointment_time:t+':00',type:rs.type,service:i===0?rs.service:rs.service,symptoms:rs.symptoms||'',note:rs.note||'',status:'confirmed',line_user_id:rs.line_user_id||null,therapist_name:rs.therapist_id==null?'不指定':thName(rs.therapist_id)}));
     const {error}=await sb.from('appointments').insert(rows); if(error)throw error;

@@ -569,8 +569,8 @@ async function openApptDetail(id){
     <div class="row-info"><span class="k">治療師</span><span class="v">${esc(thName(a.therapist_id))}</span></div>
     ${a.symptoms?`<div class="row-info"><span class="k">不適部位</span><span class="v">${esc(a.symptoms)}</span></div>`:''}
     ${a.note?`<div class="row-info"><span class="k">備註</span><span class="v">${esc(a.note)}</span></div>`:''}
-    <div class="sheet-actions"><button class="btn primary" onclick='openEdit(${a.id})'>編輯</button></div>
-    <div class="sheet-actions"><button class="btn danger" onclick='cancelGroup(${a.id})'>取消預約</button></div>`);
+    <div class="sheet-actions"><button class="btn danger" onclick='cancelGroup(${a.id})'>取消預約</button><button class="btn primary" onclick='openEdit(${a.id})'>編輯</button></div>
+    <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">關閉</button></div>`);
   // 生日背景撈取：先找這筆的初診問卷，再退而求其次查病歷表
   (async()=>{
     let bd=null;

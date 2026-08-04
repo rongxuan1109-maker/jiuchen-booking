@@ -163,12 +163,32 @@ function switchTab(tab) {
 
 // 用本地時間組今天日期（toISOString 是 UTC，台灣凌晨 0-8 點會把今天算成昨天）
 function localToday(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function addMin(t, m) {
+  const [H, M] = t.split(':').map(Number);
+  const tot = H * 60 + M + m;
+  return String(Math.floor(tot / 60)).padStart(2, '0') + ':' + String(tot % 60).padStart(2, '0');
+}
+// 60分鐘預約在資料庫是兩列30分鐘,顯示前把「同日+同治療師+時間相連」黏成一筆
+function groupRows(list) {
+  const sorted = [...list].sort((a, b) => (a.appointment_date + a.appointment_time).localeCompare(b.appointment_date + b.appointment_time));
+  const groups = [];
+  for (const a of sorted) {
+    const t = a.appointment_time.slice(0, 5);
+    const last = groups[groups.length - 1];
+    if (last && last.appointment_date === a.appointment_date && String(last.therapist_id) === String(a.therapist_id) && last.status === a.status && last._end === t) {
+      last.ids.push(a.id); last._end = addMin(t, 30);
+    } else {
+      groups.push({ ...a, ids: [a.id], _end: addMin(t, 30) });
+    }
+  }
+  return groups.sort((a, b) => (b.appointment_date + b.appointment_time).localeCompare(a.appointment_date + a.appointment_time));
+}
 function renderTab() {
   const today = localToday();
   const upcoming = appointments.filter(a => a.appointment_date >= today && a.status === 'confirmed');
   const past = appointments.filter(a => a.appointment_date < today || a.status === 'cancelled');
 
-  const list = currentTab === 'upcoming' ? upcoming : past;
+  const list = groupRows(currentTab === 'upcoming' ? upcoming : past);
   const el = document.getElementById('mainContent');
 
   if (list.length === 0) {
@@ -182,7 +202,7 @@ function renderTab() {
 function renderCard(a) {
   const d = new Date(a.appointment_date);
   const dateStr = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DAYS[d.getDay()]}）`;
-  const timeStr = a.appointment_time ? a.appointment_time.slice(0,5) : '';
+  const timeStr = a.appointment_time ? a.appointment_time.slice(0,5) + ' – ' + a._end : '';
   const today = localToday();
   const isPast = a.appointment_date < today;
   const isCancelled = a.status === 'cancelled';
@@ -213,17 +233,20 @@ function renderCard(a) {
     </div>
     ${!isPast && !isCancelled ? `
     <div class="divider"></div>
-    <button class="cancel-btn" onclick="openCancelModal('${a.id}')">取消預約</button>` : ''}
+    <button class="cancel-btn" onclick="openCancelModal('${a.ids.join(',')}')">取消預約</button>` : ''}
   </div>`;
 }
 
-function openCancelModal(id) {
-  cancelTarget = appointments.find(a => a.id == id);
-  if (!cancelTarget) return;
+function openCancelModal(idsCsv) {
+  const ids = String(idsCsv).split(',');
+  const rows = appointments.filter(a => ids.includes(String(a.id)))
+    .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
+  if (!rows.length) return;
+  cancelTarget = { ...rows[0], ids, _end: addMin(rows[rows.length-1].appointment_time.slice(0,5), 30) };
 
   const d = new Date(cancelTarget.appointment_date);
   const dateStr = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DAYS[d.getDay()]}）`;
-  const timeStr = cancelTarget.appointment_time ? cancelTarget.appointment_time.slice(0,5) : '';
+  const timeStr = cancelTarget.appointment_time ? cancelTarget.appointment_time.slice(0,5) + ' – ' + cancelTarget._end : '';
   const therapist = cancelTarget.therapist_name || '待安排';
 
   document.getElementById('modalApptInfo').innerHTML = `
@@ -246,13 +269,18 @@ async function confirmCancel() {
   btn.disabled = true;
   btn.textContent = '取消中...';
 
-  // 走安全窗口 cancel_my_appointment：資料庫會核對這筆預約的 LINE ID 是本人才取消
-  const { error } = await sb.rpc('cancel_my_appointment', { p_id: cancelTarget.id, p_line_user_id: lineUserId });
+  // 走安全窗口 cancel_my_appointment：資料庫會核對每一筆的 LINE ID 是本人才取消
+  // 60分鐘=兩列,整組一起取消
+  let anyError = null;
+  for (const id of cancelTarget.ids) {
+    const { error } = await sb.rpc('cancel_my_appointment', { p_id: parseInt(id), p_line_user_id: lineUserId });
+    if (error) anyError = error;
+  }
 
   btn.disabled = false;
   btn.textContent = '確認取消';
 
-  if (error) {
+  if (anyError) {
     alert('取消失敗，請稍後再試');
     return;
   }

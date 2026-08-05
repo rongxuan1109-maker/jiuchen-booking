@@ -418,7 +418,7 @@ async function renderToday(){
   el.innerHTML=`
     <div class="datebar">
       <button class="nav" onclick="shiftDay(-1)">‹</button>
-      <div class="cur">
+      <div class="cur" onclick="openJumpCal()" style="cursor:pointer">
         <div class="d">${curDate.getMonth()+1}月${curDate.getDate()}日</div>
         <div class="w">星期${WD[curDate.getDay()]}</div>
         ${isToday?'<span class="today-chip is-today">本日</span>':'<span class="today-chip" onclick="goToday()">回今天</span>'}
@@ -431,6 +431,23 @@ async function renderToday(){
   renderTodayList(rows);
 }
 function shiftDay(n){ curDate.setDate(curDate.getDate()+n); renderToday(); }
+
+/* ============ 點日期→小月曆跳日 ============ */
+let jc={m:null};
+function openJumpCal(){ jc.m=new Date(curDate.getFullYear(),curDate.getMonth(),1); renderJumpCal(); }
+function renderJumpCal(){
+  const y=jc.m.getFullYear(), mo=jc.m.getMonth();
+  const first=new Date(y,mo,1).getDay(), dim=new Date(y,mo+1,0).getDate(), t=todayStr();
+  let cal=`<div class="mc-nav"><button onclick="jcMonth(-1)">‹</button><div class="m">${y} 年 ${mo+1} 月</div><button onclick="jcMonth(1)">›</button></div><div class="mini-cal">`+WD.map(w=>`<div class="mc-h">${w}</div>`).join('')+Array(first).fill('<div></div>').join('');
+  for(let d=1;d<=dim;d++){
+    const ds=fmtDate(new Date(y,mo,d)); const sel=ds===fmtDate(curDate);
+    cal+=`<div class="mc-d ${sel?'sel':''} ${ds===t&&!sel?'today':''}" onclick="jcPick('${ds}')">${d}</div>`;
+  }
+  cal+='</div>';
+  openSheet(`<h2>跳到日期</h2><div class="sub">點選日期直接切換</div>${cal}<div style="height:8px"></div>`);
+}
+function jcMonth(n){ jc.m=new Date(jc.m.getFullYear(),jc.m.getMonth()+n,1); renderJumpCal(); }
+function jcPick(ds){ curDate=parseDate(ds); closeSheet(); renderToday(); }
 function goToday(){ curDate=new Date(); renderToday(); }
 
 /* Google 日曆式時間軸：08:00–22:00 一屏看到大部分，其餘往下捲 */

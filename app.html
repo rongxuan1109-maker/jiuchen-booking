@@ -412,7 +412,7 @@ async function renderToday(){
   const ds=fmtDate(curDate);
   const isToday=ds===todayStr();
   // 左上標題跟著看的日期走：今天=「今日」，其他天=該日期（避免翻到別天還寫今日誤導）
-  $('topTitle').textContent=isToday?'今日':`${curDate.getMonth()+1}月${curDate.getDate()}日（${WD[curDate.getDay()]}）`;
+  $('topTitle').textContent=isToday?`今日 ${curDate.getMonth()+1}/${curDate.getDate()}`:`${curDate.getMonth()+1}月${curDate.getDate()}日（${WD[curDate.getDay()]}）`;
   $('topSub').textContent='';
   const el=$('page-today');
   el.innerHTML=`

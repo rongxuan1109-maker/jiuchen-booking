@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 44 44' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='44' height='44' fill='%23f3ede1'/%3E%3Cpath d='M22 6C22 6 27 15 27 22C27 29 22 38 22 38C22 38 17 29 17 22C17 15 22 6 22 6Z' stroke='%23c08a52' stroke-width='1.8' fill='none'/%3E%3Cpath d='M6 22C6 22 15 17 22 17C29 17 38 22 38 22C38 22 29 27 22 27C15 27 6 22 6 22Z' stroke='%23c08a52' stroke-width='1.8' fill='none'/%3E%3Ccircle cx='22' cy='22' r='2.5' fill='%23c08a52' opacity='.7'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@200;300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@200;300;400;500&family=Noto+Sans+TC:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
 <style>
 :root{
   color-scheme:light only;
@@ -41,34 +41,57 @@ body::before{
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
 }
 
-/* ── HEADER ── */
+/* ── HEADER(奶茶綠新版) ── */
+.hd-stripe{display:flex;height:8px;}
+.hd-stripe i{flex:1;}
+.hd-stripe i:nth-child(1){background:#d97b8b;}
+.hd-stripe i:nth-child(2){background:#6b8e4e;}
+.hd-stripe i:nth-child(3){background:#4e8e96;}
+.hd-stripe i:nth-child(4){background:#e08a3c;}
+.hd-stripe i:nth-child(5){background:#d9a13c;}
 .header{
-  background:var(--deep);
-  border-bottom:1px solid rgba(192,138,82,.2);
-  padding:16px 20px;
-  display:flex;align-items:center;gap:14px;
-  position:sticky;top:0;z-index:10;
+  background:linear-gradient(90deg,#eef0dd,#f6f4e6);
+  padding:16px 22px;
+  display:flex;align-items:center;gap:16px;
+  position:relative;overflow:hidden;
+  border-bottom:1px solid rgba(107,142,78,.15);
 }
+.hd-deco{position:absolute;border-radius:50%;pointer-events:none;}
+.hd-deco.y{width:150px;height:150px;background:rgba(233,196,106,.28);right:60px;top:-40px;}
+.hd-deco.p{width:130px;height:130px;background:rgba(224,160,166,.25);right:-35px;bottom:-45px;}
 .logo{
-  width:38px;height:38px;
-  border-radius:50%;
-  border:1px solid var(--warm);
+  background:#fff;border-radius:30px;
+  padding:10px 26px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  animation:breathe 5s ease-in-out infinite;
+  box-shadow:0 2px 8px rgba(90,80,50,.08);
+  position:relative;z-index:1;
 }
-.logo svg{width:22px;height:22px;}
-@keyframes breathe{
-  0%,100%{box-shadow:0 0 0 0 rgba(192,138,82,.25)}
-  50%{box-shadow:0 0 0 8px rgba(192,138,82,0)}
-}
+.logo img{display:block;}
+.header-text{position:relative;z-index:1;flex:1;}
 .header-text h1{
-  font-family:'Cormorant Garamond',serif;
-  font-size:17px;font-weight:400;
-  color:#f3ede1;letter-spacing:1px;
+  font-size:20px;font-weight:700;
+  color:#3d5226;letter-spacing:2px;
+  font-family:'Noto Serif TC',serif;
 }
 .header-text p{
-  font-size:11px;color:var(--muted);
-  letter-spacing:2px;margin-top:1px;
+  font-size:12px;color:#6b8e4e;
+  letter-spacing:1px;margin-top:3px;
+}
+.hd-badge{
+  background:#5a7a40;color:#fff;
+  font-size:12.5px;padding:7px 16px;border-radius:24px;
+  white-space:nowrap;position:relative;z-index:1;letter-spacing:1px;
+}
+@media (max-width:640px){
+  html,body{background:#f7f3ec !important;}
+  .header{padding:12px 14px;gap:10px;}
+  .logo{padding:7px 13px;border-radius:22px;}
+  .logo img{height:32px !important;}
+  .header-text h1{font-size:16px;letter-spacing:1px;white-space:nowrap;}
+  .header-text p{font-size:10.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hd-badge{font-size:11px;padding:5px 10px;letter-spacing:0;}
+  .hd-deco.y{width:100px;height:100px;right:40px;}
+  .hd-deco.p{width:90px;height:90px;}
 }
 
 /* ── CONTAINER ── */
@@ -206,46 +229,163 @@ body::before{
   font-size:11px;color:var(--muted);margin-top:2px;
   font-weight:300;position:relative;z-index:1;
 }
+/* ── 拳套卡:長方形收在圓心,大圓照片當結尾 ── */
+.th-card.glove{overflow:visible;height:92px;margin:4px 56px 4px 0;padding:14px 68px 14px 16px;display:flex;align-items:center;}
+.th-card.glove::before{display:none;}
+.th-card.glove:hover,.th-card.glove.selected{background:var(--glow);}
+.th-avatar.glove-avatar{position:absolute;right:0;top:50%;transform:translateY(-50%);width:116px;height:116px;font-size:30px;overflow:hidden;z-index:2;}
+@media (max-width:640px){
+  .therapist-grid{grid-template-columns:1fr !important;gap:18px 0 !important;}
+  .th-card.glove{height:84px;margin-right:50px;padding-right:58px;}
+  .th-avatar.glove-avatar{width:100px;height:100px;font-size:26px;}
+}
 
 /* ── CALENDAR ── */
-.cal-header{
-  display:flex;align-items:center;
-  justify-content:space-between;margin-bottom:14px;
+/* ── 初診問卷(奶茶風設計稿) ── */
+.q-card{position:relative;overflow:hidden;}
+.q-deco1{position:absolute;width:130px;height:130px;border-radius:50%;background:rgba(190,214,166,.25);top:-45px;right:-40px;pointer-events:none;}
+.q-deco2{position:absolute;width:150px;height:150px;border-radius:50%;background:rgba(240,206,122,.18);bottom:-55px;left:-45px;pointer-events:none;}
+.q-deco1.pk{background:rgba(230,185,190,.35);}
+.q-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);position:relative;z-index:1;}
+.q-icon{width:34px;height:34px;border-radius:9px;background:#6b8e4e;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.q-title{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink);letter-spacing:1px;}
+.q-pill{background:#e2ecd8;color:#5a7a40;font-size:11px;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.q-sec{display:flex;align-items:center;gap:8px;margin:18px 0 12px;font-size:14px;font-weight:500;color:var(--ink);position:relative;z-index:1;}
+.q-num{width:22px;height:22px;border-radius:50%;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.q-sec .q-line{flex:1;border-top:1.5px dashed var(--border);}
+.q-box{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:10px 14px 12px;margin-bottom:12px;position:relative;z-index:1;}
+.q-plain{margin-bottom:14px;position:relative;z-index:1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.q-plain .q-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;margin-bottom:0;padding:4px 13px;border-radius:20px;flex-shrink:0;}
+.q-plain input,.q-plain select{flex:1;min-width:140px;}
+.q-plain .q-pills{flex:1;min-width:200px;}
+.q-plain textarea{width:100%;}
+.q-plain.stack{display:block;}
+.q-plain.stack .q-label{margin-bottom:6px;}
+.q-plain #f-by,.q-plain #f-bm,.q-plain #f-bd{min-width:0;flex:1 1 0;width:auto;}
+.q-plain.b textarea{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--surface);}
+.q-plain.b textarea:focus{border-color:#5b8a94;}
+/* ── 預約成功頁 ── */
+.sc-wrap{text-align:center;position:relative;z-index:1;font-family:'Noto Sans TC',sans-serif;}
+.sc-wrap .sc-title{font-family:'Noto Serif TC',serif;}
+.sc-wrap .cf-time .t{font-family:'Noto Sans TC',sans-serif;}
+.sc-wrap .cf-cal .d{font-family:'Noto Sans TC',sans-serif;font-weight:700;}
+.sc-wrap .btn span{font-family:'Noto Sans TC',sans-serif;}
+.sc-card .cf-cal{border-color:#e08a3c;}
+.sc-card .cf-cal.rt{border-color:#b5645a;}
+.sc-circle{width:86px;height:86px;border-radius:50%;margin:8px auto 18px;display:flex;align-items:center;justify-content:center;}
+.sc-circle.nw{background:#6b8e4e;}
+.sc-circle.rt{background:#b5645a;}
+.sc-title{font-size:30px;font-weight:700;color:var(--ink);font-family:'Noto Serif TC',serif;letter-spacing:4px;margin-bottom:12px;}
+.sc-sub{font-size:14px;color:var(--muted);line-height:1.9;margin-bottom:18px;}
+.sc-card{display:flex;align-items:center;gap:16px;background:#fffdf7;border:1.5px solid rgba(192,138,82,.45);border-radius:16px;padding:16px;text-align:left;margin-bottom:14px;}
+.cf-cal.rt .m{background:#b5645a;}
+.cf-type.rt{background:#f5d9dc;color:#b5645a;}
+.sc-flow{border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:18px 14px 14px;margin-bottom:14px;font-family:'Noto Sans TC',sans-serif;}
+.sc-flow-title{display:flex;align-items:center;justify-content:center;gap:8px;font-size:17px;font-weight:700;color:var(--ink);margin-bottom:14px;}
+.sc-bang{width:22px;height:22px;border-radius:50%;background:#e08a3c;color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sc-opts{display:flex;gap:8px;align-items:stretch;}
+.sc-opt{flex:1;border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;}
+.sc-opt.gg{background:#eaf1e2;}
+.sc-opt.yy{background:#faf0d4;}
+.sc-opt img{height:112px;width:auto;max-width:100%;object-fit:contain;border-radius:10px;}
+.sc-opt .h{font-size:14.5px;font-weight:700;}
+.sc-opt.gg .h{color:#5a7a40;}
+.sc-opt.yy .h{color:#c07a20;}
+.sc-opt .d{font-size:13.5px;color:var(--ink);line-height:1.7;}
+.sc-opt .fee{background:#fff;border-radius:14px;font-size:11.5px;padding:3px 11px;color:#8a6d1f;}
+.sc-or{align-self:center;color:#b09a6a;font-size:14px;flex-shrink:0;}
+.sc-band{border-radius:14px;padding:13px 12px;font-size:14.5px;margin-top:12px;text-align:center;font-weight:700;display:flex;align-items:center;justify-content:center;gap:9px;}
+.sc-band.blue{background:#d9e8ec;color:#2e6b74;}
+.sc-band.pink{background:#f2d7da;color:#b04a56;}
+.sc-cash{display:inline-flex;width:26px;height:26px;border-radius:50%;background:#3d8a94;color:#fff;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;}
+/* ── 確認預約頁 ── */
+.cf-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);position:relative;z-index:1;}
+.cf-icon{width:34px;height:34px;border-radius:9px;background:#d98a2b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.cf-title{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink);letter-spacing:1px;}
+.cf-pill{background:#f6e8bd;color:#8a6d1f;font-size:11px;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.cf-sum{display:flex;align-items:center;gap:16px;background:#fffdf7;border:1.5px solid rgba(192,138,82,.45);border-radius:14px;padding:16px;margin-bottom:14px;position:relative;z-index:1;flex-wrap:wrap;}
+.cf-cal{border:1.5px solid #3d3227;border-radius:10px;overflow:hidden;text-align:center;width:74px;flex-shrink:0;background:#fff;}
+.cf-cal .m{background:#d98a2b;color:#fff;font-size:12px;padding:3px 0;letter-spacing:2px;}
+.cf-cal .d{font-size:30px;font-weight:700;color:var(--ink);line-height:1.15;padding-top:2px;}
+.cf-cal .w{font-size:12px;color:var(--muted);padding-bottom:4px;}
+.cf-time{flex:1;min-width:150px;}
+.cf-time .t{font-size:34px;font-family:'Noto Serif TC',serif;font-weight:700;color:var(--ink);line-height:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.cf-type{background:#e2ecd8;color:#5a7a40;font-size:12px;padding:3px 12px;border-radius:20px;font-family:'Noto Serif TC',serif;}
+.cf-type.rt{background:#f5e3d9;color:#b06a3c;}
+.cf-time .th{font-size:13px;color:var(--muted);margin-top:6px;}
+.cf-clinic{text-align:right;font-size:12px;color:var(--muted);line-height:1.7;margin-left:auto;}
+.cf-info{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:6px 16px;margin-bottom:14px;position:relative;z-index:1;}
+.cf-row{display:flex;align-items:center;padding:11px 0;border-bottom:1.5px dashed var(--border);gap:8px;}
+.cf-row:last-child{border-bottom:none;}
+.cf-lbl{font-size:12px;color:var(--muted);flex-shrink:0;min-width:58px;}
+.cf-val{flex:1;text-align:center;font-size:15px;font-weight:500;color:var(--ink);word-break:break-all;}
+.cf-trio{display:flex;border-bottom:1.5px dashed var(--border);}
+.cf-trio>div{flex:1;display:flex;align-items:center;padding:11px 0;gap:6px;min-width:0;}
+.cf-trio>div+div{border-left:1px solid var(--border);padding-left:10px;}
+@media (max-width:640px){
+  .cf-trio{flex-direction:column;border-bottom:none;}
+  .cf-trio>div{border-bottom:1.5px dashed var(--border);}
+  .cf-trio>div+div{border-left:none;padding-left:0;}
+  .cf-clinic{text-align:left;margin-left:90px;}
 }
-.cal-nav{
-  width:30px;height:30px;
-  border:1px solid var(--border);
-  cursor:pointer;background:var(--surface);
-  display:flex;align-items:center;justify-content:center;
-  font-size:15px;color:var(--muted);
-  transition:all .2s;
-}
-.cal-nav:hover{border-color:var(--warm);color:var(--warm);}
-.cal-title{
-  font-family:'Cormorant Garamond',serif;
-  font-size:16px;font-weight:400;
-  color:var(--ink);letter-spacing:1px;
-}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
-.cal-day-lbl{
-  text-align:center;font-size:11px;
-  color:var(--muted);padding:4px 0;
-  font-weight:300;
-}
-.cal-day{
-  text-align:center;padding:7px 3px;
-  font-size:13px;cursor:pointer;
-  transition:all .2s;font-weight:300;
-}
-.cal-day:hover:not(.disabled){
-  background:var(--glow);color:var(--accent);
-}
-.cal-day.disabled{color:rgba(155,138,116,.4);cursor:default;}
-.cal-day.selected{
-  background:var(--warm);color:#f3ede1;
-  font-weight:500;
-}
-.cal-day.today{color:var(--warm);font-weight:500;}
+.q-plain.g .q-label{background:#e2ecd8;color:#5a7a40;}
+.q-plain.o .q-label{background:#f6e3c9;color:#c07a20;}
+.q-plain.b .q-label{background:#e2eef1;color:#4a7680;}
+.q-plain input,.q-plain select,.q-plain textarea{border:none;background:transparent;width:100%;font-family:inherit;font-size:15px;color:var(--ink);outline:none;padding:6px 4px;}
+.q-plain input::placeholder,.q-plain textarea::placeholder{color:rgba(155,138,116,.45);}
+.q-label{font-size:12px;color:var(--ink);margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.q-label .req{color:var(--orange);}
+.q-eg{background:#f6e8bd;color:#8a6d1f;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:400;}
+.q-box input,.q-box select,.q-box textarea{border:none;background:transparent;width:100%;font-family:inherit;font-size:15px;color:var(--ink);outline:none;padding:2px 0;}
+.q-box input::placeholder,.q-box textarea::placeholder{color:rgba(155,138,116,.45);}
+.q-two{display:grid;grid-template-columns:1fr 1fr;gap:12px;position:relative;z-index:1;}
+.q-three{display:flex;flex-direction:column;position:relative;z-index:1;}
+@media (max-width:640px){.q-three{grid-template-columns:1fr;gap:0;}}
+@media (max-width:640px){.q-two{grid-template-columns:1fr;gap:0;}}
+.q-pills{display:flex;gap:10px;}
+.q-pillbtn{flex:1;text-align:center;padding:11px 0;border:1px solid var(--border);border-radius:30px;cursor:pointer;font-size:14px;color:var(--muted);transition:all .2s;background:var(--surface);}
+.q-pillbtn.on-yes{background:#e2ecd8;border-color:#6b8e4e;color:#4a6a33;font-weight:500;}
+.q-pillbtn.on-no{background:#f5d9dc;border-color:#c97b84;color:#a5525c;font-weight:500;}
+.q-proxy{display:flex;gap:10px;align-items:flex-start;border:1.5px dashed #7fb2bd;background:#e9f3f5;border-radius:12px;padding:10px 12px;font-size:12.5px;color:#4a7680;margin-bottom:12px;line-height:1.6;position:relative;z-index:1;}
+.q-bang{width:20px;height:20px;border-radius:50%;background:#5b8a94;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px;}
+.btn.qnext{background:#6b8e4e;border:none;box-shadow:0 5px 14px rgba(107,142,78,.35);border-radius:30px;}
+.btn.qnext:hover{background:#5f8043;}
+.btn.qnext span{color:#fff;}
+.cal-wrap{position:relative;overflow:hidden;border-radius:14px;}
+.cal-deco{position:absolute;border-radius:50%;pointer-events:none;}
+.cal-deco-y{width:150px;height:150px;background:rgba(240,206,122,.22);top:-55px;right:-45px;}
+.cal-deco-p{width:170px;height:170px;background:rgba(228,175,180,.16);bottom:-70px;left:-55px;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;position:relative;z-index:1;}
+.cal-nav{width:34px;height:34px;border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s;}
+.cal-nav.nav-prev{background:#f3dadd;color:#b4636b;}
+.cal-nav.nav-next{background:#e2ecd8;color:#6b8e4e;}
+.cal-nav:hover{filter:brightness(.95);}
+.cal-title{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:500;color:var(--ink);letter-spacing:1px;}
+.today-pill{background:#d98a2b;color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;margin-left:8px;vertical-align:2px;font-family:'Noto Serif TC',serif;font-weight:400;white-space:nowrap;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px 4px;position:relative;z-index:1;}
+.cal-day-lbl{text-align:center;font-size:11px;padding:6px 0;border-radius:20px;background:#f0ead9;color:#8a7a5c;font-weight:400;}
+.cal-day-lbl.sun{background:#f3dadd;color:#b4636b;}
+.cal-day-lbl.sat{background:#dcebee;color:#5b8a94;}
+.cal-day2{display:flex;flex-direction:column;align-items:center;height:56px;cursor:pointer;padding-top:2px;}
+.cal-day2 .cd-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
+.cal-day2:hover:not(.off):not(.sel) .cd-num{background:var(--glow);}
+.cal-day2.off{cursor:default;}
+.cal-day2.off .cd-num{color:rgba(155,138,116,.45);}
+.cal-day2.off.sun .cd-num{color:#dcb3b8;}
+.cal-day2.sel .cd-num{background:#a5793d;color:#fff;font-weight:600;box-shadow:0 4px 10px rgba(165,121,61,.38);}
+.cal-day2.sel .cd-sub{color:#a5793d;}
+.cal-day2.today .cd-num{border:1.5px dashed #d98a2b;color:#d98a2b;font-weight:500;}
+.cal-day2.today .cd-sub{color:#d98a2b;}
+.cd-sub{font-size:9px;margin-top:1px;letter-spacing:1px;}
+.cd-dots{display:flex;gap:3px;margin-top:4px;height:5px;}
+.cd-dots i{width:5px;height:5px;border-radius:50%;display:block;}
+.cd-dots i.g{background:#6b8e4e;}
+.cd-dots i.o{background:#d98a2b;}
+.cal-legend{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 14px;font-size:11px;color:var(--muted);margin-top:12px;border-top:1px solid var(--border);padding-top:10px;position:relative;z-index:1;}
+.cal-legend .lg-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:1px;}
+.cal-legend .lg-dot.g{background:#6b8e4e;}
+.cal-legend .lg-dot.o{background:#d98a2b;}
+.cal-legend .lg-gray{color:rgba(155,138,116,.55);margin-right:2px;}
 
 /* ── TIME SLOTS ── */
 .time-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
@@ -455,18 +595,17 @@ body::before{
 </head>
 <body>
 
+<div class="hd-stripe"><i></i><i></i><i></i><i></i><i></i></div>
 <div class="header">
+  <div class="hd-deco y"></div><div class="hd-deco p"></div>
   <div class="logo">
-    <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M22 6C22 6 27 15 27 22C27 29 22 38 22 38C22 38 17 29 17 22C17 15 22 6 22 6Z" stroke="#c08a52" stroke-width="1" fill="none"/>
-      <path d="M6 22C6 22 15 17 22 17C29 17 38 22 38 22C38 22 29 27 22 27C15 27 6 22 6 22Z" stroke="#c08a52" stroke-width="1" fill="none"/>
-      <circle cx="22" cy="22" r="2" fill="#c08a52" opacity=".6"/>
-    </svg>
+    <img src="icons/logo.png" alt="九辰物理治療所" style="height:44px;width:auto">
   </div>
   <div class="header-text">
     <h1>九辰物理治療所</h1>
-    <p>線上預約系統</p>
+    <p>線上預約系統・手機點點就約好</p>
   </div>
+  <div class="hd-badge">高雄楠梓・2F</div>
 </div>
 
 <div class="container">
@@ -504,7 +643,7 @@ function availableTimes(date, therapistId){
 const blockOfSlot = {};
 Object.entries(SHIFT_SLOTS).forEach(([b,arr]) => arr.forEach(s => blockOfSlot[s] = b));
 // 這個服務要佔幾個 30 分鐘格：60 分鐘服務(s60)＝2 格，其餘＝1 格
-function slotsNeeded(){ return state.service && state.service.id==='s60' ? 2 : 1; }
+function slotsNeeded(){ if(state.type==='new') return 2; return state.service && state.service.id==='s60' ? 2 : 1; }   // 初診一律60分鐘
 // 時間字串加減分鐘，回傳 HH:MM
 function addMin(t, mins){
   const [h,m] = t.split(':').map(Number);
@@ -666,6 +805,49 @@ async function loadSavedInfo() {
   } catch(e) { console.log('loadSavedInfo failed:', e); }
 }
 
+// ── 日曆名額點點:載入整月已約時段(只抓時間/治療師,無個資) ──
+async function loadMonthBooked() {
+  const m = state.calMonth;
+  const y = m.getFullYear(), mo = m.getMonth();
+  const from = `${y}-${String(mo+1).padStart(2,'0')}-01`;
+  const to = fmtDate(new Date(y, mo+1, 1));
+  const key = from + '|' + (state.therapistId || 0);
+  if (state._monthKey === key) return;
+  let q = sb.from('appointments')
+    .select('appointment_date, appointment_time, therapist_id')
+    .gte('appointment_date', from).lt('appointment_date', to)
+    .eq('status', 'confirmed');
+  if (state.therapistId) q = q.eq('therapist_id', state.therapistId);
+  const { data } = await q;
+  state.monthBooked = data || [];
+  state._monthKey = key;
+}
+// 某一天還剩幾個可約的30分鐘格(對接名額點點)
+function dayFreeCount(d) {
+  const slots = availableTimes(d, state.therapistId);
+  if (!slots.length) return 0;
+  const ds = fmtDate(d);
+  const rows = (state.monthBooked || []).filter(r => r.appointment_date === ds);
+  if (state.therapistId && state.therapistId !== 0) {
+    const taken = new Set(rows.map(r => r.appointment_time.slice(0,5)));
+    return slots.filter(t => !taken.has(t)).length;
+  }
+  const wd = String(d.getDay());
+  let free = 0;
+  for (const t of slots) {
+    const block = blockOfSlot[t];
+    const scheduled = state.therapists.filter(th => {
+      const sh = state.schedules[th.id]; return sh && sh[wd] && sh[wd].includes(block);
+    }).length;
+    let bookedTh = new Set(), unassigned = 0;
+    rows.forEach(r => {
+      if (r.appointment_time.slice(0,5) !== t) return;
+      if (r.therapist_id == null) unassigned++; else bookedTh.add(r.therapist_id);
+    });
+    if (scheduled - bookedTh.size - unassigned > 0) free++;
+  }
+  return free;
+}
 async function loadBookedSlots(dateStr, therapistId) {
   // 只取「時段 + 治療師」兩個欄位，不再撈 note（備註含其他病人個資，不可外洩到前端）。
   // 註：活動/公休在資料庫存為 status='cancelled'，本查詢只看 confirmed，本來就不會撈到。
@@ -713,12 +895,12 @@ function renderTypeSelect(el) {
     <p class="card-title">請選擇就診類型</p>
     <div class="type-grid">
       <div class="type-card ${state.type==='new'?'selected':''}" onclick="selectType('new',this)">
-        <div class="type-icon">🌱</div>
+        <div class="type-icon" style="margin-bottom:8px"><img src="icons/new.png?v=2" alt="" style="width:100%;max-width:190px;border-radius:12px"></div>
         <div class="type-name">初診</div>
         <div class="type-desc">首次到診・需填問卷</div>
       </div>
       <div class="type-card ${state.type==='return'?'selected':''}" onclick="selectType('return',this)">
-        <div class="type-icon">🔄</div>
+        <div class="type-icon" style="margin-bottom:8px"><img src="icons/return.png?v=2" alt="" style="width:100%;max-width:190px;border-radius:12px"></div>
         <div class="type-name">複診</div>
         <div class="type-desc">回診治療・快速預約</div>
       </div>
@@ -748,21 +930,17 @@ function pickRadio(el, field, val){
 
 function renderServiceSelect(el) {
   const services = [
-    { id:'s30', name:'複診一個部位', time:'30 分鐘', color:'#c08a52' },
-    { id:'s60', name:'複診兩個部位／親友一起約', time:'60 分鐘', color:'#7a5638' },
+    { id:'s30', name:'預約人數一位', time:'', color:'#c08a52' },
+    { id:'s60', name:'預約人數一位以上', time:'', color:'#7a5638' },
   ];
   el.innerHTML = `
   <div class="card">
-    <p class="card-title">選擇服務項目</p>
-    <p class="section-sub">複診・請選擇治療部位數量</p>
-    <div class="service-list">
+    <p class="card-title">選擇預約人數</p>
+    <div class="type-grid">
       ${services.map(s=>`
-        <div class="service-item ${state.service?.id===s.id?'selected':''}" onclick="selectService(${JSON.stringify(s).replace(/"/g,'&quot;')},this)">
-          <div class="service-dot" style="background:${s.color}"></div>
-          <div class="service-info">
-            <div class="service-name">${s.name}</div>
-            <div class="service-time">${s.time}</div>
-          </div>
+        <div class="type-card ${state.service?.id===s.id?'selected':''}" onclick="selectService(${JSON.stringify(s).replace(/"/g,'&quot;')},this)">
+          <div class="type-icon" style="margin-bottom:8px"><img src="${s.id==='s30'?'icons/one.png':'icons/multi.png'}" alt="" style="width:100%;max-width:190px;border-radius:12px"></div>
+          <div class="type-name" style="font-size:17px">${s.name}</div>
         </div>`).join('')}
     </div>
     <div class="btn-row">
@@ -774,7 +952,7 @@ function renderServiceSelect(el) {
 
 function selectService(s, el) {
   state.service = s;
-  if(el){ el.parentElement.querySelectorAll('.service-item').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); }
+  if(el){ el.parentElement.querySelectorAll('.type-card,.service-item').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); }
   enableStepNext();
 }
 
@@ -793,23 +971,25 @@ function renderTherapistSelect(el) {
   el.innerHTML = `
   <div class="card">
     <p class="card-title">選擇治療師</p>
-    <div class="therapist-grid">
-      <div class="th-card ${state.therapistId===0?'selected':''}" onclick="selectTherapist(0,'不指定',this)">
-        <div class="th-avatar" style="background:rgba(155,138,116,.12);color:var(--muted)">任</div>
-        <div>
-          <div class="th-name">不指定</div>
-          <div class="th-spec">系統自動安排</div>
+    <div class="therapist-grid" style="gap:26px 14px;margin-top:6px">
+      <div class="th-card ${state.therapistId===0?'selected':''}" style="grid-column:1/-1;padding:0;min-height:96px;background:#fbf0d2" onclick="selectTherapist(0,'不指定',this)">
+        <div style="width:33.3%;align-self:stretch;position:relative;flex-shrink:0;z-index:1"><img src="icons/any.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1;padding:14px 12px;text-align:center">
+          <div class="th-name" style="font-size:20px;font-weight:500">不指定治療師</div>
+          <div class="th-spec">治療所幫我安排</div>
         </div>
       </div>
       ${state.therapists.map((t,i)=>{
         const p = warmPalette[i % warmPalette.length];
         return `
-        <div class="th-card ${state.therapistId===t.id?'selected':''}" onclick="selectTherapist(${t.id},'${t.name}',this)">
-          <div class="th-avatar" style="background:${p.bg};color:${p.color}">${t.name[0]}</div>
-          <div>
-            <div class="th-name">${t.name} 治療師</div>
-            <div class="th-spec">${t.specialty||''}</div>
+        <div style="position:relative;min-height:100px;cursor:pointer" onclick="selectTherapist(${t.id},'${t.name}',this)">
+          <div class="th-card glove ${state.therapistId===t.id?'selected':''}">
+            <div style="flex:1;position:relative;z-index:1">
+              <div class="th-name" style="font-size:20px;font-weight:500;white-space:nowrap"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${t.color||'#c08a52'};margin-right:8px;vertical-align:2px"></span>${t.name}<span style="font-size:11px;color:var(--muted);margin-left:6px;font-weight:300">治療師</span></div>
+              <div style="height:4px;border-radius:2px;margin-top:8px;width:90%;background:linear-gradient(90deg,${t.color||'#c08a52'}59,transparent)"></div>
+            </div>
           </div>
+          <div class="th-avatar glove-avatar" style="background:var(--surface);background-image:linear-gradient(${p.bg},${p.bg});color:${p.color};border:1.5px solid ${state.therapistId===t.id?'var(--warm)':'var(--border)'}">${t.name[0]}<img src="th_photos/${t.id}.jpg?v=10" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;z-index:2" onerror="this.remove()"></div>
         </div>`;
       }).join('')}
     </div>
@@ -822,15 +1002,28 @@ function renderTherapistSelect(el) {
 
 function selectTherapist(id, name, el) {
   state.therapistId = id; state.therapistName = name;
-  if(el){ el.parentElement.querySelectorAll('.th-card').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); }
+  if(el){
+    const grid = el.closest('.therapist-grid') || el.parentElement;
+    grid.querySelectorAll('.th-card').forEach(c=>c.classList.remove('selected'));
+    grid.querySelectorAll('.th-avatar.glove-avatar').forEach(a=>a.style.borderColor='var(--border)');
+    // 拳套卡的點擊掛在外層包裝,真正要亮的是裡面的卡片
+    const card = el.classList.contains('th-card') ? el : el.querySelector('.th-card');
+    if(card) card.classList.add('selected');
+    const av = el.querySelector ? el.querySelector('.glove-avatar') : null;
+    if(av) av.style.borderColor = 'var(--warm)';
+  }
   enableStepNext();
 }
 
 async function renderDatetime(el) {
+  // 先立刻畫(不等資料,避免畫面多跳一下),名額資料到貨後再靜靜補畫點點
+  renderDatetimeInner(el);
+  const before = state._monthKey;
+  await loadMonthBooked();
   if (state.date) {
     await loadBookedSlots(fmtDate(state.date), state.therapistId || null);
   }
-  renderDatetimeInner(el);
+  if (state._monthKey !== before || state.date) renderDatetimeInner(el);
 }
 // 同步重畫日期時段區(不轉圈圈、不重播淡入)，給選日期/換月直接呼叫＝不跳動
 function renderDatetimeInner(el) {
@@ -840,14 +1033,17 @@ function renderDatetimeInner(el) {
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const today = new Date(); today.setHours(0,0,0,0);
 
+  const isThisMonth = today.getFullYear()===year && today.getMonth()===month;
   let calHtml = `
+  <div class="cal-wrap">
+  <div class="cal-deco cal-deco-y"></div><div class="cal-deco cal-deco-p"></div>
   <div class="cal-header">
-    <button class="cal-nav" onclick="prevMonth()">‹</button>
-    <span class="cal-title">${year} 年 ${month+1} 月</span>
-    <button class="cal-nav" onclick="nextMonth()">›</button>
+    <button class="cal-nav nav-prev" onclick="prevMonth()">‹</button>
+    <span class="cal-title">${year} 年 ${month+1} 月${isThisMonth?`<span class="today-pill">今天 ${today.getMonth()+1}/${today.getDate()}</span>`:''}</span>
+    <button class="cal-nav nav-next" onclick="nextMonth()">›</button>
   </div>
   <div class="cal-grid">
-    ${DAYS.map(d=>`<div class="cal-day-lbl">${d}</div>`).join('')}
+    ${DAYS.map((d,i)=>`<div class="cal-day-lbl ${i===0?'sun':i===6?'sat':''}">${d}</div>`).join('')}
     ${Array(first).fill('<div></div>').join('')}
     ${Array.from({length:daysInMonth},(_,i)=>{
       const d = new Date(year,month,i+1);
@@ -855,8 +1051,21 @@ function renderDatetimeInner(el) {
       const isSun = d.getDay()===0;
       const isToday = d.toDateString()===today.toDateString();
       const sel = state.date && fmtDate(state.date)===fmtDate(d);
-      return `<div class="cal-day ${isPast||isSun?'disabled':''} ${sel?'selected':''} ${isToday&&!sel?'today':''}" onclick="${isPast||isSun?'':'selectDate('+year+','+month+','+(i+1)+')'}">${i+1}</div>`;
+      const free = (isPast||isSun) ? 0 : dayFreeCount(d);
+      const off = isPast || isSun || free===0;
+      // 名額點點:綠=充足(依剩餘量1~3顆)、橘=剩少量
+      let extra='';
+      if(sel) extra='<span class="cd-sub">已選</span>';
+      else if(isToday&&!off) extra='<span class="cd-sub">今天</span>';
+      else if(!off){
+        const g = free>=4;
+        const n = g ? (free>=12?3:free>=7?2:1) : 1;
+        extra=`<span class="cd-dots">${Array(n).fill(`<i class="${g?'g':'o'}"></i>`).join('')}</span>`;
+      }
+      return `<div class="cal-day2 ${off?'off':''} ${isSun?'sun':''} ${sel?'sel':''} ${isToday&&!sel?'today':''}" onclick="${off?'':'selectDate('+year+','+month+','+(i+1)+')'}"><span class="cd-num">${i+1}</span>${extra}</div>`;
     }).join('')}
+  </div>
+  <div class="cal-legend"><span><span class="lg-dot g"></span>名額充足</span><span><span class="lg-dot o"></span>剩少量名額</span><span><span class="lg-gray">灰字</span>休診/不可約</span></div>
   </div>`;
 
   const slots = availableTimes(state.date, state.therapistId);
@@ -892,14 +1101,15 @@ function selectTime(t, el) {
   if(el){ el.parentElement.querySelectorAll('.time-slot').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); }
   enableStepNext();
 }
-function prevMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()-1,1); renderDatetimeInner(document.getElementById('mainContent')); }
-function nextMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()+1,1); renderDatetimeInner(document.getElementById('mainContent')); }
+async function prevMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()-1,1); await loadMonthBooked(); renderDatetimeInner(document.getElementById('mainContent')); }
+async function nextMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()+1,1); await loadMonthBooked(); renderDatetimeInner(document.getElementById('mainContent')); }
 
 function renderForm(el) {
   const isNew = state.type === 'new';
-  el.innerHTML = `
+  if (!isNew) {
+    el.innerHTML = `
   <div class="card">
-    <p class="card-title">${isNew?'初診問卷':'填寫預約資料'}</p>
+    <p class="card-title">填寫預約資料</p>
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">姓名<span>*</span></label>
@@ -911,53 +1121,92 @@ function renderForm(el) {
       </div>
     </div>
     ${state.savedInfo?`<p class="notice" style="margin-top:-6px;margin-bottom:12px;color:var(--warm)">✓ 已帶入您上次的資料，如有變動可直接修改</p>`:''}
-    ${isNew?`
-    <div class="form-group">
-      <label class="form-label">出生年月日（民國）<span>*</span></label>
-      <p class="form-hint">填民國年 / 月 / 日（例：民國 54 年 8 月 15 日）</p>
-      ${birthBox()}
-    </div>
-    <div class="form-group">
-      <label class="form-label">主要不適部位<span>*</span></label>
-      <p class="form-hint">例：右肩、下背、左膝（直接打字）</p>
-      <input class="form-input" id="f-area" value="${String(state.discomfortArea||'').replace(/"/g,'&quot;')}" oninput="state.discomfortArea=this.value;updateBtn()">
-    </div>
-    <div class="form-group">
-      <label class="form-label">不適時間多久了？<span>*</span></label>
-      <select class="form-select" id="f-dur" onchange="state.discomfortDuration=this.value;updateBtn()">
-        <option value="">請選擇...</option>
-        <option ${state.discomfortDuration==='1週內'?'selected':''}>1週內</option>
-        <option ${state.discomfortDuration==='1個月內'?'selected':''}>1個月內</option>
-        <option ${state.discomfortDuration==='3個月內'?'selected':''}>3個月內</option>
-        <option ${state.discomfortDuration==='超過3個月'?'selected':''}>超過3個月</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">曾接受過物理治療？<span>*</span></label>
-      <div class="radio-group">
-        <div class="radio-item ${state.previousPT==='是'?'selected':''}" onclick="pickRadio(this,'previousPT','是')"><span>是</span></div>
-        <div class="radio-item ${state.previousPT==='否'?'selected':''}" onclick="pickRadio(this,'previousPT','否')"><span>否</span></div>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">是否有手術史？</label>
-      <div class="radio-group">
-        <div class="radio-item ${state.surgeryHistory==='是'?'selected':''}" onclick="pickRadio(this,'surgeryHistory','是')"><span>是</span></div>
-        <div class="radio-item ${state.surgeryHistory==='否'?'selected':''}" onclick="pickRadio(this,'surgeryHistory','否')"><span>否</span></div>
-      </div>
-    </div>
-    <div class="form-group">
-      <p class="notice" style="margin-bottom:8px;color:var(--warm)">如是幫年長者或親友預約，請在備註欄註明代約人的姓名、關係、電話，謝謝 🙏</p>
-      <label class="form-label">其他說明（選填）</label>
-      <p class="form-hint">其他症狀、特殊需求或代約人資訊</p>
-      <textarea class="form-textarea" oninput="state.otherNotes=this.value">${state.otherNotes}</textarea>
-    </div>`:`
     <div class="form-group">
       <p class="notice" style="margin-bottom:8px;color:var(--warm)">如是幫年長者或親友預約，請在備註欄註明代約人的姓名、關係、電話，謝謝 🙏</p>
       <label class="form-label">備註（選填）</label>
       <textarea class="form-textarea" placeholder="如有特殊需求請填寫..." oninput="state.otherNotes=this.value">${state.otherNotes}</textarea>
-    </div>`}
+    </div>
     <div class="btn-row">
+      <button class="btn" onclick="prevStep()"><span>上一步</span></button>
+      <button class="btn primary" id="formNextBtn" onclick="nextStep()"><span>下一步</span></button>
+    </div>
+  </div>`;
+    updateBtn();
+    return;
+  }
+  const rerender = "renderForm(document.getElementById('mainContent'))";
+  el.innerHTML = `
+  <div class="card q-card">
+    <div class="q-deco1"></div><div class="q-deco2"></div>
+    <div class="q-head">
+      <div class="q-icon">📋</div>
+      <span class="q-title">初診問卷</span>
+      <span class="q-pill">約 1 分鐘完成</span>
+    </div>
+
+    <div class="q-sec"><span class="q-num" style="background:#6b8e4e">1</span>基本資料<span class="q-line"></span></div>
+    <div class="q-three">
+      <div class="q-plain g">
+        <div class="q-label">姓名 <span class="req">*</span></div>
+        <input id="f-name" placeholder="請輸入姓名" value="${state.name}" oninput="state.name=this.value;updateBtn()">
+      </div>
+      <div class="q-plain g stack">
+        <div class="q-label">出生年月日（民國）<span class="req">*</span></div>
+        ${birthBox()}
+      </div>
+      <div class="q-plain g">
+        <div class="q-label">性別 <span class="req">*</span></div>
+        <div class="q-pills" style="margin-top:2px">
+          <div class="q-pillbtn ${state.gender==='男'?'on-yes':''}" style="padding:7px 0" onclick="state.gender='男';${rerender}">男${state.gender==='男'?' ✓':''}</div>
+          <div class="q-pillbtn ${state.gender==='女'?'on-yes':''}" style="padding:7px 0" onclick="state.gender='女';${rerender}">女${state.gender==='女'?' ✓':''}</div>
+        </div>
+      </div>
+    </div>
+    ${state.savedInfo?`<p class="notice" style="margin:-4px 2px 10px;color:var(--warm);position:relative;z-index:1">✓ 已帶入您上次的資料，如有變動可直接修改</p>`:''}
+    <div class="q-plain g">
+      <div class="q-label">聯絡電話 <span class="req">*</span></div>
+      <input id="f-phone" type="tel" placeholder="09xx-xxx-xxx" value="${state.phone}" oninput="state.phone=this.value;updateBtn()">
+    </div>
+
+    <div class="q-sec"><span class="q-num" style="background:#d98a2b">2</span>不適狀況<span class="q-line"></span></div>
+    <div class="q-plain o">
+      <div class="q-label">主要不適部位 <span class="req">*</span><span class="q-eg">例：右肩、下背、左膝</span></div>
+      <input id="f-area" placeholder="直接打字輸入" value="${String(state.discomfortArea||'').replace(/"/g,'&quot;')}" oninput="state.discomfortArea=this.value;updateBtn()">
+    </div>
+    <div class="q-two">
+      <div class="q-plain o">
+        <div class="q-label">不適時間多久了？<span class="req">*</span></div>
+        <select id="f-dur" onchange="state.discomfortDuration=this.value;updateBtn()">
+          <option value="">請選擇...</option>
+          <option ${state.discomfortDuration==='1週內'?'selected':''}>1週內</option>
+          <option ${state.discomfortDuration==='1個月內'?'selected':''}>1個月內</option>
+          <option ${state.discomfortDuration==='3個月內'?'selected':''}>3個月內</option>
+          <option ${state.discomfortDuration==='超過3個月'?'selected':''}>超過3個月</option>
+        </select>
+      </div>
+      <div class="q-plain o">
+        <div class="q-label">曾接受過物理治療？<span class="req">*</span></div>
+        <div class="q-pills">
+          <div class="q-pillbtn ${state.previousPT==='是'?'on-yes':''}" onclick="state.previousPT='是';${rerender}">是${state.previousPT==='是'?' ✓':''}</div>
+          <div class="q-pillbtn ${state.previousPT==='否'?'on-yes':''}" onclick="state.previousPT='否';${rerender}">否${state.previousPT==='否'?' ✓':''}</div>
+        </div>
+      </div>
+    </div>
+    <div class="q-plain o">
+      <div class="q-label">是否有手術史？</div>
+      <div class="q-pills">
+        <div class="q-pillbtn ${state.surgeryHistory==='是'?'on-no':''}" onclick="state.surgeryHistory='是';${rerender}">是${state.surgeryHistory==='是'?' ✓':''}</div>
+        <div class="q-pillbtn ${state.surgeryHistory==='否'?'on-no':''}" onclick="state.surgeryHistory='否';${rerender}">否${state.surgeryHistory==='否'?' ✓':''}</div>
+      </div>
+    </div>
+
+    <div class="q-sec"><span class="q-num" style="background:#5b8a94">3</span>其他說明（選填）<span class="q-line"></span></div>
+    <div class="q-proxy"><span class="q-bang">!</span><span>幫年長者或親友預約，請在下方註明代約人的姓名、關係、電話，謝謝 🙏</span></div>
+    <div class="q-plain b">
+      <textarea rows="3" placeholder="其他症狀、特殊需求或代約人資訊" oninput="state.otherNotes=this.value">${state.otherNotes}</textarea>
+    </div>
+
+    <div class="btn-row" style="position:relative;z-index:1">
       <button class="btn" onclick="prevStep()"><span>上一步</span></button>
       <button class="btn primary" id="formNextBtn" onclick="nextStep()"><span>下一步</span></button>
     </div>
@@ -970,7 +1219,7 @@ function updateBtn() {
   if (!btn) return;
   const isNew = state.type === 'new';
   const ok = state.name && state.phone &&
-    (!isNew || (state.birthDate && state.discomfortArea && state.discomfortDuration && state.previousPT));
+    (!isNew || (state.birthDate && state.gender && state.discomfortArea && state.discomfortDuration && state.previousPT));
   btn.disabled = !ok;
 }
 
@@ -988,12 +1237,50 @@ function renderConfirm(el) {
     state.otherNotes?['備註', state.otherNotes]:null,
   ].filter(Boolean);
 
+  const isNew = state.type === 'new';
+  let mgBirth = '';
+  if (state.birthDate && /^\d{4}-\d{2}-\d{2}$/.test(state.birthDate)) {
+    const [Y,M,D] = state.birthDate.split('-').map(Number);
+    mgBirth = `民國 ${Y-1911} 年 ${M} 月 ${D} 日`;
+  }
   el.innerHTML = `
-  <div class="card">
-    <p class="card-title">確認預約內容</p>
-    ${rows.map(([l,v])=>`<div class="confirm-row"><span class="confirm-lbl">${l}</span><span class="confirm-val">${v}</span></div>`).join('')}
-    <p class="notice" style="margin-top:14px">送出後將由診所以 LINE 或電話確認預約，如需取消請提前 24 小時告知。</p>
-    <div class="btn-row">
+  <div class="card q-card">
+    <div class="q-deco1"></div><div class="q-deco2"></div>
+    <div class="cf-head">
+      <div class="cf-icon">✓</div>
+      <span class="cf-title">確認預約內容</span>
+      <span class="cf-pill">最後一步！</span>
+    </div>
+
+    <div class="cf-sum">
+      <div class="cf-cal">
+        <div class="m">${d.getMonth()+1} 月</div>
+        <div class="d">${d.getDate()}</div>
+        <div class="w">週${DAYS[d.getDay()]}</div>
+      </div>
+      <div class="cf-time">
+        <div class="t">${state.time}<span class="cf-type ${isNew?'':'rt'}">${isNew?'初診':'複診'}</span></div>
+        <div class="th">治療師：${state.therapistId===0?'不指定（系統安排）':state.therapistName+' 治療師'}${!isNew&&state.service?'・'+state.service.name:''}</div>
+      </div>
+      <div class="cf-clinic">九辰物理治療所<br>高雄市楠梓區清豐二路108號2樓</div>
+    </div>
+
+    <div class="cf-info">
+      ${isNew?`
+      <div class="cf-trio">
+        <div><span class="cf-lbl">姓名</span><span class="cf-val">${state.name}</span></div>
+        <div><span class="cf-lbl">出生年月日</span><span class="cf-val">${mgBirth||'—'}</span></div>
+        <div><span class="cf-lbl">性別</span><span class="cf-val">${state.gender||'—'}</span></div>
+      </div>`:`
+      <div class="cf-row"><span class="cf-lbl">姓名</span><span class="cf-val">${state.name}</span></div>`}
+      <div class="cf-row"><span class="cf-lbl">電話</span><span class="cf-val">${state.phone}</span></div>
+      ${isNew&&state.discomfortArea?`<div class="cf-row"><span class="cf-lbl">不適部位</span><span class="cf-val">${state.discomfortArea}</span></div>`:''}
+      ${state.otherNotes?`<div class="cf-row"><span class="cf-lbl">備註</span><span class="cf-val">${state.otherNotes}</span></div>`:''}
+    </div>
+
+    <div class="q-proxy"><span class="q-bang">!</span><span>送出後將由診所以 LINE 或電話確認預約；如需取消，請提前 24 小時告知，謝謝！</span></div>
+
+    <div class="btn-row" style="position:relative;z-index:1">
       <button class="btn" onclick="prevStep()"><span>修改</span></button>
       <button class="btn primary" id="submitBtn" onclick="submitBooking()"><span>確認送出</span></button>
     </div>
@@ -1028,7 +1315,7 @@ async function submitBooking() {
         appointment_date: fmtDate(state.date),
         appointment_time: addMin(state.time, i*30) + ':00',
         type: state.type,
-        service: state.service?.name || (state.type==='new'?'初診評估':'複診'),
+        service: (state.service?.name || (state.type==='new'?'初診評估':'複診')) + (i>0?'（續）':''),
         symptoms: state.discomfortArea || '',
         note: state.otherNotes || '',
         line_user_id: lineUserId || null,
@@ -1041,6 +1328,7 @@ async function submitBooking() {
     // 全部成功才算數；資料庫端也會再擋一次「同治療師同時段已有人」（回 SLOT_TAKEN）
     const intake = state.type === 'new' ? {
       birth_date: state.birthDate || null,
+      gender: state.gender || null,
       discomfort_area: state.discomfortArea,
       discomfort_duration: state.discomfortDuration,
       previous_pt: state.previousPT,
@@ -1083,25 +1371,65 @@ async function submitBooking() {
   }
 }
 
+// 設計預覽用:網址帶 ?preview=new 或 ?preview=return 直接看成功頁(純畫面,不寫任何資料)
+if (location.search.includes('preview=')) {
+  window.addEventListener('load', () => {
+    state.type = location.search.includes('preview=new') ? 'new' : 'return';
+    state.date = new Date(); state.time = '19:30';
+    state.name = '王小明'; state.therapistId = 0; state.step = 99;
+    setTimeout(() => render(), 400);
+  });
+}
 function renderSuccess(el) {
   const d = state.date;
+  const isNew = state.type === 'new';
   el.innerHTML = `
-  <div class="card">
-    <div class="success-wrap">
-      <div class="success-icon">
-        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M7 16l6 6 12-12" stroke="#c08a52" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+  <div class="card q-card">
+    <div class="q-deco1 ${isNew?'':'pk'}"></div><div class="q-deco2"></div>
+    <div class="sc-wrap">
+      <div class="sc-circle ${isNew?'nw':'rt'}">
+        <svg viewBox="0 0 32 32" width="40" height="40" fill="none"><path d="M7 17l7 7 11-13" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
-      <p class="success-title">預約成功</p>
-      <p class="success-sub">可隨時至 LINE 選單「預約資訊」查詢或取消預約<br>預約前一天晚上會傳 LINE 提醒您</p>
-      <div class="warm-divider"></div>
-      <div class="booking-summary">
-        <div class="confirm-row"><span class="confirm-lbl">姓名</span><span class="confirm-val">${state.name}</span></div>
-        <div class="confirm-row"><span class="confirm-lbl">日期時間</span><span class="confirm-val">${d.getMonth()+1} 月 ${d.getDate()} 日 ${state.time}</span></div>
-        <div class="confirm-row"><span class="confirm-lbl">治療師</span><span class="confirm-val">${state.therapistId===0?'不指定':state.therapistName+' 治療師'}</span></div>
+      <p class="sc-title">預約成功！</p>
+      <p class="sc-sub">可隨時至 LINE 選單「預約資訊」查詢或取消<br>預約前一天晚上會傳 LINE 提醒您</p>
+
+      <div class="sc-card">
+        <div class="cf-cal ${isNew?'':'rt'}">
+          <div class="m">${d.getMonth()+1} 月</div>
+          <div class="d">${d.getDate()}</div>
+          <div class="w">週${DAYS[d.getDay()]}</div>
+        </div>
+        <div class="cf-time">
+          <div class="t">${state.time}<span class="cf-type ${isNew?'':'rt'}">${isNew?'初診':'複診'}</span></div>
+          <div class="th">${state.name}・治療師${state.therapistId===0?'不指定':' '+state.therapistName}</div>
+          ${!isNew?`<div class="th" style="margin-top:2px">高雄市楠梓區清豐二路108號2樓</div>`:''}
+        </div>
       </div>
-      <div class="btn-row" style="margin-top:22px">
+
+      ${isNew?`
+      <div class="sc-flow">
+        <div class="sc-flow-title"><span class="sc-bang">!</span>初診當天流程，再提醒一次</div>
+        <div class="sc-opts">
+          <div class="sc-opt gg">
+            <img src="icons/dxbook.png" alt="">
+            <div class="h">有診斷書</div>
+            <div class="d">攜帶診斷書<br>直接上 2F</div>
+            <div class="fee">掛號費 200 元</div>
+          </div>
+          <div class="sc-or">或</div>
+          <div class="sc-opt yy">
+            <img src="icons/dexing.png" alt="">
+            <div class="h">沒有診斷書</div>
+            <div class="d">先 1F 德杏中醫<br>再上 2F 治療</div>
+            <div class="fee">只付中醫掛號費</div>
+          </div>
+        </div>
+        <div class="sc-band blue"><span class="sc-cash">$</span>單次治療 1500–2000 元・依現場評估為準</div>
+        <div class="sc-band pink">診斷書三個月內有效・請提早 10 分鐘報到</div>
+      </div>`:`
+      <div class="q-proxy"><span class="q-bang">!</span><span>直接到診所報到；如需改期或取消，請提前 24 小時告知</span></div>`}
+
+      <div class="btn-row" style="margin-top:18px">
         <button class="btn" onclick="location.href='https://liff.line.me/2010100504-sH4QFQP5'"><span>查看我的預約</span></button>
         <button class="btn primary" onclick="resetBooking()"><span>再次預約</span></button>
       </div>
@@ -1113,7 +1441,7 @@ function nextStep() { state.step++; render(); }
 function prevStep() { state.step--; render(); }
 async function resetBooking() {
   state = { step:0, type:null, service:null, therapistId:null, therapistName:null,
-    date:null, time:null, name:'', phone:'', birthDate:'', discomfortArea:'',
+    date:null, time:null, name:'', phone:'', birthDate:'', gender:'', discomfortArea:'',
     discomfortDuration:'', previousPT:'', surgeryHistory:'', otherNotes:'',
     calMonth:new Date(), therapists:state.therapists, schedules:state.schedules, bookedSlots:[], savedInfo:false };
   await loadSavedInfo();

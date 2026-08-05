@@ -423,7 +423,8 @@ async function renderToday(){
   $('topSub').textContent='';
   const el=$('page-today');
   el.innerHTML=`
-    <div class="datebar">
+    <div style="position:relative;z-index:60">
+    <div class="datebar" style="margin-bottom:0">
       <button class="nav" onclick="shiftDay(-1)">‹</button>
       <div class="cur" onclick="openJumpCal()" style="cursor:pointer">
         <div class="d">${curDate.getMonth()+1}月${curDate.getDate()}日 <span style="font-size:11px;color:var(--warm);vertical-align:2px">▼</span></div>
@@ -432,8 +433,9 @@ async function renderToday(){
       </div>
       <button class="nav" onclick="shiftDay(1)">›</button>
     </div>
-    <div id="jumpCalBox" style="display:none"></div>
-    <div id="todayList"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>`;
+    <div id="jumpCalBox" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 6px)"></div>
+    </div>
+    <div id="todayList" style="margin-top:12px"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>`;
   let rows;
   try{ rows=await loadDay(ds); }catch(e){ return; }
   renderTodayList(rows);

@@ -117,13 +117,15 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
 .mo-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 8px}
 .mo-lbl{text-align:center;font-size:11px;color:var(--sub);padding:4px 0 6px}
 .mo-lbl.sun{color:#c0523c}
-.mo-day{min-height:56px;border-radius:10px;padding:4px 2px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.mo-grid{gap:2px;padding:8px 4px}
+.mo-day{min-height:74px;border-radius:8px;padding:2px 1px;cursor:pointer;display:flex;flex-direction:column;align-items:stretch;gap:2px;overflow:hidden}
 .mo-day:active{background:var(--glow)}
-.mo-day .n{font-size:13px;line-height:1.4}
+.mo-day .n{font-size:11.5px;line-height:1.4;text-align:center;flex-shrink:0}
 .mo-day.dim .n{color:rgba(155,138,116,.35)}
-.mo-day.today .n{width:24px;height:24px;border-radius:50%;background:var(--warm);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto}
-.mo-day .cnt{font-size:10px;background:var(--glow);color:var(--warm-d);border-radius:8px;padding:0 5px;line-height:1.6}
-.mo-day .ev{font-size:9px;color:var(--event)}
+.mo-day.today .n{width:20px;height:20px;border-radius:50%;background:var(--warm);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto}
+.mo-chip{font-size:8.5px;color:#fff;border-radius:4px;padding:1px 3px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.mo-chip.ev{background:rgba(138,127,176,.25);color:var(--event)}
+.mo-more{font-size:8.5px;color:var(--sub);text-align:center;line-height:1.3}
 .wbar{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--glow);color:var(--warm-d)}
 .wbar .wdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-0.5px}
 .wbar.ev{background:rgba(229,115,115,.15);color:var(--event)}
@@ -191,6 +193,10 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 .mc-d.dis{color:var(--line)}
 .mc-d.sel{background:var(--warm);color:#fff;font-weight:600}
 .mc-d.today{color:var(--warm);font-weight:600}
+.mc-d{position:relative;padding:7px 0 12px}
+.mc-dots{position:absolute;left:0;right:0;bottom:2px;display:flex;justify-content:center;gap:2px;align-items:center}
+.mc-dots i{width:4.5px;height:4.5px;border-radius:50%;display:block}
+.mc-dots b{font-size:8px;color:var(--sub);font-weight:400}
 .mc-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .mc-nav .m{font-size:16px;font-weight:600}
 .mc-nav button{width:36px;height:36px;border-radius:10px;background:var(--card);color:var(--warm);font-size:18px}
@@ -435,16 +441,21 @@ function shiftDay(n){ curDate.setDate(curDate.getDate()+n); renderToday(); }
 /* ============ 點日期→小月曆跳日 ============ */
 let jc={m:null};
 function openJumpCal(){ jc.m=new Date(curDate.getFullYear(),curDate.getMonth(),1); renderJumpCal(); }
-function renderJumpCal(){
+async function renderJumpCal(){
   const y=jc.m.getFullYear(), mo=jc.m.getMonth();
   const first=new Date(y,mo,1).getDay(), dim=new Date(y,mo+1,0).getDate(), t=todayStr();
+  let rows=[]; try{ rows=await loadRange(fmtDate(new Date(y,mo,1)),fmtDate(new Date(y,mo+1,0))); }catch(e){}
+  const byDay={}; rows.forEach(a=>{(byDay[a.appointment_date]=byDay[a.appointment_date]||[]).push(a);});
   let cal=`<div class="mc-nav"><button onclick="jcMonth(-1)">‹</button><div class="m">${y} 年 ${mo+1} 月</div><button onclick="jcMonth(1)">›</button></div><div class="mini-cal">`+WD.map(w=>`<div class="mc-h">${w}</div>`).join('')+Array(first).fill('<div></div>').join('');
   for(let d=1;d<=dim;d++){
     const ds=fmtDate(new Date(y,mo,d)); const sel=ds===fmtDate(curDate);
-    cal+=`<div class="mc-d ${sel?'sel':''} ${ds===t&&!sel?'today':''}" onclick="jcPick('${ds}')">${d}</div>`;
+    const groups=groupAppts(byDay[ds]||[]);
+    const ths=[...new Set(groups.map(g=>g[0].therapist_id))].slice(0,3);
+    const dots=ths.map(id=>`<i style="background:${thColor(id)}"></i>`).join('')+(groups.length>3?'<b>+</b>':'');
+    cal+=`<div class="mc-d ${sel?'sel':''} ${ds===t&&!sel?'today':''}" onclick="jcPick('${ds}')">${d}${ths.length?`<span class="mc-dots">${dots}</span>`:''}</div>`;
   }
   cal+='</div>';
-  openSheet(`<h2>跳到日期</h2><div class="sub">點選日期直接切換</div>${cal}<div style="height:8px"></div>`);
+  openSheet(`<h2>跳到日期</h2><div class="sub">點日期直接切換・點點=當天有診的治療師</div>${cal}<div style="height:8px"></div>`);
 }
 function jcMonth(n){ jc.m=new Date(jc.m.getFullYear(),jc.m.getMonth()+n,1); renderJumpCal(); }
 function jcPick(ds){ curDate=parseDate(ds); closeSheet(); renderToday(); }
@@ -558,10 +569,18 @@ async function renderMonth(){
   for(let d=1; d<=last.getDate(); d++){
     const dd=new Date(y,mo,d); const ds=fmtDate(dd);
     const dayRows=byDay[ds]||[];
-    const n=groupAppts(dayRows).length;
-    const hasEv=dayRows.some(isEvent);
+    const groups=groupAppts(dayRows);
+    const evs=dayRows.filter(isEvent);
     const isT=ds===tstr;
-    cells+=`<div class="mo-day ${isT?'today':''} ${dd.getDay()===0?'dim':''}" onclick="jumpDay('${ds}')"><span class="n">${d}</span>${n?`<span class="cnt">${n}</span>`:''}${hasEv?'<span class="ev">🚫</span>':''}</div>`;
+    const MAX=4;
+    let chips=groups.slice(0,MAX).map(g=>{
+      const code=(thName(g[0].therapist_id)||'未')[0];
+      return `<div class="mo-chip" style="background:${thColor(g[0].therapist_id)}">${code}-${esc((g[0].patient_name||'').slice(0,3))}</div>`;
+    }).join('');
+    if(evs.length) chips=`<div class="mo-chip ev">🚫${esc((evs[0].patient_name||'休').slice(0,3))}</div>`+chips;
+    const extra=groups.length-MAX;
+    if(extra>0) chips+=`<div class="mo-more">+${extra}</div>`;
+    cells+=`<div class="mo-day ${isT?'today':''} ${dd.getDay()===0?'dim':''}" onclick="jumpDay('${ds}')"><span class="n">${d}</span>${chips}</div>`;
   }
   const grid=$('moGrid'); if(grid) grid.outerHTML=`<div class="mo-grid">${cells}</div>`;
 }

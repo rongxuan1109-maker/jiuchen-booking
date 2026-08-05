@@ -193,6 +193,7 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 .mc-d.dis{color:var(--line)}
 .mc-d.sel{background:var(--warm);color:#fff;font-weight:600}
 .mc-d.today{color:var(--warm);font-weight:600}
+.jump-cal{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px 8px;margin-bottom:10px;box-shadow:0 6px 18px rgba(42,29,18,.10)}
 .mc-d{position:relative;padding:7px 0 12px}
 .mc-dots{position:absolute;left:0;right:0;bottom:2px;display:flex;justify-content:center;gap:2px;align-items:center}
 .mc-dots i{width:4.5px;height:4.5px;border-radius:50%;display:block}
@@ -425,12 +426,13 @@ async function renderToday(){
     <div class="datebar">
       <button class="nav" onclick="shiftDay(-1)">‹</button>
       <div class="cur" onclick="openJumpCal()" style="cursor:pointer">
-        <div class="d">${curDate.getMonth()+1}月${curDate.getDate()}日</div>
+        <div class="d">${curDate.getMonth()+1}月${curDate.getDate()}日 <span style="font-size:11px;color:var(--warm);vertical-align:2px">▼</span></div>
         <div class="w">星期${WD[curDate.getDay()]}</div>
         ${isToday?'<span class="today-chip is-today">本日</span>':'<span class="today-chip" onclick="goToday()">回今天</span>'}
       </div>
       <button class="nav" onclick="shiftDay(1)">›</button>
     </div>
+    <div id="jumpCalBox" style="display:none"></div>
     <div id="todayList"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>`;
   let rows;
   try{ rows=await loadDay(ds); }catch(e){ return; }
@@ -440,7 +442,12 @@ function shiftDay(n){ curDate.setDate(curDate.getDate()+n); renderToday(); }
 
 /* ============ 點日期→小月曆跳日 ============ */
 let jc={m:null};
-function openJumpCal(){ jc.m=new Date(curDate.getFullYear(),curDate.getMonth(),1); renderJumpCal(); }
+function openJumpCal(){
+  const box=$('jumpCalBox');
+  if(box && box.style.display!=='none'){ box.style.display='none'; return; }   // 再點一次收合
+  jc.m=new Date(curDate.getFullYear(),curDate.getMonth(),1);
+  renderJumpCal();
+}
 async function renderJumpCal(){
   const y=jc.m.getFullYear(), mo=jc.m.getMonth();
   const first=new Date(y,mo,1).getDay(), dim=new Date(y,mo+1,0).getDate(), t=todayStr();
@@ -455,10 +462,11 @@ async function renderJumpCal(){
     cal+=`<div class="mc-d ${sel?'sel':''} ${ds===t&&!sel?'today':''}" onclick="jcPick('${ds}')">${d}${ths.length?`<span class="mc-dots">${dots}</span>`:''}</div>`;
   }
   cal+='</div>';
-  openSheet(`<h2>跳到日期</h2><div class="sub">點日期直接切換・點點=當天有診的治療師</div>${cal}<div style="height:8px"></div>`);
+  const box=$('jumpCalBox');
+  if(box){ box.innerHTML=`<div class="jump-cal">${cal}</div>`; box.style.display='block'; }
 }
 function jcMonth(n){ jc.m=new Date(jc.m.getFullYear(),jc.m.getMonth()+n,1); renderJumpCal(); }
-function jcPick(ds){ curDate=parseDate(ds); closeSheet(); renderToday(); }
+function jcPick(ds){ curDate=parseDate(ds); renderToday(); }
 function goToday(){ curDate=new Date(); renderToday(); }
 
 /* Google 日曆式時間軸：08:00–22:00 一屏看到大部分，其餘往下捲 */

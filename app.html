@@ -443,18 +443,17 @@ async function renderToday(){
 function shiftDay(n){ curDate.setDate(curDate.getDate()+n); renderToday(); }
 
 /* ============ 點日期→小月曆跳日 ============ */
-let jc={m:null};
+let jc={m:null,cache:{}};
 function openJumpCal(){
   const box=$('jumpCalBox');
   if(box && box.style.display!=='none'){ box.style.display='none'; return; }   // 再點一次收合
   jc.m=new Date(curDate.getFullYear(),curDate.getMonth(),1);
   renderJumpCal();
 }
-async function renderJumpCal(){
+function drawJumpCal(rows){
   const y=jc.m.getFullYear(), mo=jc.m.getMonth();
   const first=new Date(y,mo,1).getDay(), dim=new Date(y,mo+1,0).getDate(), t=todayStr();
-  let rows=[]; try{ rows=await loadRange(fmtDate(new Date(y,mo,1)),fmtDate(new Date(y,mo+1,0))); }catch(e){}
-  const byDay={}; rows.forEach(a=>{(byDay[a.appointment_date]=byDay[a.appointment_date]||[]).push(a);});
+  const byDay={}; (rows||[]).forEach(a=>{(byDay[a.appointment_date]=byDay[a.appointment_date]||[]).push(a);});
   let cal=`<div class="mc-nav"><button onclick="jcMonth(-1)">‹</button><div class="m">${y} 年 ${mo+1} 月</div><button onclick="jcMonth(1)">›</button></div><div class="mini-cal">`+WD.map(w=>`<div class="mc-h">${w}</div>`).join('')+Array(first).fill('<div></div>').join('');
   for(let d=1;d<=dim;d++){
     const ds=fmtDate(new Date(y,mo,d)); const sel=ds===fmtDate(curDate);
@@ -466,6 +465,17 @@ async function renderJumpCal(){
   cal+='</div>';
   const box=$('jumpCalBox');
   if(box){ box.innerHTML=`<div class="jump-cal">${cal}</div>`; box.style.display='block'; }
+}
+async function renderJumpCal(){
+  const key=jc.m.getFullYear()+'-'+jc.m.getMonth();
+  drawJumpCal(jc.cache[key]);                     // 先秒開(有快取就直接帶點點)
+  if(jc.cache[key]) return;                       // 快取過就不重查
+  const y=jc.m.getFullYear(), mo=jc.m.getMonth();
+  let rows=[]; try{ rows=await loadRange(fmtDate(new Date(y,mo,1)),fmtDate(new Date(y,mo+1,0))); }catch(e){ return; }
+  jc.cache[key]=rows;
+  const box=$('jumpCalBox');
+  const sameMonth = key === (jc.m.getFullYear()+'-'+jc.m.getMonth());
+  if(box && box.style.display!=='none' && sameMonth) drawJumpCal(rows);   // 資料到了靜靜補點點
 }
 function jcMonth(n){ jc.m=new Date(jc.m.getFullYear(),jc.m.getMonth()+n,1); renderJumpCal(); }
 function jcPick(ds){ curDate=parseDate(ds); renderToday(); }

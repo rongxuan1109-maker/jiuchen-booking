@@ -3093,7 +3093,9 @@ async function submitEditAppt(id){
         const{error:e}=await sb.from('appointments').update(row).eq('id',oldGroup[i].id);
         if(e&&i===0){showToast('儲存失敗：'+e.message);return;}
       }else{
-        await sb.from('appointments').insert([{...row,status:'confirmed'}]);
+        // 延長時長新增的半格:繼承整組的治療師名/Google連結/LINE綁定,避免被同步引擎當成獨立新預約(孤兒問題)
+        const inherit={therapist_name:thVal==null?'不指定':((therapists.find(t=>t.id===thVal)||{}).name||null), google_event_id:oldGroup[0]?.google_event_id||null, line_user_id:oldGroup[0]?.line_user_id||null};
+        await sb.from('appointments').insert([{...row,...inherit,status:'confirmed'}]);
       }
     }else{
       // 縮短時長多出來的格子＝軟性移除，不是真的取消預約：一併清掉 line_user_id，

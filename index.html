@@ -687,24 +687,31 @@ function singleSlotTaken(t){
 }
 // 這個「起始時段」能不能約：要把服務需要的每一格(60分＝連兩格)都檢查（存在、未滿、未過期）
 function startBookable(t){
+  // 規則:釋出時段=可以「開始」的時間;60分的後半格可延用未釋出的收尾格(同班別內),
+  // 例:釋出只到10:30 → 10:30仍可約60分做到11:30,但11:00不能當開始。
   const slots = availableTimes(state.date, state.therapistId);
   const need = slotsNeeded();
+  if(!slots.includes(t)) return false;              // 起始格必須有釋出
+  const isAny = !state.therapistId || state.therapistId===0;
+  const startBlock = blockOfSlot[t];
   for(let i=0;i<need;i++){
     const tt = addMin(t, i*30);
-    if(!slots.includes(tt)) return false;   // 下一格必須也是可約時段（不能跨班別或超出下班時間）
-    if(singleSlotTaken(tt)) return false;
+    if(blockOfSlot[tt] !== startBlock) return false; // 不能跨班別或超出格線(如17:30/20:30不存在)
     if(isPastStart(tt)) return false;
+    if(!isAny && state.bookedSlots.some(s => s.appointment_time.slice(0,5) === tt)) return false;  // 指定:他這幾格都要空
   }
-  // 不指定+60分:要有「同一位」治療師連續兩格都有釋出且都空著,否則排不出同一個人
-  if((!state.therapistId || state.therapistId===0) && need > 1){
-    const wd = String(state.date.getDay());
-    const times = []; for(let i=0;i<need;i++) times.push(addMin(t, i*30));
-    const ok = state.therapists.some(th => {
-      const es = effSlots(th.id, wd);
-      if(!times.every(tt => es.includes(tt))) return false;
-      return !state.bookedSlots.some(s => s.therapist_id===th.id && times.includes(s.appointment_time.slice(0,5)));
-    });
-    if(!ok) return false;
+  if(isAny){
+    if(slotFull(t)) return false;                    // 起始格容量(不指定)
+    // 不指定+60分:要有「同一位」治療師起始格有釋出、且連續兩格都空著
+    if(need > 1){
+      const wd = String(state.date.getDay());
+      const times = []; for(let i=0;i<need;i++) times.push(addMin(t, i*30));
+      const ok = state.therapists.some(th => {
+        if(!effSlots(th.id, wd).includes(t)) return false;
+        return !state.bookedSlots.some(s => s.therapist_id===th.id && times.includes(s.appointment_time.slice(0,5)));
+      });
+      if(!ok) return false;
+    }
   }
   return true;
 }

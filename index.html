@@ -626,17 +626,25 @@ const SHIFT_SLOTS = {
   pm:  ['15:00','15:30','16:00','16:30','17:00'],
   eve: ['18:00','18:30','19:00','19:30','20:00']
 };
-// 不指定治療師＝開放全部標準時段（早診＋下午診＋晚診）；指定治療師＝只開他那天有排班的時段
-function availableTimes(date, therapistId){
-  if(!date) return [];
-  if(!therapistId || therapistId===0){
-    return [...SHIFT_SLOTS.am, ...SHIFT_SLOTS.pm, ...SHIFT_SLOTS.eve];
-  }
-  const wd = String(date.getDay());            // 0=日 … 6=六
+// 治療師某天「實際釋出」的可約時段:有自訂就用自訂,沒有就把班別(早/午/晚)整段展開
+function effSlots(therapistId, wd){
+  const cs = state.customSlots && state.customSlots[therapistId];
+  if(cs && cs[wd]) return [...cs[wd]].sort();
   const blocks = (state.schedules[therapistId] && state.schedules[therapistId][wd]) || [];
   const slots = new Set();
   blocks.forEach(b => (SHIFT_SLOTS[b]||[]).forEach(s => slots.add(s)));
   return [...slots].sort();
+}
+// 不指定治療師＝當天所有治療師釋出時段的聯集；指定治療師＝只開他釋出的時段
+function availableTimes(date, therapistId){
+  if(!date) return [];
+  const wd = String(date.getDay());            // 0=日 … 6=六
+  if(!therapistId || therapistId===0){
+    const u = new Set();
+    (state.therapists||[]).forEach(th => effSlots(th.id, wd).forEach(t => u.add(t)));
+    return [...u].sort();
+  }
+  return effSlots(therapistId, wd);
 }
 
 // 時段 → 班別(am/pm/eve)對照（模組層，畫面與送出重驗共用）
@@ -661,10 +669,7 @@ function isPastStart(t){
 // 不指定治療師時：這個 30 分鐘格是否客滿（有排這個班、且還沒被約的治療師＝0 → 客滿）
 function slotFull(t){
   const wd = String(state.date.getDay());
-  const block = blockOfSlot[t];
-  const scheduled = state.therapists.filter(th => {
-    const sh = state.schedules[th.id]; return sh && sh[wd] && sh[wd].includes(block);
-  }).map(th => th.id);
+  const scheduled = state.therapists.filter(th => effSlots(th.id, wd).includes(t)).map(th => th.id);
   if(!scheduled.length) return true;                 // 這個班別沒人上 → 不能約
   let bookedTh = new Set(), unassigned = 0;
   state.bookedSlots.forEach(s => {
@@ -689,6 +694,17 @@ function startBookable(t){
     if(!slots.includes(tt)) return false;   // 下一格必須也是可約時段（不能跨班別或超出下班時間）
     if(singleSlotTaken(tt)) return false;
     if(isPastStart(tt)) return false;
+  }
+  // 不指定+60分:要有「同一位」治療師連續兩格都有釋出且都空著,否則排不出同一個人
+  if((!state.therapistId || state.therapistId===0) && need > 1){
+    const wd = String(state.date.getDay());
+    const times = []; for(let i=0;i<need;i++) times.push(addMin(t, i*30));
+    const ok = state.therapists.some(th => {
+      const es = effSlots(th.id, wd);
+      if(!times.every(tt => es.includes(tt))) return false;
+      return !state.bookedSlots.some(s => s.therapist_id===th.id && times.includes(s.appointment_time.slice(0,5)));
+    });
+    if(!ok) return false;
   }
   return true;
 }
@@ -786,9 +802,10 @@ async function loadTherapists() {
   const { data, error } = await sb.from('therapists').select('*').order('id');
   if (data) state.therapists = data;
   // 載入治療師班表（每週固定），用來決定可預約時段
-  const { data: scheds } = await sb.from('therapist_schedules').select('therapist_id, shifts');
+  const { data: scheds } = await sb.from('therapist_schedules').select('therapist_id, shifts, custom_slots');
   state.schedules = {};
-  (scheds||[]).forEach(s => { state.schedules[s.therapist_id] = s.shifts || {}; });
+  state.customSlots = {};
+  (scheds||[]).forEach(s => { state.schedules[s.therapist_id] = s.shifts || {}; state.customSlots[s.therapist_id] = s.custom_slots || null; });
 }
 
 // 用 LINE ID 找出病人上次填寫的資料，自動帶入（病人仍可修改）
@@ -835,10 +852,7 @@ function dayFreeCount(d) {
   const wd = String(d.getDay());
   let free = 0;
   for (const t of slots) {
-    const block = blockOfSlot[t];
-    const scheduled = state.therapists.filter(th => {
-      const sh = state.schedules[th.id]; return sh && sh[wd] && sh[wd].includes(block);
-    }).length;
+    const scheduled = state.therapists.filter(th => effSlots(th.id, wd).includes(t)).length;
     let bookedTh = new Set(), unassigned = 0;
     rows.forEach(r => {
       if (r.appointment_time.slice(0,5) !== t) return;
@@ -1443,12 +1457,25 @@ async function resetBooking() {
   state = { step:0, type:null, service:null, therapistId:null, therapistName:null,
     date:null, time:null, name:'', phone:'', birthDate:'', gender:'', discomfortArea:'',
     discomfortDuration:'', previousPT:'', surgeryHistory:'', otherNotes:'',
-    calMonth:new Date(), therapists:state.therapists, schedules:state.schedules, bookedSlots:[], savedInfo:false };
+    calMonth:new Date(), therapists:state.therapists, schedules:state.schedules, customSlots:state.customSlots, bookedSlots:[], savedInfo:false };
   await loadSavedInfo();
   render();
 }
 
 // LIFF 和治療師資料同時載入，不互相等待
+// ── 即時同步:後台/App 改了班表或釋出時段,前台畫面立刻跟上 ──
+try{
+  sb.channel('sched-rt').on('postgres_changes',{event:'*',schema:'public',table:'therapist_schedules'}, async () => {
+    try{
+      const { data: scheds } = await sb.from('therapist_schedules').select('therapist_id, shifts, custom_slots');
+      state.schedules = {}; state.customSlots = {};
+      (scheds||[]).forEach(s => { state.schedules[s.therapist_id] = s.shifts || {}; state.customSlots[s.therapist_id] = s.custom_slots || null; });
+      const onTime = (state.step===2 && state.type==='new') || (state.step===3 && state.type==='return');
+      if(onTime){ const el = document.getElementById('mainContent'); if(el) renderDatetimeInner(el); }
+    }catch(e){}
+  }).subscribe();
+}catch(e){}
+
 Promise.all([initLiff(), loadTherapists()]).then(async () => {
   await loadSavedInfo();
   render();

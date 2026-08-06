@@ -139,6 +139,18 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
 .pcard .pn{font-size:16px;font-weight:600}
 .pcard .pp{font-size:13px;color:var(--sub);margin-top:2px}
 
+/* ===== 釋出時段編輯器 ===== */
+.se-row{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.se-chip{position:relative;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 13px;font-size:13px;font-family:inherit}
+.se-chip.on2{border-color:var(--warm);background:var(--glow);color:var(--warm-d);font-weight:700}
+.se-flag{position:absolute;top:2px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--warm);display:block}
+.se-glabel{font-size:12px;color:var(--sub);margin:10px 2px 5px;font-weight:700;display:flex;align-items:center;gap:6px}
+.se-gbtn{font-size:10px;font-weight:400;color:var(--sub);border:1px solid var(--line);border-radius:8px;padding:1px 7px}
+.se-gbtn.on{color:var(--warm-d);border-color:var(--warm)}
+.se-slots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.se-slot{border:1.5px solid var(--line);background:var(--card);color:var(--sub);border-radius:9px;padding:8px 0;font-size:13px;font-family:inherit}
+.se-slot.on{border-color:var(--warm);background:var(--warm);color:#fff;font-weight:700}
+
 /* ===== 更多 ===== */
 .stat-row{display:flex;gap:10px;margin-bottom:16px}
 .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
@@ -312,14 +324,14 @@ async function guard(promise){ // 包住查詢，session 失效就導回登入
 }
 
 /* ============ 資料 ============ */
-let therapists=[], schedules={}, curDate=new Date();
+let therapists=[], schedules={}, customSlots={}, curDate=new Date();
 let apptCache={}; // date -> rows
 
 async function loadTherapists(){
   const {data}=await guard(sb.from('therapists').select('*').order('id'));
   therapists=data||[];
-  const {data:sc}=await guard(sb.from('therapist_schedules').select('therapist_id,shifts'));
-  schedules={}; (sc||[]).forEach(s=>schedules[s.therapist_id]=s.shifts||{});
+  const {data:sc}=await guard(sb.from('therapist_schedules').select('therapist_id,shifts,custom_slots'));
+  schedules={}; customSlots={}; (sc||[]).forEach(s=>{schedules[s.therapist_id]=s.shifts||{}; customSlots[s.therapist_id]=s.custom_slots||null;});
 }
 async function loadDay(dateStr,force){
   if(apptCache[dateStr]&&!force) return apptCache[dateStr];
@@ -392,6 +404,8 @@ function startRealtime(){
   try{
     sb.channel('appt-rt').on('postgres_changes',{event:'*',schema:'public',table:'appointments'},()=>{
       clearTimeout(_rtTimer); _rtTimer=setTimeout(rtRefresh,600);   // 一批變動只刷一次
+    }).on('postgres_changes',{event:'*',schema:'public',table:'therapist_schedules'},async()=>{
+      try{ await loadTherapists(); }catch(e){}                      // 班表/釋出時段變了→靜靜更新資料
     }).subscribe();
   }catch(e){}
   // App 從背景回到前景也刷一次(訂閱可能在休眠時斷線)
@@ -638,6 +652,7 @@ async function renderMore(){
   $('topTitle').textContent='更多'; $('topSub').textContent='';
   const el=$('page-more');
   el.innerHTML=`<div class="stat-row"><div class="stat"><div class="n" id="stToday">–</div><div class="l">今日預約</div></div><div class="stat"><div class="n" id="stWeek">–</div><div class="l">本週預約</div></div></div>
+    <div class="menu-item" onclick="openSlotEditor()"><span>🗓️</span> 排班（網路釋出時段）</div>
     <div class="menu-item" onclick="openEventSheet()"><span>🚫</span> 標記公休／活動</div>
     <div class="menu-item" onclick="switchTab('today')"><span>📅</span> 回今日班表</div>
     <div class="menu-item danger" onclick="doLogout()"><span>🚪</span> 登出</div>
@@ -651,6 +666,57 @@ async function renderMore(){
     $('stWeek').textContent=groupAppts(wk).length;
   }catch(e){}
 }
+
+/* ============ 網路釋出時段編輯器 ============ */
+let se={tid:null, wd:null, sel:null};
+function seEff(tid,wd){
+  const cs=customSlots[tid];
+  if(cs && cs[wd]) return [...cs[wd]];
+  const blocks=(schedules[tid]&&schedules[tid][wd])||[];
+  const out=[]; blocks.forEach(b=>(SHIFT_SLOTS[b]||[]).forEach(t=>out.push(t)));
+  return out;
+}
+function openSlotEditor(){
+  se.tid=therapists[0]?therapists[0].id:null;
+  const dow=new Date().getDay();
+  se.wd=String(dow===0?1:dow);
+  se.sel=null;
+  renderSlotEditor();
+}
+function renderSlotEditor(){
+  const wdNames={'1':'一','2':'二','3':'三','4':'四','5':'五','6':'六'};
+  if(se.sel===null) se.sel=new Set(seEff(se.tid,se.wd));
+  const thChips=therapists.map(t=>`<button class="se-chip ${t.id===se.tid?'on':''}" style="${t.id===se.tid?`background:${thColor(t.id)};border-color:${thColor(t.id)};color:#fff`:''}" onclick="seSetTh(${t.id})">${esc(t.name)}</button>`).join('');
+  const wdChips=Object.keys(wdNames).map(w=>`<button class="se-chip ${w===se.wd?'on2':''}" onclick="seSetWd('${w}')">${wdNames[w]}</button>`).join('');
+  const groups=[['早診',SHIFT_SLOTS.am],['下午診',SHIFT_SLOTS.pm],['晚診',SHIFT_SLOTS.eve]];
+  const slotHtml=groups.map(([label,arr],gi)=>{
+    const allOn=arr.every(t=>se.sel.has(t));
+    return `<div class="se-glabel" onclick="seGroup(${gi})" style="cursor:pointer">${label} <span class="se-gbtn ${allOn?'on':''}">${allOn?'整段開放中・點我關':'點我整段開放'}</span></div><div class="se-slots">${arr.map(t=>`<button class="se-slot ${se.sel.has(t)?'on':''}" onclick="seToggle('${t}')">${t}</button>`).join('')}</div>`;}).join('');
+  openSheet(`<h2>排班（網路釋出時段）</h2><div class="sub">亮起＝病人網路可約的「開始」時段，全暗＝這天不開放・只影響前台，後台代約不受限</div>
+    <div class="se-row">${thChips}</div>
+    <div class="se-row">${wdChips}</div>
+    ${slotHtml}
+    <div class="sheet-actions"><button class="btn primary" onclick="seSave()">儲存這一天</button><button class="btn ghost" onclick="seClear()">清空這天</button></div>
+    <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">關閉</button></div>`);
+}
+function seGroup(gi){
+  const arr=[SHIFT_SLOTS.am,SHIFT_SLOTS.pm,SHIFT_SLOTS.eve][gi];
+  const allOn=arr.every(t=>se.sel.has(t));
+  arr.forEach(t=>{if(allOn)se.sel.delete(t);else se.sel.add(t);});
+  renderSlotEditor();
+}
+function seClear(){ se.sel=new Set(); renderSlotEditor(); }
+function seSetTh(id){ se.tid=id; se.sel=null; renderSlotEditor(); }
+function seSetWd(w){ se.wd=w; se.sel=null; renderSlotEditor(); }
+function seToggle(t){ if(se.sel.has(t)) se.sel.delete(t); else se.sel.add(t); renderSlotEditor(); }
+async function seSave(){
+  const cur=customSlots[se.tid]||{};
+  const next={...cur}; next[se.wd]=[...se.sel].sort();
+  const {error}=await sb.from('therapist_schedules').update({custom_slots:next}).eq('therapist_id',se.tid);
+  if(error){ toast('儲存失敗：'+error.message); return; }
+  customSlots[se.tid]=next; toast('已儲存，前台立即生效'); renderSlotEditor();
+}
+
 
 /* ============ Sheet 基礎 ============ */
 function openSheet(html){

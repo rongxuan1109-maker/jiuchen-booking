@@ -1546,76 +1546,85 @@ const SHIFT_BLOCKS=[
 ];
 const SHIFT_WDAYS=[{w:1,n:'一'},{w:2,n:'二'},{w:3,n:'三'},{w:4,n:'四'},{w:5,n:'五'},{w:6,n:'六'},{w:0,n:'日'}];
 
+let customSlots={};          // {therapist_id: {"3":["09:00",...]} | null}  網路釋出時段自訂
 async function loadSchedules(){
-  const{data}=await sb.from('therapist_schedules').select('therapist_id,shifts');
-  schedules={};
-  (data||[]).forEach(r=>{schedules[r.therapist_id]=r.shifts||{};});
+  const{data}=await sb.from('therapist_schedules').select('therapist_id,shifts,custom_slots');
+  schedules={};customSlots={};
+  (data||[]).forEach(r=>{schedules[r.therapist_id]=r.shifts||{};customSlots[r.therapist_id]=r.custom_slots||null;});
 }
 
-async function openShiftScheduler(){
+async function openShiftScheduler(){   // 排班按鈕入口:直接開細格編輯器
   if(!therapists.length){const{data}=await sb.from('therapists').select('*').order('id');if(data)therapists=data;}
   await loadSchedules();
   if(_shiftTid===null)_shiftTid=therapists[0]?therapists[0].id:1;
-  renderShiftScheduler();
+  openSlotScheduler();
 }
 
-function _shiftOn(tid,wd,code){return ((schedules[tid]||{})[String(wd)]||[]).includes(code);}
-
-function renderShiftScheduler(){
-  const tid=_shiftTid;
-  const thBtns=therapists.map(t=>`<div onclick="_shiftTid=${t.id};renderShiftScheduler()" style="padding:5px 13px;border:1px solid ${t.id===tid?'var(--warm)':'var(--border)'};border-radius:10px;font-size:12px;cursor:pointer;background:${t.id===tid?'var(--glow)':'transparent'};color:${t.id===tid?'var(--accent)':'var(--text2)'};white-space:nowrap;flex-shrink:0">${t.name}</div>`).join('');
-  const headRow=`<div style="display:grid;grid-template-columns:58px repeat(7,1fr);gap:4px;margin-bottom:5px">
-    <div></div>${SHIFT_WDAYS.map(d=>`<div style="text-align:center;font-size:12px;color:var(--muted)">${d.n}</div>`).join('')}
-  </div>`;
-  const rows=SHIFT_BLOCKS.map(b=>`<div style="display:grid;grid-template-columns:58px repeat(7,1fr);gap:4px;margin-bottom:4px;align-items:center">
-    <div style="font-size:11px;color:var(--text2);line-height:1.25">${b.name}<br><span style="font-size:9px;color:var(--muted)">${b.time}</span></div>
-    ${SHIFT_WDAYS.map(d=>{const on=_shiftOn(tid,d.w,b.code);return `<div onclick="toggleShift(${d.w},'${b.code}')" style="height:36px;border-radius:8px;border:1px solid ${on?'var(--warm)':'var(--border)'};background:${on?'var(--warm)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:15px">${on?'✓':''}</div>`;}).join('')}
-  </div>`).join('');
+/* ════════ 排班＝網路釋出時段(細到每個30分鐘格,唯一版本) ════════ */
+const SLOT_GROUPS=[
+  {name:'早診',  slots:['09:00','09:30','10:00','10:30','11:00']},
+  {name:'下午診',slots:['15:00','15:30','16:00','16:30','17:00']},
+  {name:'晚診',  slots:['18:00','18:30','19:00','19:30','20:00']},
+];
+let _seTid=null,_seWd='1',_seSel=null;
+function _seEff(tid,wd){
+  const cs=customSlots[tid];
+  if(cs&&cs[wd])return[...cs[wd]];
+  const blocks=(schedules[tid]||{})[wd]||[];
+  const out=[];SLOT_GROUPS.forEach((g,i)=>{const code=['am','pm','eve'][i];if(blocks.includes(code))g.slots.forEach(t=>out.push(t));});
+  return out;
+}
+function openSlotScheduler(){
+  _seTid=_shiftTid||(therapists[0]?therapists[0].id:1);
+  const dow=new Date().getDay();_seWd=String(dow===0?1:dow);_seSel=null;
+  renderSlotScheduler();
+}
+function renderSlotScheduler(){
+  if(_seSel===null)_seSel=new Set(_seEff(_seTid,_seWd));
+  const wdNames={'1':'一','2':'二','3':'三','4':'四','5':'五','6':'六'};
+  const thBtns=therapists.map(t=>`<div onclick="_seTid=${t.id};_seSel=null;renderSlotScheduler()" style="padding:5px 13px;border:1px solid ${t.id===_seTid?'var(--warm)':'var(--border)'};border-radius:10px;font-size:12px;cursor:pointer;background:${t.id===_seTid?'var(--glow)':'transparent'};color:${t.id===_seTid?'var(--accent)':'var(--text2)'};white-space:nowrap;flex-shrink:0">${t.name}</div>`).join('');
+  const wdBtns=Object.keys(wdNames).map(w=>`<div onclick="_seWd='${w}';_seSel=null;renderSlotScheduler()" style="padding:5px 15px;border:1px solid ${w===_seWd?'var(--warm)':'var(--border)'};border-radius:10px;font-size:12px;cursor:pointer;background:${w===_seWd?'var(--warm)':'transparent'};color:${w===_seWd?'#fff':'var(--text2)'}">${wdNames[w]}</div>`).join('');
+  const grid=SLOT_GROUPS.map((g,gi)=>{
+    const allOn=g.slots.every(t=>_seSel.has(t));
+    return `
+    <div onclick="_seGroup(${gi})" style="display:flex;align-items:center;gap:6px;margin:10px 2px 5px;cursor:pointer">
+      <span style="font-size:11px;color:var(--text2);font-weight:600">${g.name}</span>
+      <span style="font-size:10px;color:${allOn?'var(--accent)':'var(--muted)'};border:1px solid ${allOn?'var(--warm)':'var(--border)'};border-radius:8px;padding:1px 7px">${allOn?'整段開放中・點我關':'點我整段開放'}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px">
+      ${g.slots.map(t=>{const on=_seSel.has(t);return `<div onclick="_seToggle('${t}')" style="height:34px;border-radius:8px;border:1px solid ${on?'var(--warm)':'var(--border)'};background:${on?'var(--warm)':'transparent'};color:${on?'#fff':'var(--muted)'};display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12.5px;font-weight:${on?'600':'300'}">${t}</div>`;}).join('')}
+    </div>`;}).join('');
   document.getElementById('modalArea').innerHTML=`
   <div class="modal-bg" onclick="guardedCloseModal()">
-    <div class="modal" onclick="event.stopPropagation()" style="max-width:540px">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:480px">
       <div class="modal-handle"></div>
-      <p class="modal-title">🗓️ 治療師排班</p>
-      <p style="font-size:11px;color:var(--muted);margin-bottom:12px;font-weight:300;line-height:1.6">勾選＝該治療師這個時段有上班。病人預約選到他時，只會看到打勾的時段。臨時請假請用日曆的「公休／活動」擋當天，不用動這張班表。</p>
-      <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;-webkit-overflow-scrolling:touch;padding-bottom:2px">${thBtns}</div>
-      ${headRow}${rows}
-      <div style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap">
-        <button class="mBtn" onclick="clearShifts()">清空這位</button>
-        <button class="mBtn" onclick="copyShiftsToAll()">複製到其他人</button>
-      </div>
+      <p class="modal-title">🗓️ 排班（網路釋出時段）</p>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px;font-weight:300;line-height:1.6">亮起＝病人網路可約的「開始」時段，全暗＝這天不開放網路預約。只影響前台，後台代約不受限。記得一天一天按「儲存這一天」。</p>
+      <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;-webkit-overflow-scrolling:touch;padding-bottom:2px">${thBtns}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">${wdBtns}</div>
+      ${grid}
       <div class="modal-btns">
         <button class="mBtn" onclick="closeModal()">關閉</button>
-        <button class="mBtn primary" onclick="saveShifts()">儲存班表</button>
+        <button class="mBtn" onclick="_seClear()">清空這天</button>
+        <button class="mBtn primary" onclick="_seSave()">儲存這一天</button>
       </div>
     </div>
   </div>`;
 }
-
-function toggleShift(wd,code){
-  const tid=_shiftTid;
-  if(!schedules[tid])schedules[tid]={};
-  const k=String(wd);
-  const arr=(schedules[tid][k]||[]).slice();
-  const i=arr.indexOf(code);
-  if(i>=0)arr.splice(i,1);else arr.push(code);
-  if(arr.length)schedules[tid][k]=arr;else delete schedules[tid][k];
-  renderShiftScheduler();
+function _seToggle(t){if(_seSel.has(t))_seSel.delete(t);else _seSel.add(t);renderSlotScheduler();}
+function _seGroup(gi){
+  const g=SLOT_GROUPS[gi];
+  const allOn=g.slots.every(t=>_seSel.has(t));
+  g.slots.forEach(t=>{if(allOn)_seSel.delete(t);else _seSel.add(t);});
+  renderSlotScheduler();
 }
-
-function clearShifts(){schedules[_shiftTid]={};renderShiftScheduler();}
-
-function copyShiftsToAll(){
-  const src=JSON.stringify(schedules[_shiftTid]||{});
-  therapists.forEach(t=>{if(t.id!==_shiftTid)schedules[t.id]=JSON.parse(src);});
-  showToast('已複製到其他治療師（記得按儲存）');
-}
-
-async function saveShifts(){
-  const rows=therapists.map(t=>({therapist_id:t.id,shifts:schedules[t.id]||{},updated_at:new Date().toISOString()}));
-  const{error}=await sb.from('therapist_schedules').upsert(rows,{onConflict:'therapist_id'});
+function _seClear(){_seSel=new Set();renderSlotScheduler();}
+async function _seSave(){
+  const cur=customSlots[_seTid]||{};
+  const next={...cur};next[_seWd]=[..._seSel].sort();
+  const{error}=await sb.from('therapist_schedules').update({custom_slots:next}).eq('therapist_id',_seTid);
   if(error){showToast('儲存失敗：'+error.message);return;}
-  showToast('班表已儲存 ✓');
-  closeModal();
+  customSlots[_seTid]=next;showToast('已儲存，前台立即生效 ✓');renderSlotScheduler();
 }
 
 function renderDateLabel(){
@@ -2464,7 +2473,11 @@ function _rtKick(){
   },800);
 }
 try{
-  sb.channel('appt-rt').on('postgres_changes',{event:'*',schema:'public',table:'appointments'},_rtKick).subscribe();
+  sb.channel('appt-rt').on('postgres_changes',{event:'*',schema:'public',table:'appointments'},_rtKick)
+    .on('postgres_changes',{event:'*',schema:'public',table:'therapist_schedules'},async()=>{
+      if(_modalOpen()) return;                  // 排班視窗開著時別蓋掉未儲存的勾選
+      try{ await loadSchedules(); }catch(e){}   // 班表/釋出時段變了→靜靜更新資料
+    }).subscribe();
 }catch(e){}
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) _rtKick(); });
 /* 點視窗外的背景要關閉時：表單若已填了東西，先問一聲，避免一個誤觸就把填到一半的資料全部清掉 */

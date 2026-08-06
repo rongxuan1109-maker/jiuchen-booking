@@ -461,6 +461,7 @@ let jc={m:null,cache:{}};
 document.addEventListener('click', e => {
   const box=$('jumpCalBox');
   if(!box || box.style.display==='none') return;
+  if(!document.body.contains(e.target)) return; // 點到的元素已被重畫丟掉(如換月箭頭)=點在月曆裡,不關
   if(e.target.closest('#jumpCalBox')) return;   // 點月曆本身不關
   if(e.target.closest('.datebar')) return;      // 日期列自己控制開關
   box.style.display='none';

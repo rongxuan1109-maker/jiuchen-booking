@@ -1594,10 +1594,7 @@ function renderSlotScheduler(){
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px">
       ${g.slots.map(t=>{const on=_seSel.has(t);return `<div onclick="_seToggle('${t}')" style="height:34px;border-radius:8px;border:1px solid ${on?'var(--warm)':'var(--border)'};background:${on?'var(--warm)':'transparent'};color:${on?'#fff':'var(--muted)'};display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12.5px;font-weight:${on?'600':'300'}">${t}</div>`;}).join('')}
     </div>`;}).join('');
-  document.getElementById('modalArea').innerHTML=`
-  <div class="modal-bg" onclick="guardedCloseModal()">
-    <div class="modal" onclick="event.stopPropagation()" style="max-width:480px">
-      <div class="modal-handle"></div>
+  const inner=`
       <p class="modal-title">🗓️ 排班（網路釋出時段）</p>
       <p style="font-size:11px;color:var(--muted);margin-bottom:12px;font-weight:300;line-height:1.6">亮起＝病人網路可約的「開始」時段，全暗＝這天不開放網路預約。只影響前台，後台代約不受限。記得一天一天按「儲存這一天」。</p>
       <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;-webkit-overflow-scrolling:touch;padding-bottom:2px">${thBtns}</div>
@@ -1607,7 +1604,14 @@ function renderSlotScheduler(){
         <button class="mBtn" onclick="closeModal()">關閉</button>
         <button class="mBtn" onclick="_seClear()">清空這天</button>
         <button class="mBtn primary" onclick="_seSave()">儲存這一天</button>
-      </div>
+      </div>`;
+  const wrap=document.getElementById('seWrap');
+  if(wrap){ wrap.innerHTML=inner; return; }   // 已開著→只換內容,不重開視窗
+  document.getElementById('modalArea').innerHTML=`
+  <div class="modal-bg" onclick="guardedCloseModal()">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:480px">
+      <div class="modal-handle"></div>
+      <div id="seWrap">${inner}</div>
     </div>
   </div>`;
 }

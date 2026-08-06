@@ -693,12 +693,15 @@ function renderSlotEditor(){
   const slotHtml=groups.map(([label,arr],gi)=>{
     const allOn=arr.every(t=>se.sel.has(t));
     return `<div class="se-glabel" onclick="seGroup(${gi})" style="cursor:pointer">${label} <span class="se-gbtn ${allOn?'on':''}">${allOn?'整段開放中・點我關':'點我整段開放'}</span></div><div class="se-slots">${arr.map(t=>`<button class="se-slot ${se.sel.has(t)?'on':''}" onclick="seToggle('${t}')">${t}</button>`).join('')}</div>`;}).join('');
-  openSheet(`<h2>排班（網路釋出時段）</h2><div class="sub">亮起＝病人網路可約的「開始」時段，全暗＝這天不開放・只影響前台，後台代約不受限</div>
+  const html=`<h2>排班（網路釋出時段）</h2><div class="sub">亮起＝病人網路可約的「開始」時段，全暗＝這天不開放・只影響前台，後台代約不受限</div>
     <div class="se-row">${thChips}</div>
     <div class="se-row">${wdChips}</div>
     ${slotHtml}
     <div class="sheet-actions"><button class="btn primary" onclick="seSave()">儲存這一天</button><button class="btn ghost" onclick="seClear()">清空這天</button></div>
-    <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">關閉</button></div>`);
+    <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">關閉</button></div>`;
+  const sh=$('sheetHost').querySelector('.sheet');
+  if(sh && sh.querySelector('.se-slots')){ sh.innerHTML='<div class="grip"></div>'+html; }  // 已開著→只換內容,不重跑動畫
+  else openSheet(html);
 }
 function seGroup(gi){
   const arr=[SHIFT_SLOTS.am,SHIFT_SLOTS.pm,SHIFT_SLOTS.eve][gi];

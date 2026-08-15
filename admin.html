@@ -3515,7 +3515,7 @@ async function deleteEvent(id){
   if(m&&m[1]==='memo'){
     ({error}=await sb.from('appointments').delete().like('note',`memo:${m[2]}%`));
   } else if(m){
-    ({error}=await sb.from('appointments').update({status:'cancelled'}).like('note',`event:${m[2]}%`));
+    ({error}=await sb.from('appointments').update({status:'cancelled',note:'del:'+m[2]}).like('note',`event:${m[2]}%`));
   } else {
     ({error}=await sb.from('appointments').update({status:'cancelled'}).eq('id',id));
   }

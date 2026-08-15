@@ -985,7 +985,7 @@ async function saveEvent(){
   const rows=[];
   while(d<=end){
     const ds=fmtDate(d);
-    times.forEach(t=>rows.push({therapist_id:thId,patient_name:name,patient_phone:'',appointment_date:ds,appointment_time:t+':00',type:'return',service:name,note:'event:'+eid,status:'cancelled',therapist_name:thId==null?'全部':thName(thId)}));
+    times.forEach(t=>rows.push({therapist_id:thId,patient_name:name,patient_phone:'',appointment_date:ds,appointment_time:t+':00',type:'return',service:name,note:'event:'+eid,status:'confirmed',therapist_name:thId==null?'全部':thName(thId)}));
     d.setDate(d.getDate()+1);
   }
   const {error}=await sb.from('appointments').insert(rows);

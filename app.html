@@ -731,6 +731,25 @@ function openSheet(html){
 function closeSheet(){ const bg=$('sheetHost').querySelector('.sheet-bg'); if(!bg)return; bg.classList.remove('on'); setTimeout(()=>{$('sheetHost').innerHTML=''; if(_rtPending){_rtPending=false; rtRender();}},260); }
 
 /* ============ 預約詳情 ============ */
+/* 初診問卷檢視(App):同組找問卷,沒有退回同名病人最近一份 */
+async function openIntakeSheet(id){
+  const ds=fmtDate(curDate); const rows=await loadDay(ds);
+  const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id))||rows.filter(x=>x.id===id);
+  if(!g.length)return; const a=g[0];
+  let f=null;
+  try{
+    let r=await sb.from('intake_forms').select('*').in('appointment_id',g.map(x=>x.id)).limit(1); f=r.data&&r.data[0];
+    if(!f){ r=await sb.from('intake_forms').select('*, appointments!inner(patient_name)').eq('appointments.patient_name',a.patient_name).order('id',{ascending:false}).limit(1); f=r.data&&r.data[0]; }
+  }catch(e){}
+  const row=(k,v)=>`<div class="row-info"><span class="k">${k}</span><span class="v" style="text-align:right;max-width:62%">${v?esc(String(v)):'—'}</span></div>`;
+  const roc=bd=>{ try{ const p=bd.split('-').map(Number); return `民國${p[0]-1911}年${p[1]}月${p[2]}日`; }catch(e){ return bd; } };
+  openSheet(`<h2>📝 初診問卷</h2><div class="sub">${esc(a.patient_name)}${f?'・線上填寫於 '+(f.created_at||'').slice(0,10):''}</div>
+    <div style="height:8px"></div>
+    ${f?row('生日',f.birth_date?roc(f.birth_date):'')+row('性別',f.gender)+row('不適部位',f.discomfort_area)+row('持續多久了',f.discomfort_duration)+row('看過復健科/骨科',f.previous_pt)+row('手術史',f.surgery_history)+row('其他說明',f.other_notes)
+      :`<div class="empty" style="padding:22px 0"><div class="ic">📄</div>沒有線上初診問卷<br><span style="font-size:12px;color:var(--sub)">可能由櫃檯代約，或現場填紙本</span></div>`}
+    <div class="sheet-actions" style="margin-top:12px"><button class="btn primary" onclick="openApptDetail(${a.id})">← 回預約</button><button class="btn ghost" onclick="closeSheet()">關閉</button></div>`);
+}
+
 async function openApptDetail(id){
   const ds=fmtDate(curDate); const rows=await loadDay(ds);
   const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id))||rows.filter(x=>x.id===id);
@@ -744,6 +763,7 @@ async function openApptDetail(id){
     <div class="row-info"><span class="k">治療師</span><span class="v">${esc(thName(a.therapist_id))}</span></div>
     ${a.symptoms?`<div class="row-info"><span class="k">不適部位</span><span class="v">${esc(a.symptoms)}</span></div>`:''}
     ${a.note?`<div class="row-info"><span class="k">備註</span><span class="v">${esc(a.note)}</span></div>`:''}
+    ${a.type==='new'?`<div class="sheet-actions"><button class="btn ghost" style="border-color:#e8556d;color:#e8556d" onclick="openIntakeSheet(${a.id})">📝 初診問卷</button></div>`:''}
     <div class="sheet-actions"><button class="btn primary" onclick='openEdit(${a.id})'>編輯</button><button class="btn danger" onclick='cancelGroup(${a.id})'>取消預約</button></div>
     <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">關閉</button></div>`);
   // 生日背景撈取：先找這筆的初診問卷，再退而求其次查病歷表

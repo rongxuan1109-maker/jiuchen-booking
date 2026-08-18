@@ -1809,6 +1809,38 @@ function apptClick(el,id,ev){
 function apptHover(){}  /* 保留空殼避免舊呼叫報錯；hover 不再做任何事 */
 
 /* 病人預約資訊小卡：放在標籤旁的空白處（不蓋標籤），按「修改」才開完整詳情 */
+/* 初診問卷檢視：撈這筆預約(或同組)的線上問卷,沒有就退回撈同名病人最近一份 */
+async function openIntakeView(id){
+  const a=appointments.find(x=>x.id===id); if(!a) return;
+  let grpIds=[id];
+  try{ const sameDay=appointments.filter(x=>x.appointment_date===a.appointment_date&&x.status!=='cancelled'); const grp=groupConsecutiveAppts(sameDay).find(g=>g.some(x=>x.id===id)); if(grp)grpIds=grp.map(x=>x.id); }catch(e){}
+  let f=null;
+  try{
+    let r=await sb.from('intake_forms').select('*').in('appointment_id',grpIds).limit(1); f=r.data&&r.data[0];
+    if(!f){ r=await sb.from('intake_forms').select('*, appointments!inner(patient_name)').eq('appointments.patient_name',a.patient_name).order('id',{ascending:false}).limit(1); f=r.data&&r.data[0]; }
+  }catch(e){}
+  const row=(k,v)=>`<div style="display:flex;gap:10px;padding:9px 2px;border-bottom:1px dashed var(--border)"><div style="width:96px;flex-shrink:0;color:var(--muted);font-size:12px;padding-top:1px">${k}</div><div style="flex:1;font-size:13.5px;line-height:1.6">${v?esc(String(v)):'<span style="color:var(--muted)">—</span>'}</div></div>`;
+  const roc=bd=>{ try{ const p=bd.split('-').map(Number); return `民國 ${p[0]-1911} 年 ${p[1]} 月 ${p[2]} 日`; }catch(e){ return bd; } };
+  document.getElementById('modalArea').innerHTML=`
+  <div class="modal-bg" onclick="guardedCloseModal()">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:440px">
+      <div class="modal-handle"></div>
+      <p class="modal-title">📝 初診問卷 — ${esc(a.patient_name)}</p>
+      ${f?`
+      ${row('生日', f.birth_date?roc(f.birth_date):'')}
+      ${row('性別', f.gender)}
+      ${row('不適部位', f.discomfort_area)}
+      ${row('持續多久了', f.discomfort_duration)}
+      ${row('看過復健科／骨科', f.previous_pt)}
+      ${row('手術史', f.surgery_history)}
+      ${row('其他說明', f.other_notes)}
+      <p style="font-size:10.5px;color:var(--muted);margin-top:10px;font-weight:300">線上填寫於 ${(f.created_at||'').slice(0,16).replace('T',' ')}</p>`
+      :`<p style="font-size:13px;color:var(--muted);padding:22px 0;text-align:center;line-height:1.8">這位病人沒有留下線上初診問卷<br>（可能由櫃檯代約，或現場填紙本）</p>`}
+      <div class="modal-btns"><button class="mBtn" onclick="closeModal()">關閉</button></div>
+    </div>
+  </div>`;
+}
+
 function openApptPopover(el,id,ev){
   closeApptPopover();
   const a=appointments.find(x=>x.id===id); if(!a){ openModal(id); return; }
@@ -1838,6 +1870,7 @@ function openApptPopover(el,id,ev){
     ${px?`<div class="ap-row"><span class="ap-ic">⇄</span><div>代約：${esc(px.name)} 治療師</div></div>`:''}
     ${partsText(a)?`<div class="ap-row"><span class="ap-ic">⊕</span><div>${esc(partsText(a))}</div></div>`:''}
     ${note?`<div class="ap-row"><span class="ap-ic">✎</span><div>${esc(note)}</div></div>`:''}
+    ${isNew?`<div style="margin-top:4px"><button style="width:100%;display:flex;align-items:center;justify-content:center;gap:5px;padding:9px;border:1px solid var(--new-color);border-radius:9px;background:var(--new-bg);color:var(--new-color);font-size:12px;font-weight:900;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.5px" onclick="closeApptPopover();openIntakeView(${id})">📝 初診問卷</button></div>`:''}
     
     <div class="ap-btns">
       <button class="ap-btn primary" onclick="bookNext(${id})">約下次</button>

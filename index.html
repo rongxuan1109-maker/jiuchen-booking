@@ -1056,7 +1056,7 @@ function renderDatetimeInner(el) {
 
   const isThisMonth = today.getFullYear()===year && today.getMonth()===month;
   let calHtml = `
-  <div class="cal-wrap">
+  <div class="cal-wrap" ontouchstart="calSwipeStart(event)" ontouchend="calSwipeEnd(event)">
   <div class="cal-deco cal-deco-y"></div><div class="cal-deco cal-deco-p"></div>
   <div class="cal-header">
     <button class="cal-nav nav-prev" onclick="prevMonth()">‹</button>
@@ -1121,6 +1121,15 @@ function selectTime(t, el) {
   state.time = t;
   if(el){ el.parentElement.querySelectorAll('.time-slot').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); }
   enableStepNext();
+}
+// 月曆左右滑動直接換月(左滑=下個月)
+let _calSw = null;
+function calSwipeStart(e){ const t=e.touches[0]; _calSw={x:t.clientX, y:t.clientY}; }
+function calSwipeEnd(e){
+  if(!_calSw) return;
+  const t=e.changedTouches[0];
+  const dx=t.clientX-_calSw.x, dy=t.clientY-_calSw.y; _calSw=null;
+  if(Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)*1.4){ if(dx < 0) nextMonth(); else prevMonth(); }
 }
 async function prevMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()-1,1); await loadMonthBooked(); renderDatetimeInner(document.getElementById('mainContent')); }
 async function nextMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()+1,1); await loadMonthBooked(); renderDatetimeInner(document.getElementById('mainContent')); }

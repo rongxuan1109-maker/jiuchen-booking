@@ -1059,9 +1059,9 @@ function renderDatetimeInner(el) {
   <div class="cal-wrap" ontouchstart="calSwipeStart(event)" ontouchend="calSwipeEnd(event)">
   <div class="cal-deco cal-deco-y"></div><div class="cal-deco cal-deco-p"></div>
   <div class="cal-header">
-    <button class="cal-nav nav-prev" onclick="prevMonth()">‹</button>
+    <button class="cal-nav nav-prev" onclick="calSlide(-1)">‹</button>
     <span class="cal-title">${year} 年 ${month+1} 月${isThisMonth?`<span class="today-pill">今天 ${today.getMonth()+1}/${today.getDate()}</span>`:''}</span>
-    <button class="cal-nav nav-next" onclick="nextMonth()">›</button>
+    <button class="cal-nav nav-next" onclick="calSlide(1)">›</button>
   </div>
   <div class="cal-grid">
     ${DAYS.map((d,i)=>`<div class="cal-day-lbl ${i===0?'sun':i===6?'sat':''}">${d}</div>`).join('')}
@@ -1129,7 +1129,21 @@ function calSwipeEnd(e){
   if(!_calSw) return;
   const t=e.changedTouches[0];
   const dx=t.clientX-_calSw.x, dy=t.clientY-_calSw.y; _calSw=null;
-  if(Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)*1.4){ if(dx < 0) nextMonth(); else prevMonth(); }
+  if(Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)*1.4){ calSlide(dx < 0 ? 1 : -1); }
+}
+// 翻書式換月:舊月往外滑、新月從另一邊滑進(週標題與外框不動)
+let _calSliding=false;
+async function calSlide(dir){
+  if(_calSliding) return; _calSliding=true;
+  try{
+    const g=document.querySelector('.cal-grid');
+    if(g){ g.style.transition='transform .16s ease-in, opacity .16s ease-in'; g.style.transform=`translateX(${-dir*40}%)`; g.style.opacity='0';
+      await new Promise(r=>setTimeout(r,160)); }
+    if(dir>0) await nextMonth(); else await prevMonth();
+    const g2=document.querySelector('.cal-grid');
+    if(g2){ g2.style.transition='none'; g2.style.transform=`translateX(${dir*40}%)`; g2.style.opacity='0';
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ g2.style.transition='transform .22s ease-out, opacity .22s ease-out'; g2.style.transform='translateX(0)'; g2.style.opacity='1'; }); }); }
+  }finally{ _calSliding=false; }
 }
 async function prevMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()-1,1); await loadMonthBooked(); renderDatetimeInner(document.getElementById('mainContent')); }
 async function nextMonth() { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth()+1,1); await loadMonthBooked(); renderDatetimeInner(document.getElementById('mainContent')); }

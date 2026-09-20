@@ -1911,7 +1911,7 @@ function bookNext(id){
     const grp=groupConsecutiveAppts(sameDay).find(g=>g.some(x=>x.id===id));
     if(grp&&grp.length>1) endT=slotEnd(grp[grp.length-1].appointment_time);   // 例：60分=2格→帶+60分結束
   }catch(e){}
-  const d=new Date(a.appointment_date+'T00:00:00'); d.setDate(d.getDate()+7);   // 預設下週同一天
+  const d=new Date(a.appointment_date+'T00:00:00');   // 停在這次看診的日期,下次日期由櫃檯自己點(不再自動跳下週)
   const nd=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const nt=a.appointment_time.slice(0,5);                                        // 預設同時段
   window._pendingProxyTh=a.therapist_id||'';     // 預選同一位治療師

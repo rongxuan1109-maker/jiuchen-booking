@@ -363,11 +363,12 @@ body::before{
 .cal-title{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:500;color:var(--ink);letter-spacing:1px;}
 .today-pill{background:#d98a2b;color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;margin-left:8px;vertical-align:2px;font-family:'Noto Serif TC',serif;font-weight:400;white-space:nowrap;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px 4px;position:relative;z-index:1;}
-.cal-day-lbl{text-align:center;font-size:11px;padding:6px 0;border-radius:20px;background:#f0ead9;color:#8a7a5c;font-weight:400;}
-.cal-day-lbl.sun{background:#f3dadd;color:#b4636b;}
-.cal-day-lbl.sat{background:#dcebee;color:#5b8a94;}
+.cal-day-lbl{text-align:center;font-size:12.5px;padding:7px 0;border-radius:20px;background:#e3d5b8;color:#6b5636;font-weight:700;letter-spacing:1px;}
+.cal-day-lbl.sun{background:#eec3c8;color:#9c4650;}
+.cal-day-lbl.sat{background:#c2dde2;color:#3f6d77;}
 .cal-day2{display:flex;flex-direction:column;align-items:center;height:56px;cursor:pointer;padding-top:2px;}
-.cal-day2 .cd-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
+.cal-day2 .cd-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;transition:all .15s;}
+.cal-day2:not(.off):not(.sel):not(.today) .cd-num{background:rgba(192,138,82,.14);}
 .cal-day2:hover:not(.off):not(.sel) .cd-num{background:var(--glow);}
 .cal-day2.off{cursor:default;}
 .cal-day2.off .cd-num{color:rgba(155,138,116,.45);}

@@ -351,18 +351,19 @@ body::before{
 .btn.qnext{background:#6b8e4e;border:none;box-shadow:0 5px 14px rgba(107,142,78,.35);border-radius:30px;}
 .btn.qnext:hover{background:#5f8043;}
 .btn.qnext span{color:#fff;}
-.cal-wrap{position:relative;overflow:hidden;border-radius:14px;}
+.cal-wrap{position:relative;border-radius:14px;}
 .cal-deco{position:absolute;border-radius:50%;pointer-events:none;}
 .cal-deco-y{width:150px;height:150px;background:rgba(240,206,122,.22);top:-55px;right:-45px;}
 .cal-deco-p{width:170px;height:170px;background:rgba(228,175,180,.16);bottom:-70px;left:-55px;}
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;position:relative;z-index:1;}
 .cal-nav{position:absolute;top:57%;transform:translateY(-50%);width:30px;height:76px;border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;box-shadow:0 4px 10px rgba(60,45,25,.25);z-index:6;transition:all .2s;}
-.cal-nav.nav-prev{left:4px;background:#c08a52;}
-.cal-nav.nav-next{right:4px;background:#c08a52;}
+.cal-nav.nav-prev{left:-15px;background:#c08a52;}
+.cal-nav.nav-next{right:-15px;background:#c08a52;}
 .cal-nav:hover{filter:brightness(.95);}
 .cal-title{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:500;color:var(--ink);letter-spacing:1px;}
 .today-pill{background:#d98a2b;color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;margin-left:8px;vertical-align:2px;font-family:'Noto Serif TC',serif;font-weight:400;white-space:nowrap;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px 4px;padding:0 40px;position:relative;z-index:1;}
+.cal-clip{overflow:hidden;margin:0 -4px;padding:0 4px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px 4px;padding:0;position:relative;z-index:1;}
 .cal-day-lbl{text-align:center;font-size:12.5px;padding:7px 0;border-radius:7px;background:#e3d5b8;color:#6b5636;font-weight:700;letter-spacing:1px;}
 .cal-day-lbl.sun{background:#eec3c8;color:#9c4650;}
 .cal-day-lbl.sat{background:#c2dde2;color:#3f6d77;}
@@ -1085,6 +1086,7 @@ function renderDatetimeInner(el) {
   </div>
   <button class="cal-nav nav-prev" onclick="calSlide(-1)">‹</button>
   <button class="cal-nav nav-next" onclick="calSlide(1)">›</button>
+  <div class="cal-clip">
   <div class="cal-grid">
     ${DAYS.map((d,i)=>`<div class="cal-day-lbl ${i===0?'sun':i===6?'sat':''}">${d}</div>`).join('')}
     ${Array(first).fill('<div></div>').join('')}
@@ -1107,6 +1109,7 @@ function renderDatetimeInner(el) {
       }
       return `<div class="cal-day2 ${off?'off':''} ${isSun?'sun':''} ${sel?'sel':''} ${isToday&&!sel?'today':''}" onclick="${off?'':'selectDate('+year+','+month+','+(i+1)+')'}">${top}<span class="cd-num">${i+1}</span>${extra}</div>`;
     }).join('')}
+  </div>
   </div>
   <div class="cal-legend"><span><span class="lg-dot g"></span>名額充足</span><span><span class="lg-dot o"></span>剩少量名額</span><span><span class="lg-gray">灰字</span>休診/不可約</span></div>
   </div>`;

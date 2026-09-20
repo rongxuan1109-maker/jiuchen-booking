@@ -1077,7 +1077,7 @@ function renderDatetimeInner(el) {
   const isThisMonth = today.getFullYear()===year && today.getMonth()===month;
   let calHtml = `
   <div class="cal-wrap" ontouchstart="calSwipeStart(event)" ontouchend="calSwipeEnd(event)">
-  <div class="cal-deco cal-deco-y"></div><div class="cal-deco cal-deco-p"></div>
+  
   <div class="cal-header" style="justify-content:center">
     <span class="cal-title">${year} 年 ${month+1} 月${isThisMonth?`<span class="today-pill">今天 ${today.getMonth()+1}/${today.getDate()}</span>`:''}</span>
   </div>

@@ -366,7 +366,9 @@ body::before{
 .cal-day-lbl{text-align:center;font-size:12.5px;padding:7px 0;border-radius:7px;background:#e3d5b8;color:#6b5636;font-weight:700;letter-spacing:1px;}
 .cal-day-lbl.sun{background:#eec3c8;color:#9c4650;}
 .cal-day-lbl.sat{background:#c2dde2;color:#3f6d77;}
-.cal-day2{display:flex;flex-direction:column;align-items:center;height:56px;cursor:pointer;padding-top:2px;}
+.cal-day2{display:flex;flex-direction:column;align-items:center;height:66px;cursor:pointer;padding-top:0;}
+.cd-top{font-size:9px;height:12px;line-height:12px;letter-spacing:1px;color:#d98a2b;display:block;}
+.cal-day2.sel .cd-top{color:#a5793d;font-weight:700;}
 .cal-day2 .cd-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;transition:all .15s;}
 .cal-day2:not(.off):not(.sel):not(.today) .cd-num{background:rgba(192,138,82,.14);}
 .cal-day2:hover:not(.off):not(.sel) .cd-num{background:var(--glow);}
@@ -1094,16 +1096,16 @@ function renderDatetimeInner(el) {
       const sel = state.date && fmtDate(state.date)===fmtDate(d);
       const free = (isPast||isSun) ? 0 : dayFreeCount(d);
       const off = isPast || isSun || free===0;
-      // 名額點點:綠=充足(依剩餘量1~3顆)、橘=剩少量
-      let extra='';
-      if(sel) extra='<span class="cd-sub">已選</span>';
-      else if(isToday&&!off) extra='<span class="cd-sub">今天</span>';
-      else if(!off){
+      // 今天/已選標字放日期上方,名額點點固定在下方(不再互相蓋住)
+      let top='<span class="cd-top"></span>', extra='';
+      if(sel) top='<span class="cd-top">已選</span>';
+      else if(isToday&&!off) top='<span class="cd-top">今天</span>';
+      if(!off){
         const g = free>=4;
         const n = g ? (free>=12?3:free>=7?2:1) : 1;
         extra=`<span class="cd-dots">${Array(n).fill(`<i class="${g?'g':'o'}"></i>`).join('')}</span>`;
       }
-      return `<div class="cal-day2 ${off?'off':''} ${isSun?'sun':''} ${sel?'sel':''} ${isToday&&!sel?'today':''}" onclick="${off?'':'selectDate('+year+','+month+','+(i+1)+')'}"><span class="cd-num">${i+1}</span>${extra}</div>`;
+      return `<div class="cal-day2 ${off?'off':''} ${isSun?'sun':''} ${sel?'sel':''} ${isToday&&!sel?'today':''}" onclick="${off?'':'selectDate('+year+','+month+','+(i+1)+')'}">${top}<span class="cd-num">${i+1}</span>${extra}</div>`;
     }).join('')}
   </div>
   <div class="cal-legend"><span><span class="lg-dot g"></span>名額充足</span><span><span class="lg-dot o"></span>剩少量名額</span><span><span class="lg-gray">灰字</span>休診/不可約</span></div>

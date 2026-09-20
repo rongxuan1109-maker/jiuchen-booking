@@ -50,7 +50,7 @@ input,select,textarea{font-family:inherit;font-size:16px}
 .iconbtn{width:38px;height:38px;border-radius:12px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px}
 .iconbtn:active{background:var(--glow)}
 main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--tab-h) + var(--safe-b) + 12px)}
-.page{display:none;padding:14px}
+.page{overflow-x:hidden;display:none;padding:14px}
 .page.on{display:block}
 
 /* ===== Tab Bar ===== */
@@ -454,7 +454,22 @@ async function renderToday(){
   try{ rows=await loadDay(ds); }catch(e){ return; }
   renderTodayList(rows);
 }
-function shiftDay(n){ curDate.setDate(curDate.getDate()+n); renderToday(); }
+// 翻書式換日/換週:舊內容滑出、新內容從另一邊滑進
+let _pgSliding=false;
+async function _slidePage(listId, dir, apply){
+  if(_pgSliding) return; _pgSliding=true;
+  try{
+    const g=$(listId);
+    if(g){ g.style.transition='transform .16s ease-in, opacity .16s ease-in'; g.style.transform=`translateX(${-dir*40}%)`; g.style.opacity='0';
+      await new Promise(r=>setTimeout(r,160)); }
+    await apply();
+    const g2=$(listId);
+    if(g2){ g2.style.transition='none'; g2.style.transform=`translateX(${dir*40}%)`; g2.style.opacity='0';
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ g2.style.transition='transform .22s ease-out, opacity .22s ease-out'; g2.style.transform='translateX(0)'; g2.style.opacity='1'; }); }); }
+  }finally{ _pgSliding=false; }
+}
+function shiftDay(n){ _slidePage('todayList', n, async()=>{ curDate.setDate(curDate.getDate()+n); await renderToday(); }); }
+
 // 日檢視左右滑動換日(左滑=明天,右滑=昨天);滑動要夠水平才觸發,不干擾上下捲動
 (function(){
   let sw=null;
@@ -611,7 +626,7 @@ async function renderWeek(){
       <div class="bars">${bars}</div></div>`;
   }).join('');
 }
-function shiftWeek(n){ curDate.setDate(curDate.getDate()+n*7); renderWeek(); }
+function shiftWeek(n){ _slidePage('weekList', n, async()=>{ curDate.setDate(curDate.getDate()+n*7); await renderWeek(); }); }
 
 /* ============ 月檢視 ============ */
 async function renderMonth(){

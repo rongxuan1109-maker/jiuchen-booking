@@ -3393,8 +3393,8 @@ function _renderNaCal(){
     const lb=lunarLabel(d);
     return `<div onclick="naDayPick(${_naCalY},${_naCalM},${i+1})" style="text-align:center;padding:5px 2px;cursor:pointer;background:${isSel?'var(--warm)':'transparent'};border:1.5px ${isToday?'dashed':'solid'} ${isSel?'var(--warm)':isToday?'var(--warm)':'transparent'};border-radius:${isToday?'9px':'0'}">
       <div style="font-family:'Cormorant Garamond',serif;font-size:${isToday?'18px':'14px'};font-weight:${isSel||isToday?600:400};color:${isSel?'#f3ede1':isToday?'var(--warm)':isSun?'var(--new-color)':'var(--text)'}">${i+1}</div>
-      ${isToday?`<div style="font-size:11px;font-weight:800;letter-spacing:1px;line-height:1.35;color:${isSel?'#f3ede1':'var(--warm)'}">今日</div>`:''}
       ${lb.lunar?`<div style="font-size:9px;color:${isSel?'rgba(243,237,225,.8)':lb.hot?'var(--warm)':'var(--muted)'};margin-top:1px">${lb.lunar}</div>`:'<div style="font-size:9px"> </div>'}
+      ${isToday?`<div style="font-size:11px;font-weight:800;letter-spacing:1px;line-height:1.35;color:${isSel?'#f3ede1':'var(--warm)'}">今日</div>`:''}
       ${lb.holiday?`<div style="font-size:8px;color:${isSel?'rgba(243,237,225,.9)':'var(--warm)'}">${lb.holiday}</div>`:''}
     </div>`;
   }).join('');

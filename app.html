@@ -658,9 +658,22 @@ async function renderMonth(){
     if(extra>0) chips+=`<div class="mo-more">+${extra}</div>`;
     cells+=`<div class="mo-day ${isT?'today':''} ${dd.getDay()===0?'dim':''}" onclick="jumpDay('${ds}')"><span class="n">${d}</span>${chips}</div>`;
   }
-  const grid=$('moGrid'); if(grid) grid.outerHTML=`<div class="mo-grid">${cells}</div>`;
+  const grid=$('moGrid'); if(grid) grid.outerHTML=`<div id="moGrid" class="mo-grid">${cells}</div>`;
 }
-function shiftMonth(n){ curDate=new Date(curDate.getFullYear(), curDate.getMonth()+n, 1); renderMonth(); }
+function shiftMonth(n){ _slidePage('moGrid', n, async()=>{ curDate=new Date(curDate.getFullYear(), curDate.getMonth()+n, 1); await renderMonth(); }); }
+// 月檢視左右滑動換月
+(function(){
+  let sw=null;
+  const pg=document.getElementById('page-month');
+  if(!pg) return;
+  pg.addEventListener('touchstart',e=>{ const t=e.touches[0]; sw={x:t.clientX,y:t.clientY}; },{passive:true});
+  pg.addEventListener('touchend',e=>{
+    if(!sw) return;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-sw.x, dy=t.clientY-sw.y; sw=null;
+    if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.6){ shiftMonth(dx<0?1:-1); }
+  },{passive:true});
+})();
 function jumpDay(ds){ curDate=parseDate(ds); switchTab('today'); }
 
 /* ============ 病人 ============ */

@@ -679,8 +679,24 @@ function slotFull(t){
   const freeCount = scheduled.filter(id => !bookedTh.has(id)).length - unassigned;
   return freeCount <= 0;
 }
+// 公休表(get_closures):全診所公休不掛在任何治療師名下,靠這張表才擋得住(60秒快取)
+async function loadClosures(){
+  const now = Date.now();
+  if (state._closAt && now - state._closAt < 60000) return;
+  try{
+    const { data } = await sb.rpc('get_closures');
+    state.closures = {};
+    (data||[]).forEach(r => { (state.closures[r.appointment_date] = state.closures[r.appointment_date] || []).push(r); });
+    state._closAt = now;
+  }catch(e){}
+}
+function closedAt(ds, t){
+  const cs = state.closures && state.closures[ds];
+  return !!(cs && cs.some(c => c.therapist_id == null && (c.times||[]).includes(t)));
+}
 // 單一 30 分鐘格是否已被佔用（依目前治療師選擇）
 function singleSlotTaken(t){
+  if(closedAt(fmtDate(state.date), t)) return true;   // 全診所公休
   const isAny = !state.therapistId || state.therapistId===0;
   if(isAny) return slotFull(t);
   return state.bookedSlots.some(s => s.appointment_time.slice(0,5) === t);  // 指定治療師：只看他自己的預約
@@ -845,6 +861,7 @@ async function loadMonthBooked() {
   const { data } = await q;
   state.monthBooked = data || [];
   state._monthKey = key;
+  await loadClosures();
 }
 // 某一天還剩幾個可約的30分鐘格(對接名額點點)
 function dayFreeCount(d) {
@@ -854,11 +871,12 @@ function dayFreeCount(d) {
   const rows = (state.monthBooked || []).filter(r => r.appointment_date === ds);
   if (state.therapistId && state.therapistId !== 0) {
     const taken = new Set(rows.map(r => r.appointment_time.slice(0,5)));
-    return slots.filter(t => !taken.has(t)).length;
+    return slots.filter(t => !taken.has(t) && !closedAt(ds, t)).length;
   }
   const wd = String(d.getDay());
   let free = 0;
   for (const t of slots) {
+    if (closedAt(ds, t)) continue;
     const scheduled = state.therapists.filter(th => effSlots(th.id, wd).includes(t)).length;
     let bookedTh = new Set(), unassigned = 0;
     rows.forEach(r => {
@@ -879,6 +897,7 @@ async function loadBookedSlots(dateStr, therapistId) {
   if (therapistId) q = q.eq('therapist_id', therapistId);
   const { data } = await q;
   state.bookedSlots = data || [];
+  await loadClosures();
 }
 
 function fmtDate(d) {

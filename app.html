@@ -401,8 +401,14 @@ function rtRefresh(){
 }
 function startRealtime(){
   if(_rtOn)return; _rtOn=true;
-  // 2026-09-21 流量瘦身:關閉即時訂閱(websocket廣播→全員重抓整天資料太耗流量)
-  // 改為:切回App前景時刷新一次;存檔前防撞檢查(collision guard)仍在,資料安全不受影響
+  try{
+    sb.channel('appt-rt').on('postgres_changes',{event:'*',schema:'public',table:'appointments'},()=>{
+      clearTimeout(_rtTimer); _rtTimer=setTimeout(rtRefresh,600);   // 一批變動只刷一次
+    }).on('postgres_changes',{event:'*',schema:'public',table:'therapist_schedules'},async()=>{
+      try{ await loadTherapists(); }catch(e){}                      // 班表/釋出時段變了→靜靜更新資料
+    }).subscribe();
+  }catch(e){}
+  // App 從背景回到前景也刷一次(訂閱可能在休眠時斷線)
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden) rtRefresh(); });
 }
 

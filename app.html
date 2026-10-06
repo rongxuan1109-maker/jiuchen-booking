@@ -339,8 +339,15 @@ async function loadDay(dateStr,force){
   apptCache[dateStr]=data||[]; return apptCache[dateStr];
 }
 async function loadRange(startStr,endStr){
-  const {data}=await guard(sb.from('appointments').select('*').gte('appointment_date',startStr).lte('appointment_date',endStr).order('appointment_date').order('appointment_time'));
-  return data||[];
+  // 2026-10-06修:排除取消單+自動翻頁(單次上限1000筆,整月爆量會截斷後面日期)
+  const all=[]; const PAGE=1000;
+  for(let off=0;;off+=PAGE){
+    const {data}=await guard(sb.from('appointments').select('*').neq('status','cancelled').gte('appointment_date',startStr).lte('appointment_date',endStr).order('appointment_date').order('appointment_time').order('id').range(off,off+PAGE-1));
+    if(!data)break;
+    all.push(...data);
+    if(data.length<PAGE)break;
+  }
+  return all;
 }
 function invalidate(dateStr){ if(dateStr) delete apptCache[dateStr]; else apptCache={}; try{ jc.cache={}; }catch(e){} }
 function thName(id){const t=therapists.find(x=>x.id===id);return t?t.name:(id==null?'不指定':'');}

@@ -1354,11 +1354,21 @@ function _getDateRange(){
 }
 
 async function _fetchAppts(s,e,key){
-  const{data}=await sb.from('appointments').select('*')
-    .gte('appointment_date',s).lte('appointment_date',e)
-    .order('appointment_date').order('appointment_time');
-  if(data)_apptCache.set(key,{data,ts:Date.now()});
-  return data;
+  // 2026-10-06修:只載有效資料(取消單畫面從不顯示)+自動翻頁——資料庫單次最多回1000筆,
+  // 整月資料超過1000筆時後面日期整批被截斷(10/17全院休診消失案)
+  const all=[]; const PAGE=1000;
+  for(let off=0;;off+=PAGE){
+    const{data}=await sb.from('appointments').select('*')
+      .neq('status','cancelled')
+      .gte('appointment_date',s).lte('appointment_date',e)
+      .order('appointment_date').order('appointment_time').order('id')
+      .range(off,off+PAGE-1);
+    if(!data)break;
+    all.push(...data);
+    if(data.length<PAGE)break;
+  }
+  _apptCache.set(key,{data:all,ts:Date.now()});
+  return all;
 }
 
 function _prefetchAdjacent(){

@@ -1359,7 +1359,7 @@ async function _fetchAppts(s,e,key){
   const all=[]; const PAGE=1000;
   for(let off=0;;off+=PAGE){
     const{data}=await sb.from('appointments').select('*')
-      .neq('status','cancelled')
+      .or('status.neq.cancelled,note.like.memo:*')
       .gte('appointment_date',s).lte('appointment_date',e)
       .order('appointment_date').order('appointment_time').order('id')
       .range(off,off+PAGE-1);

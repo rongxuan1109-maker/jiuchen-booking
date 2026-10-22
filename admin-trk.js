@@ -11,6 +11,7 @@ window.TRK={sel:null,cv:{},cvIdx:null,pop:null,cal:null,nvDate:'',nvTime:'',msg:
 function db(){ try{return JSON.parse(localStorage.getItem('ptrack_v1'))||{patients:[]};}catch(e){return{patients:[]};} }
 function saveDb(d){ localStorage.setItem('ptrack_v1',JSON.stringify(d)); }
 function rec(name){ return db().patients.find(function(x){return x.name===name;})||null; }
+window._trkRec=rec;
 function today(){ var d=new Date(); return d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0'); }
 function nowHM(){ var d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
@@ -678,7 +679,7 @@ window.trkRenderList=function(){
     '<div style="font-size:11px;color:var(--muted);margin:0 2px 8px">共 '+filtered.length+' 位病人'+(totalPages>1?' · 第 '+(TRK.page+1)+' / '+totalPages+' 頁':'')+'</div>'+
     '<div style="'+(narrow?'max-height:42vh':'flex:1;min-height:0')+';overflow-y:auto;display:flex;flex-direction:column;gap:6px">'+
     (filtered.length?pageItems.map(function(p){
-      var r=rec(p.name); var n=r?r.visits.length:0;
+      var r=(window._trkRec?window._trkRec(p.name):null); var n=r?r.visits.length:0;
       return '<div class="trk-pt" data-name="'+esc(p.name)+'" onclick="trkSelect(\''+esc(p.name).replace(/'/g,'')+'\')" style="background:#fff;border:1px solid #f0e6da;border-radius:12px;padding:10px 12px;cursor:pointer">'+
         '<div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:13px">'+esc(p.name)+'</b><span style="font-size:10px;color:#b3a08c">'+(n?n+' 次紀錄':'')+'</span></div>'+
         '<div style="font-size:11px;color:#a08b76;margin-top:1px">'+esc(p.phone||'無電話')+(p.birthday?' · 🎂'+p.birthday:'')+(p.body_parts&&p.body_parts.length?' · '+p.body_parts.join('/'):'')+'</div>'+

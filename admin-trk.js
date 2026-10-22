@@ -236,7 +236,7 @@ window.renderTrkPanel=function(){
     '<b style="font-size:18px">'+esc(TRK.sel)+'</b>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
       (p?'<button onclick="editPatientOld('+p.id+')" style="padding:8px 14px;border:1.5px solid #e3d5c3;border-radius:10px;background:#fff;color:#8a7361;font-size:12.5px;font-weight:700;cursor:pointer">✎ 編輯基本資料</button>':'<button onclick="openNewPatient()" style="padding:8px 14px;border:1.5px solid #c98a2e;border-radius:10px;background:#fff;color:#a5701f;font-size:12.5px;font-weight:700;cursor:pointer">＋ 建立基本資料</button>')+
-      '<button onclick="trkToggleRcptHist()" style="padding:8px 14px;border:1.5px solid #c98a2e;border-radius:10px;background:#fff;color:#a5701f;font-size:12.5px;font-weight:700;cursor:pointer">📑 收據紀錄</button>'+
+      '<button onclick="trkRcptHistPanel()" style="padding:8px 14px;border:1.5px solid #c98a2e;border-radius:10px;background:#fff;color:#a5701f;font-size:12.5px;font-weight:700;cursor:pointer">📑 收據紀錄</button>'+
       '<button onclick="trkReceipt()" style="padding:8px 16px;border:none;border-radius:10px;background:#b0541f;color:#fff;font-size:12.5px;font-weight:900;cursor:pointer">🧾 開收據</button>'+
     '</div>'+
   '</div>'+
@@ -252,7 +252,7 @@ window.renderTrkPanel=function(){
     (p&&p.note?'<div style="margin-top:6px;font-size:12px;color:#8a6a1f;background:#faf0dd;border-radius:8px;padding:5px 10px">📝 '+esc(p.note)+'</div>':'')+
   '</div>'+
   '<div id="trkApptHist" style="background:#fff;border:1px solid #f0e6da;border-radius:16px;padding:12px 16px;max-width:'+MW+';width:100%;margin:0 auto 10px;box-sizing:border-box;font-size:12px;color:#b3a08c">就診紀錄載入中…</div>'+
-  '<div id="trkRcptHist" style="display:none;max-width:'+MW+';width:100%;margin:0 auto 10px"></div>';
+  '';
   trkLoadApptHist(TRK.sel);
   var hel=document.getElementById('trkHistory');
   if(hel)hel.innerHTML='<div style="font-size:12px;font-weight:900;color:#8a7361;margin:2px 2px 8px">歷史紀錄（'+visits.length+' 次）</div>'+
@@ -455,7 +455,7 @@ window.rcptSaveRecord=async function(){
     var key=JSON.stringify(payload);
     if(TRK._rcptSaved===key)return;          /* 同內容重印不重複記 */
     var r=await sb.from('receipts').insert(payload);
-    if(!r.error){ TRK._rcptSaved=key; var h=document.getElementById('trkRcptHist'); if(h&&h.style.display!=='none'&&typeof trkLoadReceipts==='function')trkLoadReceipts(TRK.sel); }
+    if(!r.error){ TRK._rcptSaved=key; if(document.getElementById('rcptHistBody'))trkLoadReceipts(TRK.sel); }
   }catch(e){}
 };
 window.rcptPrint=function(){
@@ -495,12 +495,12 @@ window.trkReceipt=async function(){
   if(!document.getElementById('rcptStyle')){
     var css=document.createElement('style'); css.id='rcptStyle';
     css.textContent=
-      '#rcptPanel{position:fixed;top:0;right:0;width:min(640px,96vw);height:100vh;background:#efe9df;z-index:3000;box-shadow:-10px 0 34px rgba(60,40,20,.3);display:flex;flex-direction:column;animation:rcptIn .22s ease-out}'+
+      '#rcptPanel,#rcptHistPanel{position:fixed;top:0;right:0;width:min(640px,96vw);height:100vh;background:#efe9df;z-index:3000;box-shadow:-10px 0 34px rgba(60,40,20,.3);display:flex;flex-direction:column;animation:rcptIn .22s ease-out}'+
       '@keyframes rcptIn{from{transform:translateX(40%);opacity:.4}to{transform:none;opacity:1}}'+
-      '#rcptBar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-bottom:1px solid #e3d5c3}'+
-      '#rcptBar b{font-size:14px;color:#5c452f}'+
-      '#rcptBar button{padding:8px 16px;border:none;border-radius:9px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;margin-left:6px}'+
-      '#rcptScroll{overflow:auto;flex:1;padding:14px}'+
+      '#rcptBar,#rcptHistBar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-bottom:1px solid #e3d5c3}'+
+      '#rcptBar b,#rcptHistBar b{font-size:14px;color:#5c452f}'+
+      '#rcptBar button,#rcptHistBar button{padding:8px 16px;border:none;border-radius:9px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;margin-left:6px}'+
+      '#rcptScroll,#rcptHistBody{overflow:auto;flex:1;padding:14px}'+
       '.rcpt-doc{background:#fff;padding:20px 22px;box-sizing:border-box;font-family:"Noto Sans TC","PingFang TC",sans-serif;color:#2f2a24;width:100%}'+
       '.rcpt-doc .rbar{border:none;border-top:2.5px solid #b07d3a;margin:12px 0}'+
       '.rcpt-doc h1{font-size:19px;letter-spacing:1px;margin:0 0 10px;font-weight:900}'+
@@ -542,7 +542,7 @@ window.trkReceipt=async function(){
       '<td class="cqt"><input type="text" class="rqty" inputmode="numeric"></td>'+
       '<td class="cam">$ <input type="text" class="ramt" inputmode="numeric" oninput="rcptAutoCk(this);rcptCalc()"></td></tr>'; }
   });
-  rcptClose();
+  rcptClose(); if(window.rcptHistClose)rcptHistClose();
   var panel=document.createElement('div'); panel.id='rcptPanel';
   panel.innerHTML=
     '<div id="rcptBar"><b>🧾 費用收據</b><span>'+
@@ -593,20 +593,19 @@ window.trkLoadApptHist=async function(name){
 /* ── 收據紀錄:開過的收據都留底,可重印可刪 ── */
 window.trkLoadReceipts=async function(name){
   try{
-    var q=await sb.from('receipts').select('id,issue_date,total,items,created_at').eq('patient_name',name).order('id',{ascending:false}).limit(20);
-    var el=document.getElementById('trkRcptHist'); if(!el||TRK.sel!==name)return;
+    var q=await sb.from('receipts').select('id,issue_date,total,items,created_at').eq('patient_name',name).order('id',{ascending:false}).limit(30);
+    var el=document.getElementById('rcptHistBody'); if(!el||TRK.sel!==name)return;
     var rows=q.data||[];
-    if(!rows.length){ el.innerHTML='<div style="background:#fff;border:1px solid #f0e6da;border-radius:16px;padding:12px 16px;font-size:12px;color:#b3a08c">尚無收據紀錄</div>'; return; }
+    if(!rows.length){ el.innerHTML='<div style="background:#fff;border-radius:14px;padding:18px;font-size:13px;color:#b3a08c;text-align:center">尚無收據紀錄</div>'; return; }
     TRK._rcptRows=rows;
-    el.innerHTML='<div style="background:#fff;border:1px solid #f0e6da;border-radius:16px;padding:12px 16px;box-sizing:border-box">'+
-      '<div style="font-size:12px;font-weight:900;color:#8a7361;margin-bottom:6px">🧾 收據紀錄（'+rows.length+' 筆）</div>'+
+    el.innerHTML='<div style="background:#fff;border-radius:14px;padding:12px 16px">'+
       rows.map(function(r,i){
         var its=(r.items||[]).map(function(x){return x.item;}).join('、');
-        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f4ece1;font-size:12.5px;color:#5c452f">'+
-          '<span>'+esc(r.issue_date||String(r.created_at||'').slice(0,10))+'　<b style="color:#b0541f">$'+Number(r.total||0).toLocaleString()+'</b><span style="font-size:11px;color:#a08b76">　'+esc(its.slice(0,24))+(its.length>24?'…':'')+'</span></span>'+
-          '<span style="display:flex;gap:6px">'+
-            '<button onclick="trkRcptReprint('+i+')" style="border:1.5px solid #b58a2e;background:#fff;color:#8a6a1f;border-radius:8px;padding:2px 10px;font-size:11px;font-weight:700;cursor:pointer">重印</button>'+
-            '<button onclick="trkRcptDel('+r.id+')" style="border:none;background:transparent;color:#c0ad98;font-size:11px;cursor:pointer">刪除</button>'+
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f4ece1;font-size:13px;color:#5c452f">'+
+          '<span><b>'+esc(r.issue_date||String(r.created_at||'').slice(0,10))+'</b>　<b style="color:#b0541f">$'+Number(r.total||0).toLocaleString()+'</b><br><span style="font-size:11px;color:#a08b76">'+esc(its.slice(0,40))+(its.length>40?'…':'')+'</span></span>'+
+          '<span style="display:flex;gap:6px;flex-shrink:0">'+
+            '<button onclick="trkRcptReprint('+i+')" style="border:1.5px solid #b58a2e;background:#fff;color:#8a6a1f;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">重印</button>'+
+            '<button onclick="trkRcptDel('+r.id+')" style="border:none;background:transparent;color:#c0ad98;font-size:12px;cursor:pointer">刪除</button>'+
           '</span></div>';
       }).join('')+'</div>';
   }catch(e){}
@@ -617,6 +616,7 @@ window.trkRcptDel=async function(id){
 };
 window.trkRcptReprint=async function(i){
   var r=(TRK._rcptRows||[])[i]; if(!r)return;
+  rcptHistClose();
   await trkReceipt();
   setTimeout(function(){
     var paper=document.getElementById('rcptPaper'); if(!paper)return;
@@ -639,9 +639,14 @@ window.trkRcptReprint=async function(i){
   },400);
 };
 
-window.trkToggleRcptHist=function(){
-  var el=document.getElementById('trkRcptHist'); if(!el)return;
-  if(el.style.display==='none'){ el.style.display='block'; trkLoadReceipts(TRK.sel); }
-  else el.style.display='none';
+window.rcptHistClose=function(){ var p=document.getElementById('rcptHistPanel'); if(p)p.remove(); };
+window.trkRcptHistPanel=function(){
+  rcptClose(); rcptHistClose();
+  var panel=document.createElement('div'); panel.id='rcptHistPanel';
+  panel.innerHTML='<div id="rcptHistBar"><b>📑 收據紀錄 — '+esc(TRK.sel||'')+'</b><span>'+
+    '<button onclick="rcptHistClose()" style="background:#e8e0d2;color:#5c5243">✕ 關閉</button></span></div>'+
+    '<div id="rcptHistBody" style="flex:1;padding:14px"><div style="font-size:13px;color:#8a7361">載入中…</div></div>';
+  document.body.appendChild(panel);
+  trkLoadReceipts(TRK.sel);
 };
 

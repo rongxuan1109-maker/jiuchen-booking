@@ -2094,7 +2094,7 @@ function renderMonth(){
     const ds=d?fmtDate(d):'';
     const isToday=ds===todayStr;
     const isSun=d&&d.getDay()===0;
-    const dayAppts=valid?appointments.filter(a=>a.appointment_date===ds&&a.status!=='cancelled'&&(curThId===0||a.therapist_id===curThId||(isEvent(a)&&a.therapist_id===null))):[];
+    const dayAppts=valid?appointments.filter(a=>a.appointment_date===ds&&(a.status!=='cancelled'||isMemo(a))&&(curThId===0||a.therapist_id===curThId||((isEvent(a)||isMemo(a))&&a.therapist_id===null))):[];
     const lb=valid?lunarLabel(d):null;
     html+=`<div onclick="${valid?`gotoDayView('${ds}')`:''}" style="min-height:96px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:4px;cursor:${valid?'pointer':'default'};${isToday?'background:rgba(192,138,82,.06)':''}${isSun&&!isToday?'background:rgba(217,110,40,.03)':''}">`;
     if(valid){
@@ -2119,7 +2119,7 @@ function renderMonth(){
 // ── 月檢視：點「還有 N 個」彈出當日完整名單（Google 日曆風）──
 function openDayPopover(ds, ev){
   closeDayPopover();
-  const list=appointments.filter(a=>a.appointment_date===ds&&a.status!=='cancelled'&&(curThId===0||a.therapist_id===curThId||(isEvent(a)&&a.therapist_id===null)))
+  const list=appointments.filter(a=>a.appointment_date===ds&&(a.status!=='cancelled'||isMemo(a))&&(curThId===0||a.therapist_id===curThId||((isEvent(a)||isMemo(a))&&a.therapist_id===null)))
     .sort((a,b)=>a.appointment_time.localeCompare(b.appointment_time));
   const d=new Date(ds+'T00:00:00');
   const wrap=document.createElement('div');

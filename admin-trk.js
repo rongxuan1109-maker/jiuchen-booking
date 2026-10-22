@@ -250,8 +250,9 @@ window.renderTrkPanel=function(){
     '</div>'+
     (p&&p.note?'<div style="margin-top:6px;font-size:12px;color:#8a6a1f;background:#faf0dd;border-radius:8px;padding:5px 10px">📝 '+esc(p.note)+'</div>':'')+
   '</div>'+
-  '<div id="trkApptHist" style="background:#fff;border:1px solid #f0e6da;border-radius:16px;padding:12px 16px;max-width:'+MW+';width:100%;margin:0 auto 10px;box-sizing:border-box;font-size:12px;color:#b3a08c">就診紀錄載入中…</div>';
-  trkLoadApptHist(TRK.sel);
+  '<div id="trkApptHist" style="background:#fff;border:1px solid #f0e6da;border-radius:16px;padding:12px 16px;max-width:'+MW+';width:100%;margin:0 auto 10px;box-sizing:border-box;font-size:12px;color:#b3a08c">就診紀錄載入中…</div>'+
+  '<div id="trkRcptHist" style="max-width:'+MW+';width:100%;margin:0 auto 10px"></div>';
+  trkLoadApptHist(TRK.sel); trkLoadReceipts(TRK.sel);
   var hel=document.getElementById('trkHistory');
   if(hel)hel.innerHTML='<div style="font-size:12px;font-weight:900;color:#8a7361;margin:2px 2px 8px">歷史紀錄（'+visits.length+' 次）</div>'+
     '<div style="flex:1;display:flex;flex-direction:column;gap:8px;overflow-y:auto;padding-right:4px;min-height:0">'+hist+'</div>';
@@ -431,8 +432,34 @@ window.rcptCalc=function(){
   });
   var el=document.getElementById('rcptTotal'); if(el)el.textContent=t?t.toLocaleString():'　';
 };
+window.rcptSaveRecord=async function(){
+  try{
+    var paper=document.getElementById('rcptPaper'); if(!paper)return;
+    var dts=paper.querySelectorAll('.rdt input');
+    var y=parseInt(dts[0].value,10)+1911, mo=parseInt(dts[1].value,10), dd=parseInt(dts[2].value,10);
+    var iso=(isNaN(y)||isNaN(mo)||isNaN(dd))?null:(y+'-'+String(mo).padStart(2,'0')+'-'+String(dd).padStart(2,'0'));
+    var infos=paper.querySelectorAll('.rinfo input');
+    var nm=(infos[0]&&infos[0].value||TRK.sel||'').trim();
+    var pidv=parseInt((infos[2]&&infos[2].value||'').trim(),10);
+    var items=[];
+    paper.querySelectorAll('table tr').forEach(function(tr){
+      var ck=tr.querySelector('.rk'); if(!ck)return;
+      var amt=parseInt(String((tr.querySelector('.ramt')||{}).value||'').replace(/[^0-9]/g,''),10);
+      if(ck.checked||!isNaN(amt)){
+        items.push({item:tr.querySelector('label').textContent.trim(), qty:(tr.querySelector('.rqty')||{}).value||'', amt:isNaN(amt)?0:amt});
+      }
+    });
+    var total=0; items.forEach(function(it){ total+=it.amt||0; });
+    var payload={patient_name:nm, patient_id:isNaN(pidv)?null:pidv, issue_date:iso, items:items, total:total};
+    var key=JSON.stringify(payload);
+    if(TRK._rcptSaved===key)return;          /* 同內容重印不重複記 */
+    var r=await sb.from('receipts').insert(payload);
+    if(!r.error){ TRK._rcptSaved=key; if(typeof trkLoadReceipts==='function')trkLoadReceipts(TRK.sel); }
+  }catch(e){}
+};
 window.rcptPrint=function(){
   var src=document.getElementById('rcptPaper'); if(!src)return;
+  rcptSaveRecord();
   src.querySelectorAll('input').forEach(function(i2){
     if(i2.type==='checkbox'){ if(i2.checked)i2.setAttribute('checked',''); else i2.removeAttribute('checked'); }
     else i2.setAttribute('value',i2.value);
@@ -560,5 +587,54 @@ window.trkLoadApptHist=async function(name){
       }).join('')+
       (rows.length>20?'<div style="font-size:11px;color:#b3a08c;margin-top:5px">（顯示最近 20 筆）</div>':'');
   }catch(e){}
+};
+
+/* ── 收據紀錄:開過的收據都留底,可重印可刪 ── */
+window.trkLoadReceipts=async function(name){
+  try{
+    var q=await sb.from('receipts').select('id,issue_date,total,items,created_at').eq('patient_name',name).order('id',{ascending:false}).limit(20);
+    var el=document.getElementById('trkRcptHist'); if(!el||TRK.sel!==name)return;
+    var rows=q.data||[];
+    if(!rows.length){ el.innerHTML=''; return; }
+    TRK._rcptRows=rows;
+    el.innerHTML='<div style="background:#fff;border:1px solid #f0e6da;border-radius:16px;padding:12px 16px;box-sizing:border-box">'+
+      '<div style="font-size:12px;font-weight:900;color:#8a7361;margin-bottom:6px">🧾 收據紀錄（'+rows.length+' 筆）</div>'+
+      rows.map(function(r,i){
+        var its=(r.items||[]).map(function(x){return x.item;}).join('、');
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f4ece1;font-size:12.5px;color:#5c452f">'+
+          '<span>'+esc(r.issue_date||String(r.created_at||'').slice(0,10))+'　<b style="color:#b0541f">$'+Number(r.total||0).toLocaleString()+'</b><span style="font-size:11px;color:#a08b76">　'+esc(its.slice(0,24))+(its.length>24?'…':'')+'</span></span>'+
+          '<span style="display:flex;gap:6px">'+
+            '<button onclick="trkRcptReprint('+i+')" style="border:1.5px solid #b58a2e;background:#fff;color:#8a6a1f;border-radius:8px;padding:2px 10px;font-size:11px;font-weight:700;cursor:pointer">重印</button>'+
+            '<button onclick="trkRcptDel('+r.id+')" style="border:none;background:transparent;color:#c0ad98;font-size:11px;cursor:pointer">刪除</button>'+
+          '</span></div>';
+      }).join('')+'</div>';
+  }catch(e){}
+};
+window.trkRcptDel=async function(id){
+  if(!confirm('刪除這筆收據紀錄?'))return;
+  try{ await sb.from('receipts').delete().eq('id',id); trkLoadReceipts(TRK.sel); }catch(e){}
+};
+window.trkRcptReprint=async function(i){
+  var r=(TRK._rcptRows||[])[i]; if(!r)return;
+  await trkReceipt();
+  setTimeout(function(){
+    var paper=document.getElementById('rcptPaper'); if(!paper)return;
+    if(r.issue_date){
+      var d=r.issue_date.split('-'); var dts=paper.querySelectorAll('.rdt input');
+      dts[0].value=Number(d[0])-1911; dts[1].value=Number(d[1]); dts[2].value=Number(d[2]);
+    }
+    (r.items||[]).forEach(function(it){
+      paper.querySelectorAll('table tr').forEach(function(tr){
+        var lb=tr.querySelector('label'); if(!lb)return;
+        if(lb.textContent.trim()===it.item){
+          var ck=tr.querySelector('.rk'); if(ck)ck.checked=true;
+          var qy=tr.querySelector('.rqty'); if(qy)qy.value=it.qty||'';
+          var am=tr.querySelector('.ramt'); if(am)am.value=it.amt||'';
+        }
+      });
+    });
+    rcptCalc();
+    TRK._rcptSaved=JSON.stringify({patient_name:r.patient_name,patient_id:r.patient_id,issue_date:r.issue_date,items:r.items,total:r.total});
+  },400);
 };
 

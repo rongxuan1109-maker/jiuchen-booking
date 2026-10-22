@@ -236,7 +236,7 @@ window.renderTrkPanel=function(){
     '<b style="font-size:18px">'+esc(TRK.sel)+'</b>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
       (p?'<button onclick="editPatientOld('+p.id+')" style="padding:8px 14px;border:1.5px solid #e3d5c3;border-radius:10px;background:#fff;color:#8a7361;font-size:12.5px;font-weight:700;cursor:pointer">✎ 編輯基本資料</button>':'<button onclick="openNewPatient()" style="padding:8px 14px;border:1.5px solid #c98a2e;border-radius:10px;background:#fff;color:#a5701f;font-size:12.5px;font-weight:700;cursor:pointer">＋ 建立基本資料</button>')+
-      '<button onclick="trkToggleApptHist()" style="padding:8px 14px;border:1.5px solid #c98a2e;border-radius:10px;background:#fff;color:#a5701f;font-size:12.5px;font-weight:700;cursor:pointer">🗓 就診紀錄</button>'+
+      '<button onclick="trkToggleRcptHist()" style="padding:8px 14px;border:1.5px solid #c98a2e;border-radius:10px;background:#fff;color:#a5701f;font-size:12.5px;font-weight:700;cursor:pointer">📑 收據紀錄</button>'+
       '<button onclick="trkReceipt()" style="padding:8px 16px;border:none;border-radius:10px;background:#b0541f;color:#fff;font-size:12.5px;font-weight:900;cursor:pointer">🧾 開收據</button>'+
     '</div>'+
   '</div>'+
@@ -251,9 +251,9 @@ window.renderTrkPanel=function(){
     '</div>'+
     (p&&p.note?'<div style="margin-top:6px;font-size:12px;color:#8a6a1f;background:#faf0dd;border-radius:8px;padding:5px 10px">📝 '+esc(p.note)+'</div>':'')+
   '</div>'+
-  '<div id="trkApptHist" style="display:none;background:#fff;border:1px solid #f0e6da;border-radius:16px;padding:12px 16px;max-width:'+MW+';width:100%;margin:0 auto 10px;box-sizing:border-box;font-size:12px;color:#b3a08c">就診紀錄載入中…</div>'+
-  '<div id="trkRcptHist" style="max-width:'+MW+';width:100%;margin:0 auto 10px"></div>';
-  trkLoadReceipts(TRK.sel);
+  '<div id="trkApptHist" style="background:#fff;border:1px solid #f0e6da;border-radius:16px;padding:12px 16px;max-width:'+MW+';width:100%;margin:0 auto 10px;box-sizing:border-box;font-size:12px;color:#b3a08c">就診紀錄載入中…</div>'+
+  '<div id="trkRcptHist" style="display:none;max-width:'+MW+';width:100%;margin:0 auto 10px"></div>';
+  trkLoadApptHist(TRK.sel);
   var hel=document.getElementById('trkHistory');
   if(hel)hel.innerHTML='<div style="font-size:12px;font-weight:900;color:#8a7361;margin:2px 2px 8px">歷史紀錄（'+visits.length+' 次）</div>'+
     '<div style="flex:1;display:flex;flex-direction:column;gap:8px;overflow-y:auto;padding-right:4px;min-height:0">'+hist+'</div>';
@@ -455,7 +455,7 @@ window.rcptSaveRecord=async function(){
     var key=JSON.stringify(payload);
     if(TRK._rcptSaved===key)return;          /* 同內容重印不重複記 */
     var r=await sb.from('receipts').insert(payload);
-    if(!r.error){ TRK._rcptSaved=key; if(typeof trkLoadReceipts==='function')trkLoadReceipts(TRK.sel); }
+    if(!r.error){ TRK._rcptSaved=key; var h=document.getElementById('trkRcptHist'); if(h&&h.style.display!=='none'&&typeof trkLoadReceipts==='function')trkLoadReceipts(TRK.sel); }
   }catch(e){}
 };
 window.rcptPrint=function(){
@@ -596,7 +596,7 @@ window.trkLoadReceipts=async function(name){
     var q=await sb.from('receipts').select('id,issue_date,total,items,created_at').eq('patient_name',name).order('id',{ascending:false}).limit(20);
     var el=document.getElementById('trkRcptHist'); if(!el||TRK.sel!==name)return;
     var rows=q.data||[];
-    if(!rows.length){ el.innerHTML=''; return; }
+    if(!rows.length){ el.innerHTML='<div style="background:#fff;border:1px solid #f0e6da;border-radius:16px;padding:12px 16px;font-size:12px;color:#b3a08c">尚無收據紀錄</div>'; return; }
     TRK._rcptRows=rows;
     el.innerHTML='<div style="background:#fff;border:1px solid #f0e6da;border-radius:16px;padding:12px 16px;box-sizing:border-box">'+
       '<div style="font-size:12px;font-weight:900;color:#8a7361;margin-bottom:6px">🧾 收據紀錄（'+rows.length+' 筆）</div>'+
@@ -639,9 +639,9 @@ window.trkRcptReprint=async function(i){
   },400);
 };
 
-window.trkToggleApptHist=function(){
-  var el=document.getElementById('trkApptHist'); if(!el)return;
-  if(el.style.display==='none'){ el.style.display='block'; trkLoadApptHist(TRK.sel); }
+window.trkToggleRcptHist=function(){
+  var el=document.getElementById('trkRcptHist'); if(!el)return;
+  if(el.style.display==='none'){ el.style.display='block'; trkLoadReceipts(TRK.sel); }
   else el.style.display='none';
 };
 

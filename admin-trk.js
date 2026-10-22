@@ -570,7 +570,7 @@ window.trkReceiptBuild=async function(name,bd,pid,roc,now){
     '<table><tr><th>費用明細</th><th class="cqt">數量</th><th class="cam">金額（元）</th></tr>'+body+
     '<tr class="rtot"><td>實收總計共</td><td class="cqt"></td><td class="cam rsum">$ <span id="rcptTotal">　</span></td></tr></table>'+
     '<h2>三、簽章</h2>'+
-    '<table class="rsign"><tr><td style="width:50%">物理治療師（簽章）：</td><td>機構大小章：<img src="icons/stamp.png" alt="" style="height:96px;float:right;margin:4px 14px 4px 0" onerror="this.remove()"></td></tr></table>'+
+    '<table class="rsign"><tr><td style="width:50%">物理治療師（簽章）：</td><td>機構大小章：<img src="icons/stamp.png?v=2" alt="" style="height:96px;float:right;margin:4px 14px 4px 0" onerror="this.remove()"></td></tr></table>'+
     '<hr class="rbar">'+
     '<div class="rft"><span>地址：高雄市楠梓區清豐二路108號2樓</span><span>電話：07-3516097</span></div>'+
     '<div class="rnote">收據正本只提供一次，恕不補發，請妥善保存。</div>'+

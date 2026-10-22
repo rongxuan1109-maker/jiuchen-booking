@@ -246,7 +246,9 @@ window.renderTrkPanel=function(){
       '<span>📋 治療紀錄：<b>'+visits.length+'</b> 次</span>'+
     '</div>'+
     (p&&p.note?'<div style="margin-top:6px;font-size:12px;color:#8a6a1f;background:#faf0dd;border-radius:8px;padding:5px 10px">📝 '+esc(p.note)+'</div>':'')+
-  '</div>';
+  '</div>'+
+  '<div id="trkApptHist" style="background:#fff;border:1px solid #f0e6da;border-radius:16px;padding:12px 16px;max-width:'+MW+';width:100%;margin:0 auto 10px;box-sizing:border-box;font-size:12px;color:#b3a08c">就診紀錄載入中…</div>';
+  trkLoadApptHist(TRK.sel);
   var hel=document.getElementById('trkHistory');
   if(hel)hel.innerHTML='<div style="font-size:12px;font-weight:900;color:#8a7361;margin:2px 2px 8px">歷史紀錄（'+visits.length+' 次）</div>'+
     '<div style="flex:1;display:flex;flex-direction:column;gap:8px;overflow-y:auto;padding-right:4px;min-height:0">'+hist+'</div>';
@@ -533,5 +535,27 @@ window.trkReceipt=async function(){
     '<div class="rnote">收據正本只提供一次，恕不補發，請妥善保存。</div>'+
     '</div></div>';
   document.body.appendChild(panel);
+};
+
+/* ── 就診紀錄(預約場次歷史):資料卡下方,含已取消劃線 ── */
+window.trkLoadApptHist=async function(name){
+  try{
+    var q=await sb.from('appointments').select('appointment_date,appointment_time,type,therapist_id,status,service')
+      .eq('patient_name',name).order('appointment_date',{ascending:false}).order('appointment_time',{ascending:false}).limit(60);
+    var el=document.getElementById('trkApptHist'); if(!el||TRK.sel!==name)return;
+    var rows=(q.data||[]).filter(function(a){return !(a.service&&a.service.indexOf('（續）')>=0);});
+    var valid=rows.filter(function(a){return a.status!=='cancelled';});
+    if(!rows.length){ el.innerHTML='<div style="font-size:12px;color:#b3a08c">尚無就診紀錄</div>'; return; }
+    var thName=function(id){ try{ var t=(therapists||[]).find(function(x){return x.id===id;}); return t?t.name:''; }catch(e){ return ''; } };
+    el.innerHTML='<div style="font-size:12px;font-weight:900;color:#8a7361;margin-bottom:6px">🗓 就診紀錄（有效 '+valid.length+' 次）</div>'+
+      rows.slice(0,20).map(function(a){
+        var c=a.status==='cancelled';
+        return '<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid #f4ece1;font-size:12.5px;color:#5c452f;'+(c?'opacity:.45;text-decoration:line-through':'')+'">'+
+          '<span>'+esc(a.appointment_date)+' '+esc((a.appointment_time||'').slice(0,5))+'</span>'+
+          '<span>'+(a.type==='new'?'初診':'複診')+(thName(a.therapist_id)?' · '+esc(thName(a.therapist_id)):'')+(c?' · 已取消':'')+'</span>'+
+        '</div>';
+      }).join('')+
+      (rows.length>20?'<div style="font-size:11px;color:#b3a08c;margin-top:5px">（顯示最近 20 筆）</div>':'');
+  }catch(e){}
 };
 

@@ -413,7 +413,33 @@ window.renderPop=function(){
 };
 })();
 
-/* ── 費用收據(2026-10-22):獨立視窗A4,自動帶病人資料,勾選填額自動加總,一鍵列印 ── */
+/* ── 費用收據(2026-10-22):右側滑出面板(不開新視窗),自動帶資料+加總,列印走A4 ── */
+window.rcptClose=function(){ var p=document.getElementById('rcptPanel'); if(p)p.remove(); };
+window.rcptAutoCk=function(inp){ var tr=inp.closest('tr'); var ck=tr&&tr.querySelector('.rk'); if(ck&&String(inp.value).trim()!=='')ck.checked=true; };
+window.rcptCalc=function(){
+  var t=0;
+  document.querySelectorAll('#rcptPaper tr').forEach(function(tr){
+    var ck=tr.querySelector('.rk'), am=tr.querySelector('.ramt');
+    if(ck&&ck.checked&&am){ var v=parseInt(String(am.value).replace(/[^0-9]/g,''),10); if(!isNaN(v))t+=v; }
+  });
+  var el=document.getElementById('rcptTotal'); if(el)el.textContent=t?t.toLocaleString():'　';
+};
+window.rcptPrint=function(){
+  var src=document.getElementById('rcptPaper'); if(!src)return;
+  src.querySelectorAll('input').forEach(function(i2){
+    if(i2.type==='checkbox'){ if(i2.checked)i2.setAttribute('checked',''); else i2.removeAttribute('checked'); }
+    else i2.setAttribute('value',i2.value);
+  });
+  var area=document.getElementById('a6print')||(function(){var d=document.createElement('div');d.id='a6print';document.body.appendChild(d);return d;})();
+  area.innerHTML=''; area.appendChild(src.cloneNode(true));
+  var st=document.createElement('style'); st.id='rcptPageStyle';
+  st.textContent='@page{size:A4;margin:12mm} #a6print .rcpt-doc{width:184mm;padding:0;box-shadow:none}';
+  document.head.appendChild(st);
+  document.body.classList.add('printing-card');
+  var done=function(){ document.body.classList.remove('printing-card'); var x=document.getElementById('rcptPageStyle'); if(x)x.remove(); area.innerHTML=''; window.removeEventListener('afterprint',done); };
+  window.addEventListener('afterprint',done);
+  setTimeout(function(){window.print();},80);
+};
 window.trkReceipt=async function(){
   var name=TRK.sel||'';
   var bd='', pid='';
@@ -424,6 +450,42 @@ window.trkReceipt=async function(){
   var roc='';
   if(/^\d{4}-\d{2}-\d{2}$/.test(bd)){ var b=bd.split('-'); roc='民國 '+(Number(b[0])-1911)+' 年 '+Number(b[1])+' 月 '+Number(b[2])+' 日'; }
   var now=new Date();
+  if(!document.getElementById('rcptStyle')){
+    var css=document.createElement('style'); css.id='rcptStyle';
+    css.textContent=
+      '#rcptPanel{position:fixed;top:0;right:0;width:min(640px,96vw);height:100vh;background:#efe9df;z-index:3000;box-shadow:-10px 0 34px rgba(60,40,20,.3);display:flex;flex-direction:column;animation:rcptIn .22s ease-out}'+
+      '@keyframes rcptIn{from{transform:translateX(40%);opacity:.4}to{transform:none;opacity:1}}'+
+      '#rcptBar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-bottom:1px solid #e3d5c3}'+
+      '#rcptBar b{font-size:14px;color:#5c452f}'+
+      '#rcptBar button{padding:8px 16px;border:none;border-radius:9px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;margin-left:6px}'+
+      '#rcptScroll{overflow:auto;flex:1;padding:14px}'+
+      '.rcpt-doc{background:#fff;padding:20px 22px;box-sizing:border-box;font-family:"Noto Sans TC","PingFang TC",sans-serif;color:#2f2a24;width:100%}'+
+      '.rcpt-doc .rbar{border:none;border-top:2.5px solid #b07d3a;margin:12px 0}'+
+      '.rcpt-doc h1{font-size:19px;letter-spacing:1px;margin:0 0 10px;font-weight:900}'+
+      '.rcpt-doc .rhd{position:relative}'+
+      '.rcpt-doc .rlogo{position:absolute;right:0;top:-4px;height:52px}'+
+      '.rcpt-doc .rlic,.rcpt-doc .rdt{font-size:12.5px;margin:4px 0;font-weight:600}'+
+      '.rcpt-doc h2{font-size:14px;margin:12px 0 7px;font-weight:900}'+
+      '.rcpt-doc .rinfo{font-size:12.5px;line-height:2.3;margin-left:6px}'+
+      '.rcpt-doc input{border:none;border-bottom:1px solid #c9bda9;font-size:12.5px;font-family:inherit;background:transparent}'+
+      '.rcpt-doc table{width:100%;border-collapse:collapse;font-size:12px}'+
+      '.rcpt-doc th,.rcpt-doc td{border:1px solid #574c3c;padding:6px 8px;text-align:left}'+
+      '.rcpt-doc th{background:#faf6ee;font-weight:900}'+
+      '.rcpt-doc .cqt{width:16%;text-align:center}'+
+      '.rcpt-doc .cam{width:30%}'+
+      '.rcpt-doc tr.rsec td{background:#f3ece0;border-top:1.6px solid #574c3c}'+
+      '.rcpt-doc .rsub{font-size:10px;color:#7a6c57;font-weight:400}'+
+      '.rcpt-doc td label{cursor:pointer;display:flex;align-items:center;gap:7px}'+
+      '.rcpt-doc .rk{width:14px;height:14px;flex:none;margin:0}'+
+      '.rcpt-doc .rqty{width:70%;text-align:center;border-bottom-style:dashed}'+
+      '.rcpt-doc .ramt{width:62%;border-bottom-style:dashed}'+
+      '.rcpt-doc tr.rtot td{font-weight:900;font-size:14px;border-top:2px solid #574c3c}'+
+      '.rcpt-doc tr.rtot .rsum{color:#b0541f}'+
+      '.rcpt-doc .rsign td{height:64px;vertical-align:top;font-weight:700}'+
+      '.rcpt-doc .rft{display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-top:10px;flex-wrap:wrap;gap:4px}'+
+      '.rcpt-doc .rnote{font-size:10px;color:#7a6c57;margin-top:4px}';
+    document.head.appendChild(css);
+  }
   var items=[
     ['sec','（甲）健康促進','非以疾病治療為目的，依物理治療師法第12條第2項'],
     ['row','功能評估'],['row','健康促進筋膜放鬆'],['row','健康促進運動指導'],
@@ -432,73 +494,35 @@ window.trkReceipt=async function(){
     ['row','中頻干擾波 / 經皮電刺激治療'],['row','腰椎 / 脊椎牽引治療'],['row','磁場治療'],['row','肌內效貼紮']
   ];
   var body='';
-  items.forEach(function(it,ix){
-    if(it[0]==='sec'){
-      body+='<tr class="sec"><td colspan="3"><b>'+it[1]+'</b><span class="sub">（'+it[2]+'）</span></td></tr>';
-    } else {
-      body+='<tr><td class="nm"><label><input type="checkbox" class="ck" onchange="calc()"> '+it[1]+'</label></td>'+
-        '<td class="qt"><input type="text" class="qty" inputmode="numeric"></td>'+
-        '<td class="am">$ <input type="text" class="amt" inputmode="numeric" oninput="autoCk(this);calc()"></td></tr>';
-    }
+  items.forEach(function(it){
+    if(it[0]==='sec'){ body+='<tr class="rsec"><td colspan="3"><b>'+it[1]+'</b><span class="rsub">（'+it[2]+'）</span></td></tr>'; }
+    else{ body+='<tr><td><label><input type="checkbox" class="rk" onchange="rcptCalc()"> '+it[1]+'</label></td>'+
+      '<td class="cqt"><input type="text" class="rqty" inputmode="numeric"></td>'+
+      '<td class="cam">$ <input type="text" class="ramt" inputmode="numeric" oninput="rcptAutoCk(this);rcptCalc()"></td></tr>'; }
   });
-  var html='<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>費用收據</title><style>'+
-    '@page{size:A4;margin:13mm}'+
-    'body{font-family:"Noto Sans TC","PingFang TC",sans-serif;color:#2f2a24;margin:0;background:#f5f1ea}'+
-    '.paper{width:184mm;margin:0 auto;background:#fff;padding:10mm 12mm 8mm;box-sizing:border-box}'+
-    '.bar{border:none;border-top:2.5px solid #b07d3a;margin:5mm 0}'+
-    'h1{font-size:21pt;letter-spacing:2px;margin:0 0 5mm;font-weight:900}'+
-    '.lic,.dt{font-size:11pt;margin:1.5mm 0;font-weight:600}'+
-    '.logo{position:absolute;right:0;top:-2mm;height:24mm}'+
-    '.hd{position:relative}'+
-    'h2{font-size:13pt;margin:5mm 0 3mm;font-weight:900}'+
-    '.info{font-size:11pt;line-height:2.2;margin-left:4mm}'+
-    '.info input{border:none;border-bottom:1px solid #c9bda9;font-size:11pt;padding:0 2mm;font-family:inherit}'+
-    'table{width:100%;border-collapse:collapse;font-size:10.5pt}'+
-    'th,td{border:1px solid #574c3c;padding:2.4mm 3mm;text-align:left}'+
-    'th{background:#faf6ee;font-weight:900}'+
-    'th.qt,td.qt{width:22mm;text-align:center}'+
-    'th.am,td.am{width:48mm}'+
-    'tr.sec td{background:#f3ece0;border-top:1.6px solid #574c3c}'+
-    '.sub{font-size:8.5pt;color:#7a6c57;font-weight:400}'+
-    '.nm label{cursor:pointer;display:flex;align-items:center;gap:2.5mm;white-space:nowrap}'+
-    '.ck{width:4mm;height:4mm;flex:none}'+
-    'input.qty,input.amt{border:none;border-bottom:1px dashed #cbbfa9;font-size:10.5pt;font-family:inherit}'+
-    'input.qty{width:70%;text-align:center}'+
-    'td.am input{width:65%;text-align:left}'+
-    'tr.tot td{font-weight:900;font-size:12pt;border-top:2px solid #574c3c}'+
-    'tr.tot .sum{color:#b0541f}'+
-    '.sign td{height:22mm;vertical-align:top;font-weight:700}'+
-    '.ft{display:flex;justify-content:space-between;font-size:10.5pt;font-weight:600;margin-top:4mm}'+
-    '.note{font-size:8.5pt;color:#7a6c57;margin-top:1.5mm}'+
-    '.tools{position:fixed;top:10px;right:14px;display:flex;gap:8px;z-index:9}'+
-    '.tools button{padding:10px 18px;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit}'+
-    '.pr{background:#b0541f;color:#fff}.cl{background:#e8e0d2;color:#5c5243}'+
-    '@media print{.tools{display:none}body{background:#fff}.paper{width:auto;padding:0}}'+
-    '</style></head><body>'+
-    '<div class="tools"><button class="pr" onclick="window.print()">🖨 列印</button><button class="cl" onclick="window.close()">✕ 關閉</button></div>'+
-    '<div class="paper">'+
-    '<div class="hd"><img class="logo" src="https://rongxuan1109-maker.github.io/jiuchen-booking/icons/logo.png" onerror="this.remove()">'+
+  rcptClose();
+  var panel=document.createElement('div'); panel.id='rcptPanel';
+  panel.innerHTML=
+    '<div id="rcptBar"><b>🧾 費用收據</b><span>'+
+    '<button onclick="rcptPrint()" style="background:#b0541f;color:#fff">🖨 列印</button>'+
+    '<button onclick="rcptClose()" style="background:#e8e0d2;color:#5c5243">✕ 關閉</button></span></div>'+
+    '<div id="rcptScroll"><div class="rcpt-doc" id="rcptPaper">'+
+    '<div class="rhd"><img class="rlogo" src="icons/logo.png" onerror="this.remove()">'+
     '<h1>九辰物理治療所　費用收據</h1>'+
-    '<div class="lic">執照字號：高市衛醫物楠字第 QY07310058 號</div>'+
-    '<div class="dt">開立日期：民國 <input style="width:14mm;border:none;border-bottom:1px solid #c9bda9;font-size:11pt;text-align:center" value="'+(now.getFullYear()-1911)+'"> 年 <input style="width:9mm;border:none;border-bottom:1px solid #c9bda9;font-size:11pt;text-align:center" value="'+(now.getMonth()+1)+'"> 月 <input style="width:9mm;border:none;border-bottom:1px solid #c9bda9;font-size:11pt;text-align:center" value="'+now.getDate()+'"> 日</div></div>'+
-    '<hr class="bar">'+
+    '<div class="rlic">執照字號：高市衛醫物楠字第 QY07310058 號</div>'+
+    '<div class="rdt">開立日期：民國 <input style="width:34px;text-align:center" value="'+(now.getFullYear()-1911)+'"> 年 <input style="width:24px;text-align:center" value="'+(now.getMonth()+1)+'"> 月 <input style="width:24px;text-align:center" value="'+now.getDate()+'"> 日</div></div>'+
+    '<hr class="rbar">'+
     '<h2>一、個案基本資料</h2>'+
-    '<div class="info">姓　　名：<input style="width:42mm" value="'+name.replace(/"/g,'')+'">　　出生年月日：<input style="width:46mm" value="'+roc+'"><br>病歷號碼：<input style="width:42mm" value="'+pid+'"></div>'+
+    '<div class="rinfo">姓　　名：<input style="width:110px" value="'+String(name).replace(/"/g,'')+'">　出生年月日：<input style="width:150px" value="'+roc+'"><br>病歷號碼：<input style="width:110px" value="'+pid+'"></div>'+
     '<h2>二、費用明細</h2>'+
-    '<table><tr><th>費用明細</th><th class="qt">數量</th><th class="am">金額（元）</th></tr>'+body+
-    '<tr class="tot"><td>實收總計共</td><td class="qt"></td><td class="am sum">$ <span id="total">　</span></td></tr></table>'+
+    '<table><tr><th>費用明細</th><th class="cqt">數量</th><th class="cam">金額（元）</th></tr>'+body+
+    '<tr class="rtot"><td>實收總計共</td><td class="cqt"></td><td class="cam rsum">$ <span id="rcptTotal">　</span></td></tr></table>'+
     '<h2>三、簽章</h2>'+
-    '<table class="sign"><tr><td style="width:50%">物理治療師（簽章）：</td><td>機構大小章：</td></tr></table>'+
-    '<hr class="bar">'+
-    '<div class="ft"><span>地址：高雄市楠梓區清豐二路108號2樓</span><span>電話：07-3516097</span></div>'+
-    '<div class="note">收據正本只提供一次，恕不補發，請妥善保存。</div>'+
-    '</div>'+
-    '<script>'+
-    'function autoCk(inp){var tr=inp.closest("tr");var ck=tr.querySelector(".ck");if(inp.value.trim()!=="")ck.checked=true;}'+
-    'function calc(){var t=0;document.querySelectorAll("table tr").forEach(function(tr){var ck=tr.querySelector(".ck");var am=tr.querySelector(".amt");if(ck&&ck.checked&&am){var v=parseInt(String(am.value).replace(/[^0-9]/g,""),10);if(!isNaN(v))t+=v;}});document.getElementById("total").textContent=t?t.toLocaleString():"　";}'+
-    '<\/script></body></html>';
-  var w=window.open('','_blank');
-  if(!w){ alert('瀏覽器擋了彈出視窗,請允許後再試'); return; }
-  w.document.write(html); w.document.close();
+    '<table class="rsign"><tr><td style="width:50%">物理治療師（簽章）：</td><td>機構大小章：</td></tr></table>'+
+    '<hr class="rbar">'+
+    '<div class="rft"><span>地址：高雄市楠梓區清豐二路108號2樓</span><span>電話：07-3516097</span></div>'+
+    '<div class="rnote">收據正本只提供一次，恕不補發，請妥善保存。</div>'+
+    '</div></div>';
+  document.body.appendChild(panel);
 };
 

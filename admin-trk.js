@@ -492,6 +492,10 @@ window.trkReceipt=async function(){
   var roc='';
   if(/^\d{4}-\d{2}-\d{2}$/.test(bd)){ var b=bd.split('-'); roc='民國 '+(Number(b[0])-1911)+' 年 '+Number(b[1])+' 月 '+Number(b[2])+' 日'; }
   var now=new Date();
+  rcptEnsureStyle();
+  await trkReceiptBuild(name,bd,pid,roc,now);
+};
+window.rcptEnsureStyle=function(){
   if(!document.getElementById('rcptStyle')){
     var css=document.createElement('style'); css.id='rcptStyle';
     css.textContent=
@@ -528,6 +532,8 @@ window.trkReceipt=async function(){
       '.rcpt-doc .rnote{font-size:10px;color:#7a6c57;margin-top:4px}';
     document.head.appendChild(css);
   }
+};
+window.trkReceiptBuild=async function(name,bd,pid,roc,now){
   var items=[
     ['sec','（甲）健康促進','非以疾病治療為目的，依物理治療師法第12條第2項'],
     ['row','功能評估'],['row','健康促進筋膜放鬆'],['row','健康促進運動指導'],
@@ -641,6 +647,7 @@ window.trkRcptReprint=async function(i){
 
 window.rcptHistClose=function(){ var p=document.getElementById('rcptHistPanel'); if(p)p.remove(); };
 window.trkRcptHistPanel=function(){
+  rcptEnsureStyle();
   rcptClose(); rcptHistClose();
   var panel=document.createElement('div'); panel.id='rcptHistPanel';
   panel.innerHTML='<div id="rcptHistBar"><b>📑 收據紀錄 — '+esc(TRK.sel||'')+'</b><span>'+

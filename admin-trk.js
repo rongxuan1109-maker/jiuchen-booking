@@ -160,6 +160,7 @@ window.renderPatients=function(){
         '<div style="background:#fff;border:1px solid #f0e6da;border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(120,80,40,.06)">'+
           '<div style="display:flex;gap:6px;margin-bottom:8px">'+
             '<input id="ptSearch" placeholder="搜尋姓名或電話…" value="'+esc(patientFilter)+'" oninput="debouncedSearch(this.value)" style="flex:1;min-width:0;border:1.5px solid #eee3d4;border-radius:10px;padding:7px 10px;font-size:13px;font-family:\'Noto Sans TC\',sans-serif;outline:none;background:#fff">'+
+            '<button onclick="trkSearchNow()" style="padding:7px 12px;background:#fff;border:1.5px solid #c98a2e;color:#a5701f;border-radius:10px;font-size:12px;font-weight:900;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;white-space:nowrap">🔍 搜尋</button>'+
             '<button onclick="openNewPatient()" style="padding:7px 12px;background:#c2571f;color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:900;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;white-space:nowrap">＋ 新增</button>'+
           '</div>'+
           '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px"><span style="font-size:10px;color:var(--muted);align-self:center">最近</span>'+recChip('','全部')+recChip('3','3個月')+recChip('6','6個月')+recChip('12','一年')+'</div>'+
@@ -672,5 +673,12 @@ window.trkRcptHistPanel=function(){
     '<div id="rcptHistBody" style="flex:1;padding:14px"><div style="font-size:13px;color:#8a7361">載入中…</div></div>';
   document.body.appendChild(panel);
   trkLoadReceipts(TRK.sel);
+};
+
+window.trkSearchNow=function(){
+  var i=document.getElementById('ptSearch');
+  patientFilter=(i&&i.value)||'';
+  TRK.page=0; TRK.skipLoad=true;
+  if(typeof renderPatients==='function')renderPatients();
 };
 

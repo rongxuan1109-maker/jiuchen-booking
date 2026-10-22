@@ -524,7 +524,7 @@ window.rcptEnsureStyle=function(){
       '.rcpt-doc tr.rsec td{background:#f3ece0;border-top:1.6px solid #574c3c}'+
       '.rcpt-doc .rsub{font-size:10px;color:#7a6c57;font-weight:400}'+
       '.rcpt-doc td label{cursor:pointer;display:flex;align-items:center;gap:7px}'+
-      '.rcpt-doc .rk{width:14px;height:14px;flex:none;margin:0}'+
+      '.rcpt-doc .rk{width:16px;height:16px;flex:none;margin:0;-webkit-appearance:checkbox;appearance:auto;accent-color:#b0541f;border-radius:0;background:none;border:none}'+
       '.rcpt-doc .rqty{width:70%;text-align:center;border-bottom-style:dashed}'+
       '.rcpt-doc .ramt{width:62%;border-bottom-style:dashed}'+
       '.rcpt-doc tr.rtot td{font-weight:900;font-size:14px;border-top:2px solid #574c3c}'+

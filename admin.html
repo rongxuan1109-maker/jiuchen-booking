@@ -973,8 +973,15 @@ function ptCard(p){
 }
 
 async function loadPatients(){
-  const{data}=await sb.from('patients').select('*').order('name');
-  if(data)patients=data;
+  // 2026-10-22修:自動翻頁突破單次1000筆上限(病人已1654位,搜不到後段的人)
+  const all=[]; const PAGE=1000;
+  for(let off=0;;off+=PAGE){
+    const{data}=await sb.from('patients').select('*').order('name').order('id').range(off,off+PAGE-1);
+    if(!data)break;
+    all.push(...data);
+    if(data.length<PAGE)break;
+  }
+  if(all.length)patients=all;
 }
 
 // 一次性整合：掃描所有預約，把每位病患回填到病患表（不重複建立）

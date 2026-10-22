@@ -182,14 +182,17 @@ window.renderTrkPanel=function(){
   var inModal=!!(el.closest&&el.closest('#trkModal'));  /* 彈窗版維持560,病人頁桌機版680+撐滿高度 */
   var MW=inModal?'560px':'680px';
   if(!TRK.sel){ el.innerHTML='<div style="text-align:center;padding:60px;color:#b3a08c">從左側選擇病患</div>'; var he0=document.getElementById('trkHistory'); if(he0)he0.innerHTML=''; return; }
-  var p=patients.find(function(x){return x.name===TRK.sel;});
+  var p=patients.find(function(x){return x.name===TRK.sel;})||(TRK.fbp&&TRK.fbp[TRK.sel])||null;
   /* 沒建病歷檔的病人:退回翻預約資料(電話)與初診問卷(生日),撈到就補畫 */
   if(!TRK.fb)TRK.fb={};
+  if(!TRK.fbp)TRK.fbp={};
   if(!p && TRK.fb[TRK.sel]===undefined){
     TRK.fb[TRK.sel]=null;
     (function(n){ (async function(){
       try{
         var fb={};
+        var pq=await sb.from('patients').select('id,name,phone,birthday,body_parts,note,first_visit').eq('name',n).limit(1);
+        if(pq.data&&pq.data[0]) TRK.fbp[n]=pq.data[0];
         var a=await sb.from('appointments').select('id,patient_phone').eq('patient_name',n).neq('patient_phone','').order('id',{ascending:false}).limit(1);
         if(a.data&&a.data[0]&&a.data[0].patient_phone) fb.phone=a.data[0].patient_phone;
         var ids=await sb.from('appointments').select('id').eq('patient_name',n).order('id',{ascending:false}).limit(60);

@@ -124,17 +124,14 @@ setTimeout(function(){
     patientFilter=v; TRK.page=0;
     clearTimeout(TRK._searchT);
     TRK._searchT=setTimeout(function(){
-      var inTrk=document.getElementById('trkPanel')&&!document.getElementById('trkModal');
-      if(inTrk&&typeof renderPatients==='function'){
-        TRK.skipLoad=true; renderPatients();
-        setTimeout(function(){ var i=document.getElementById('ptSearch'); if(i){ i.focus(); var L=i.value.length; try{i.setSelectionRange(L,L);}catch(e){} } },60);
-      } else {
+      if(document.getElementById('trkPtListWrap')){ trkRenderList(); }
+      else {
         var filtered=patients.filter(patientPassFilters);
         var listEl=document.getElementById('pt-list'); if(!listEl)return;
         var cnt=document.getElementById('pt-count'); if(cnt)cnt.textContent='共 '+filtered.length+' 位病人';
         listEl.innerHTML=filtered.length?filtered.map(function(p){return ptCard(p);}).join(''):'<div style="text-align:center;padding:40px;color:var(--muted)">找不到符合的病人</div>';
       }
-    },350);
+    },300);
   };
 },0);
 function markSel(){ document.querySelectorAll('.trk-pt').forEach(function(el){ el.style.background = el.dataset.name===TRK.sel ? '#fdf1e6' : '#fff'; }); }
@@ -166,25 +163,11 @@ window.renderPatients=function(){
           '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px"><span style="font-size:10px;color:var(--muted);align-self:center">最近</span>'+recChip('','全部')+recChip('3','3個月')+recChip('6','6個月')+recChip('12','一年')+'</div>'+
           '<div style="display:flex;gap:4px;flex-wrap:wrap"><span style="font-size:10px;color:var(--muted);align-self:center">部位</span>'+partChip('','全部')+BODY_PARTS.map(function(p){return partChip(p,p);}).join('')+'</div>'+
         '</div>'+
-        '<div style="font-size:11px;color:var(--muted);margin:0 2px 8px">共 '+filtered.length+' 位病人'+(totalPages>1?' · 第 '+(TRK.page+1)+' / '+totalPages+' 頁':'')+'</div>'+
-        '<div style="'+(narrow?'max-height:42vh':'flex:1;min-height:0')+';overflow-y:auto;display:flex;flex-direction:column;gap:6px">'+
-        (filtered.length?pageItems.map(function(p){
-          var r=rec(p.name); var n=r?r.visits.length:0;
-          return '<div class="trk-pt" data-name="'+esc(p.name)+'" onclick="trkSelect(\''+esc(p.name).replace(/'/g,'')+'\')" style="background:#fff;border:1px solid #f0e6da;border-radius:12px;padding:10px 12px;cursor:pointer">'+
-            '<div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:13px">'+esc(p.name)+'</b><span style="font-size:10px;color:#b3a08c">'+(n?n+' 次紀錄':'')+'</span></div>'+
-            '<div style="font-size:11px;color:#a08b76;margin-top:1px">'+esc(p.phone||'無電話')+(p.birthday?' · 🎂'+p.birthday:'')+(p.body_parts&&p.body_parts.length?' · '+p.body_parts.join('/'):'')+'</div>'+
-          '</div>';
-        }).join(''):'<div style="text-align:center;padding:30px;color:var(--muted)">沒有符合條件的病人</div>')+
-        '</div>'+
-        (totalPages>1?'<div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:8px">'+
-          '<button onclick="trkPage(-1)" '+(TRK.page<=0?'disabled style="opacity:.4;cursor:default;':'style="cursor:pointer;')+'padding:5px 14px;border:1.5px solid #eee3d4;border-radius:10px;background:#fff;color:#8a7361;font-size:12px;font-weight:700;font-family:\'Noto Sans TC\',sans-serif">‹ 上一頁</button>'+
-          '<span style="font-size:11px;color:var(--muted);font-weight:700">'+(TRK.page+1)+' / '+totalPages+'</span>'+
-          '<button onclick="trkPage(1)" '+(TRK.page>=totalPages-1?'disabled style="opacity:.4;cursor:default;':'style="cursor:pointer;')+'padding:5px 14px;border:1.5px solid #eee3d4;border-radius:10px;background:#fff;color:#8a7361;font-size:12px;font-weight:700;font-family:\'Noto Sans TC\',sans-serif">下一頁 ›</button>'+
-        '</div>':'')+
+        '<div id="trkPtListWrap" style="display:flex;flex-direction:column;min-height:0;'+(narrow?'max-height:50vh':'flex:1')+'"></div>'+
       '</div>'+
       '<div id="trkHistory" style="display:flex;flex-direction:column;min-height:0"></div><div id="trkPanel" style="width:100%;display:flex;flex-direction:column;min-height:0"></div>'+
     '</div><div id="trkPop"></div>';
-    renderTrkPanel(); markSel();
+    trkRenderList(); renderTrkPanel(); markSel();
     var g=el.firstElementChild;  /* 桌機:依實際位置貼齊視窗底,消掉下方留白;手機直排不需要 */
     if(g&&!narrow){ var top=g.getBoundingClientRect().top; g.style.height='calc(100vh - '+Math.round(top+14)+'px)'; }
   });
@@ -678,7 +661,34 @@ window.trkRcptHistPanel=function(){
 window.trkSearchNow=function(){
   var i=document.getElementById('ptSearch');
   patientFilter=(i&&i.value)||'';
-  TRK.page=0; TRK.skipLoad=true;
-  if(typeof renderPatients==='function')renderPatients();
+  TRK.page=0;
+  if(document.getElementById('trkPtListWrap'))trkRenderList();
+  else if(typeof renderPatients==='function'){ TRK.skipLoad=true; renderPatients(); }
+};
+
+window.trkRenderList=function(){
+  var wrap=document.getElementById('trkPtListWrap'); if(!wrap)return;
+  var filtered=patients.filter(patientPassFilters);
+  var PAGE=50, totalPages=Math.max(1,Math.ceil(filtered.length/PAGE));
+  if(TRK.page==null||TRK.page<0)TRK.page=0;
+  if(TRK.page>=totalPages)TRK.page=totalPages-1;
+  var pageItems=filtered.slice(TRK.page*PAGE,TRK.page*PAGE+PAGE);
+  var narrow=window.innerWidth<900;
+  wrap.innerHTML=
+    '<div style="font-size:11px;color:var(--muted);margin:0 2px 8px">共 '+filtered.length+' 位病人'+(totalPages>1?' · 第 '+(TRK.page+1)+' / '+totalPages+' 頁':'')+'</div>'+
+    '<div style="'+(narrow?'max-height:42vh':'flex:1;min-height:0')+';overflow-y:auto;display:flex;flex-direction:column;gap:6px">'+
+    (filtered.length?pageItems.map(function(p){
+      var r=rec(p.name); var n=r?r.visits.length:0;
+      return '<div class="trk-pt" data-name="'+esc(p.name)+'" onclick="trkSelect(\''+esc(p.name).replace(/'/g,'')+'\')" style="background:#fff;border:1px solid #f0e6da;border-radius:12px;padding:10px 12px;cursor:pointer">'+
+        '<div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:13px">'+esc(p.name)+'</b><span style="font-size:10px;color:#b3a08c">'+(n?n+' 次紀錄':'')+'</span></div>'+
+        '<div style="font-size:11px;color:#a08b76;margin-top:1px">'+esc(p.phone||'無電話')+(p.birthday?' · 🎂'+p.birthday:'')+(p.body_parts&&p.body_parts.length?' · '+p.body_parts.join('/'):'')+'</div>'+
+      '</div>';
+    }).join(''):'<div style="text-align:center;padding:30px;color:var(--muted)">沒有符合條件的病人</div>')+
+    '</div>'+
+    (totalPages>1?'<div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:8px">'+
+      '<button onclick="trkPage(-1)" '+(TRK.page<=0?'disabled style="opacity:.4;cursor:default;':'style="cursor:pointer;')+'padding:5px 14px;border:1.5px solid #eee3d4;border-radius:10px;background:#fff;color:#8a7361;font-size:12px;font-weight:700;font-family:\'Noto Sans TC\',sans-serif">‹ 上一頁</button>'+
+      '<span style="font-size:11px;color:var(--muted);font-weight:700">'+(TRK.page+1)+' / '+totalPages+'</span>'+
+      '<button onclick="trkPage(1)" '+(TRK.page>=totalPages-1?'disabled style="opacity:.4;cursor:default;':'style="cursor:pointer;')+'padding:5px 14px;border:1.5px solid #eee3d4;border-radius:10px;background:#fff;color:#8a7361;font-size:12px;font-weight:700;font-family:\'Noto Sans TC\',sans-serif">下一頁 ›</button>'+
+    '</div>':'');
 };
 

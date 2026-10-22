@@ -181,6 +181,33 @@ window.renderTrkPanel=function(){
   var el=document.getElementById('trkPanel'); if(!el)return;
   var inModal=!!(el.closest&&el.closest('#trkModal'));  /* 彈窗版維持560,病人頁桌機版680+撐滿高度 */
   var MW=inModal?'560px':'680px';
+  if(!TRK.sel){ el.innerHTML='<div style="text-align:center;padding:60px;color:#b3a08c">從左側選擇病患</div>'; var he0=document.getElementById('trkHistory'); if(he0)he0.innerHTML=''; return; }
+  var p=patients.find(function(x){return x.name===TRK.sel;});
+  var r=rec(TRK.sel); var visits=r?r.visits:[];
+  var cv=TRK.cv;
+  var pb=Number(cv.painBefore),pa=Number(cv.painAfter);
+  var ok=cv.painBefore!=null&&cv.painBefore!==''&&cv.painAfter!=null&&cv.painAfter!==''&&!isNaN(pb)&&!isNaN(pa);
+  var delta='—',cheer='點疼痛卡選分數';
+  if(ok&&pa<pb){delta='▼ '+(pb>0?Math.round((pb-pa)/pb*100)+'%':(pb-pa));cheer='疼痛減輕了!';}
+  else if(ok&&pa===pb){delta='持平';cheer='慢慢來,穩住!';}
+  else if(ok){delta='▲ '+(pa-pb);cheer='回去多休息';}
+  var sw=['無','輕度','中度','重度'].map(function(s){
+    var on=s===cv.swelling;
+    return '<div onclick="trkSet(\'swelling\',\''+s+'\')" style="flex:1;text-align:center;font-size:11px;font-weight:700;padding:4px 0;border-radius:99px;background:'+(on?'#c98a2e':'#f4ece1')+';color:'+(on?'#fff':'#b3a08c')+';cursor:pointer">'+s+'</div>';
+  }).join('');
+  var hist=visits.length?visits.slice().reverse().map(function(v,ri){
+    var i=visits.length-1-ri;
+    var pain=(v.painBefore!==''&&v.painAfter!=='')?'<span style="background:#fdeae3;color:#c14a28;padding:1px 8px;border-radius:99px;font-weight:700;font-size:11px">疼痛 '+v.painBefore+'→'+v.painAfter+'</span>':'';
+    var swb=v.swelling?'<span style="background:#faf0dd;color:#a5701f;padding:1px 8px;border-radius:99px;font-weight:700;font-size:11px">腫脹:'+esc(v.swelling)+'</span>':'';
+    var body=[v.tx1&&('震波:'+v.tx1),v.tx2&&('徒手:'+v.tx2),v.home&&('回家:'+v.home)].filter(Boolean).join('\n');
+    return '<div style="background:#fff;border:1px solid #f0e6da;border-radius:12px;padding:10px 12px">'+
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:12px">'+esc(v.date||'')+'</b>'+pain+swb+
+      '<span style="margin-left:auto;display:flex;gap:6px">'+
+      '<button onclick="trkPrint('+i+')" style="border:1.5px solid #c2571f;background:#fff;color:#c2571f;border-radius:8px;padding:2px 10px;font-size:11px;font-weight:700;cursor:pointer">列印</button>'+
+      '<button onclick="trkDel('+i+')" style="border:none;background:transparent;color:#c0ad98;font-size:11px;cursor:pointer">刪除</button></span></div>'+
+      (body?'<div style="font-size:12px;color:#6b5643;margin-top:5px;line-height:1.6;white-space:pre-wrap">'+esc(body)+'</div>':'')+
+    '</div>';
+  }).join(''):'<div style="font-size:12px;color:#b3a08c">尚無治療紀錄</div>';
   el.innerHTML=
   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap;width:100%;max-width:'+MW+';margin-left:auto;margin-right:auto">'+
     '<b style="font-size:18px">'+esc(TRK.sel)+'</b>'+

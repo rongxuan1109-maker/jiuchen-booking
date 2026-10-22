@@ -183,6 +183,26 @@ window.renderTrkPanel=function(){
   var MW=inModal?'560px':'680px';
   if(!TRK.sel){ el.innerHTML='<div style="text-align:center;padding:60px;color:#b3a08c">從左側選擇病患</div>'; var he0=document.getElementById('trkHistory'); if(he0)he0.innerHTML=''; return; }
   var p=patients.find(function(x){return x.name===TRK.sel;});
+  /* 沒建病歷檔的病人:退回翻預約資料(電話)與初診問卷(生日),撈到就補畫 */
+  if(!TRK.fb)TRK.fb={};
+  if(!p && TRK.fb[TRK.sel]===undefined){
+    TRK.fb[TRK.sel]=null;
+    (function(n){ (async function(){
+      try{
+        var fb={};
+        var a=await sb.from('appointments').select('id,patient_phone').eq('patient_name',n).neq('patient_phone','').order('id',{ascending:false}).limit(1);
+        if(a.data&&a.data[0]&&a.data[0].patient_phone) fb.phone=a.data[0].patient_phone;
+        var ids=await sb.from('appointments').select('id').eq('patient_name',n).order('id',{ascending:false}).limit(60);
+        if(ids.data&&ids.data.length){
+          var f=await sb.from('intake_forms').select('birth_date').in('appointment_id',ids.data.map(function(x){return x.id;})).limit(1);
+          if(f.data&&f.data[0]&&f.data[0].birth_date) fb.birthday=f.data[0].birth_date;
+        }
+        TRK.fb[n]=fb;
+        if(TRK.sel===n) renderTrkPanel();
+      }catch(e){}
+    })(); })(TRK.sel);
+  }
+  var fb=(!p&&TRK.fb[TRK.sel])||{};
   var r=rec(TRK.sel); var visits=r?r.visits:[];
   var cv=TRK.cv;
   var pb=Number(cv.painBefore),pa=Number(cv.painAfter);
@@ -219,8 +239,8 @@ window.renderTrkPanel=function(){
   '<div style="background:#fdf8f1;border:1px solid #f0e6da;border-radius:16px;padding:14px 16px;max-width:'+MW+';width:100%;margin:0 auto 10px;box-sizing:border-box;box-shadow:0 2px 10px rgba(120,80,40,.08)">'+
     '<div style="font-size:12px;font-weight:900;color:#8a6a1f;letter-spacing:1px;margin-bottom:8px">👤 病患基本資料</div>'+
     '<div style="display:flex;flex-wrap:wrap;gap:8px 22px;font-size:13px;line-height:1.9">'+
-      '<span>📞 電話：<b>'+esc(p&&p.phone||'—')+'</b></span>'+
-      '<span>🎂 生日：<b>'+(p&&p.birthday?esc(p.birthday):'—')+'</b></span>'+
+      '<span>📞 電話：<b>'+esc((p&&p.phone)||fb.phone||'—')+'</b></span>'+
+      '<span>🎂 生日：<b>'+esc((p&&p.birthday)||fb.birthday||'—')+'</b></span>'+
       (p&&p.first_visit?'<span>初診：<b>'+esc(p.first_visit)+'</b></span>':'')+
       (p&&p.body_parts&&p.body_parts.length?'<span>部位：<b>'+esc(Array.isArray(p.body_parts)?p.body_parts.join('/'):p.body_parts)+'</b></span>':'')+
       '<span>📋 治療紀錄：<b>'+visits.length+'</b> 次</span>'+
@@ -428,6 +448,13 @@ window.trkReceipt=async function(){
   try{
     var q=await sb.from('patients').select('id,birthday').eq('name',name).limit(1);
     if(q.data&&q.data[0]){ pid=q.data[0].id||''; bd=q.data[0].birthday||''; }
+    if(!bd){
+      var ids=await sb.from('appointments').select('id').eq('patient_name',name).order('id',{ascending:false}).limit(60);
+      if(ids.data&&ids.data.length){
+        var f=await sb.from('intake_forms').select('birth_date').in('appointment_id',ids.data.map(function(x){return x.id;})).limit(1);
+        if(f.data&&f.data[0]&&f.data[0].birth_date) bd=f.data[0].birth_date;
+      }
+    }
   }catch(e){}
   var roc='';
   if(/^\d{4}-\d{2}-\d{2}$/.test(bd)){ var b=bd.split('-'); roc='民國 '+(Number(b[0])-1911)+' 年 '+Number(b[1])+' 月 '+Number(b[2])+' 日'; }

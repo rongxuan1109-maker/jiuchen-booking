@@ -610,7 +610,7 @@ window.trkLoadReceipts=async function(name){
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f4ece1;font-size:13px;color:#5c452f">'+
           '<span><b>'+esc(r.issue_date||String(r.created_at||'').slice(0,10))+'</b>　<b style="color:#b0541f">$'+Number(r.total||0).toLocaleString()+'</b><br><span style="font-size:11px;color:#a08b76">'+esc(its.slice(0,40))+(its.length>40?'…':'')+'</span></span>'+
           '<span style="display:flex;gap:6px;flex-shrink:0">'+
-            '<button onclick="trkRcptReprint('+i+')" style="border:1.5px solid #b58a2e;background:#fff;color:#8a6a1f;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">重印</button>'+
+            '<button onclick="trkRcptReprint('+i+')" style="border:1.5px solid #b58a2e;background:#fff;color:#8a6a1f;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">🔍 檢視</button>'+
             '<button onclick="trkRcptDel('+r.id+')" style="border:none;background:transparent;color:#c0ad98;font-size:12px;cursor:pointer">刪除</button>'+
           '</span></div>';
       }).join('')+'</div>';

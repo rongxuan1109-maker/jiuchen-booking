@@ -118,8 +118,25 @@ window.trkFromAppt=function(name){
 window.trkCloseModal=function(){ var m=document.getElementById('trkModal'); if(m)m.remove(); if(typeof currentView!=='undefined'&&currentView==='patients'&&typeof renderPatients==='function')renderPatients(); };
 window.trkSelect=function(name){ TRK.sel=name; TRK.cv={}; TRK.cvIdx=null; TRK.pop=null; TRK.msg=''; renderTrkPanel(); markSel(); };
 window.trkPage=function(d){ TRK.page=(TRK.page||0)+d; TRK.skipLoad=true; renderPatients(); };
-setTimeout(function(){ var _ds=window.debouncedSearch;
-  if(typeof _ds==='function'&&!_ds._trkWrapped){ window.debouncedSearch=function(v){ TRK.page=0; _ds(v); }; window.debouncedSearch._trkWrapped=true; } },0);
+setTimeout(function(){
+  /* 2026-10-22修:搜尋函式原本只認舊病歷頁的元件,在新病人頁打字沒反應 */
+  window.debouncedSearch=function(v){
+    patientFilter=v; TRK.page=0;
+    clearTimeout(TRK._searchT);
+    TRK._searchT=setTimeout(function(){
+      var inTrk=document.getElementById('trkPanel')&&!document.getElementById('trkModal');
+      if(inTrk&&typeof renderPatients==='function'){
+        TRK.skipLoad=true; renderPatients();
+        setTimeout(function(){ var i=document.getElementById('ptSearch'); if(i){ i.focus(); var L=i.value.length; try{i.setSelectionRange(L,L);}catch(e){} } },60);
+      } else {
+        var filtered=patients.filter(patientPassFilters);
+        var listEl=document.getElementById('pt-list'); if(!listEl)return;
+        var cnt=document.getElementById('pt-count'); if(cnt)cnt.textContent='共 '+filtered.length+' 位病人';
+        listEl.innerHTML=filtered.length?filtered.map(function(p){return ptCard(p);}).join(''):'<div style="text-align:center;padding:40px;color:var(--muted)">找不到符合的病人</div>';
+      }
+    },350);
+  };
+},0);
 function markSel(){ document.querySelectorAll('.trk-pt').forEach(function(el){ el.style.background = el.dataset.name===TRK.sel ? '#fdf1e6' : '#fff'; }); }
 
 /* ── 覆寫病人頁 ── */

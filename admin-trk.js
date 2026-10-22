@@ -111,7 +111,7 @@ window.trkFromAppt=function(name){
   m.innerHTML='<div onclick="trkCloseModal()" style="position:fixed;inset:0;background:rgba(60,40,20,.4);z-index:150;display:grid;place-items:center;padding:20px">'+
     '<div onclick="event.stopPropagation()" style="background:#f3ece3;border-radius:20px;padding:16px;width:560px;max-width:94vw;max-height:92vh;overflow-y:auto;box-shadow:0 12px 48px rgba(60,40,20,.35)">'+
     '<div style="display:flex;justify-content:flex-end"><button onclick="trkCloseModal()" style="border:none;background:transparent;font-size:18px;color:#8a7361;cursor:pointer">✕</button></div>'+
-    '<div id="trkPanel" style="width:100%"></div><div id="trkPop"></div></div></div>';
+    '<div id="trkPanel" style="width:100%"></div><div id="trkHistory" style="margin-top:12px;display:flex;flex-direction:column;min-height:0"></div><div id="trkPop"></div></div></div>';
   document.body.appendChild(m);
   renderTrkPanel();
 };
@@ -212,7 +212,7 @@ window.renderTrkPanel=function(){
   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap;width:100%;max-width:'+MW+';margin-left:auto;margin-right:auto">'+
     '<b style="font-size:18px">'+esc(TRK.sel)+'</b>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
-      (p?'<button onclick="editPatientOld('+p.id+')" style="padding:8px 14px;border:1.5px solid #e3d5c3;border-radius:10px;background:#fff;color:#8a7361;font-size:12.5px;font-weight:700;cursor:pointer">✎ 編輯基本資料</button>':'')+
+      (p?'<button onclick="editPatientOld('+p.id+')" style="padding:8px 14px;border:1.5px solid #e3d5c3;border-radius:10px;background:#fff;color:#8a7361;font-size:12.5px;font-weight:700;cursor:pointer">✎ 編輯基本資料</button>':'<button onclick="openNewPatient()" style="padding:8px 14px;border:1.5px solid #c98a2e;border-radius:10px;background:#fff;color:#a5701f;font-size:12.5px;font-weight:700;cursor:pointer">＋ 建立基本資料</button>')+
       '<button onclick="trkReceipt()" style="padding:8px 16px;border:none;border-radius:10px;background:#b0541f;color:#fff;font-size:12.5px;font-weight:900;cursor:pointer">🧾 開收據</button>'+
     '</div>'+
   '</div>'+

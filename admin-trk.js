@@ -468,7 +468,9 @@ window.rcptPrint=function(){
     else i2.setAttribute('value',i2.value);
   });
   var area=document.getElementById('a6print')||(function(){var d=document.createElement('div');d.id='a6print';document.body.appendChild(d);return d;})();
-  area.innerHTML=''; area.appendChild(src.cloneNode(true));
+  area.innerHTML=''; var cl=src.cloneNode(true);
+  cl.querySelectorAll('.rk').forEach(function(ck){ ck.checked=false; ck.removeAttribute('checked'); });  /* 列印版勾選一律空格,打勾只是開單時的操作開關 */
+  area.appendChild(cl);
   var st=document.createElement('style'); st.id='rcptPageStyle';
   st.textContent='@page{size:A4;margin:12mm} #a6print .rcpt-doc{width:184mm;padding:0;box-shadow:none}';
   document.head.appendChild(st);

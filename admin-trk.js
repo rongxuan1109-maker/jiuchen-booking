@@ -460,8 +460,10 @@ window.trkReceipt=async function(){
     'th.am,td.am{width:48mm}'+
     'tr.sec td{background:#f3ece0;border-top:1.6px solid #574c3c}'+
     '.sub{font-size:8.5pt;color:#7a6c57;font-weight:400}'+
-    '.nm label{cursor:pointer}'+
-    'td input{border:none;border-bottom:1px dashed #cbbfa9;width:70%;font-size:10.5pt;font-family:inherit;text-align:center}'+
+    '.nm label{cursor:pointer;display:flex;align-items:center;gap:2.5mm;white-space:nowrap}'+
+    '.ck{width:4mm;height:4mm;flex:none}'+
+    'input.qty,input.amt{border:none;border-bottom:1px dashed #cbbfa9;font-size:10.5pt;font-family:inherit}'+
+    'input.qty{width:70%;text-align:center}'+
     'td.am input{width:65%;text-align:left}'+
     'tr.tot td{font-weight:900;font-size:12pt;border-top:2px solid #574c3c}'+
     'tr.tot .sum{color:#b0541f}'+

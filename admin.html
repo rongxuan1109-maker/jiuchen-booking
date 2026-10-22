@@ -3506,7 +3506,11 @@ async function submitNewEvent(){
   const title=document.getElementById('ev-title').value.trim();
   const date=`${_evSelY}-${String(_evSelM+1).padStart(2,'0')}-${String(_evSelD).padStart(2,'0')}`;
   const note=document.getElementById('ev-note').value.trim();
-  if(!title||!date||!window._evTimes.length){showToast('請填寫名稱並選擇時段');return;}
+  if(!title||!date){showToast('請填寫名稱');return;}
+  if(!window._evTimes.length){
+    if(window._evKind==='memo'){ window._evTimes=['12:00']; }   // 活動記事免選時段,預設掛中午(純顯示用落點)
+    else { showToast('請選擇時段'); return; }
+  }
   if(!window._evThs.length){
     if(window._evKind==='memo'){ window._evThs=['all']; }   // 活動記事=純顯示便利貼,不用選人,自動當全部
     else { showToast('請選擇影響治療師（或按「全部」）'); return; }

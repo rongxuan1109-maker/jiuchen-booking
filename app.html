@@ -6,11 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="九辰後台">
+<meta name="apple-mobile-web-app-title" content="治療師後台">
 <meta name="theme-color" content="#f7f3ec">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23c08a52'/%3E%3Ctext x='90' y='120' font-size='96' text-anchor='middle' fill='%23fff' font-family='serif'%3E%E4%B9%9D%3C/text%3E%3C/svg%3E">
-<title>九辰後台</title>
+<title>治療師後台（九辰＋佐升）</title>
 <style>
 :root{
   --bg:#f7f3ec; --card:#fffdf9; --ink:#2a1d12; --sub:#9b8a74; --line:#e9e0d2;
@@ -161,7 +161,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc
 .menu-item.danger{color:var(--danger)}
 
 /* ===== Sheet 彈窗 ===== */
-.sheet-bg{position:fixed;inset:0;background:rgba(30,20,12,.4);z-index:50;display:flex;align-items:flex-end;opacity:0;transition:opacity .2s}
+.sheet-bg{position:fixed;inset:0;background:rgba(30,20,12,.4);z-index:70;display:flex;align-items:flex-end;opacity:0;transition:opacity .2s}
 .sheet-bg.on{opacity:1}
 .sheet{background:var(--bg);width:100%;max-height:92dvh;border-radius:22px 22px 0 0;overflow-y:auto;padding:8px 16px calc(var(--safe-b) + 24px);transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1)}
 .sheet-bg.on .sheet{transform:translateY(0)}
@@ -224,6 +224,19 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
   .sheet{max-width:430px}
 }
 
+/* ===== 診所切換（九辰/佐升/兩家） ===== */
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
+.seg button{padding:6px 9px;border-radius:9px;font-size:12.5px;color:var(--sub);white-space:nowrap;font-weight:500}
+.seg button.on{background:var(--warm);color:#fff;font-weight:700}
+.cbadge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:6px;color:#fff;margin-left:6px;vertical-align:1px;font-weight:600}
+.cdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:0.5px;box-shadow:0 0 0 1.5px rgba(255,255,255,.75)}
+.cchips{display:flex;gap:8px}
+.cchips .chip{flex:1;text-align:center}
+.cchips .chip.lock{opacity:.55}
+#login .lrow{width:100%;max-width:320px;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+#login .lrow .lc{width:56px;flex-shrink:0;font-size:14px;font-weight:600;text-align:right}
+#login .lrow input{margin-bottom:0;flex:1;min-width:0}
+#login .lrow .ok{color:var(--ok);font-size:13px;flex:1;text-align:center}
 /* ===== Toast ===== */
 #toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + var(--safe-b) + 20px);transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;z-index:90;opacity:0;transition:.25s;pointer-events:none;max-width:86%;text-align:center}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -237,10 +250,10 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 
 <!-- 登入 -->
 <div id="login">
-  <div class="logo">九</div>
-  <h1>九辰治療師後台</h1>
-  <p>請輸入後台密碼</p>
-  <input id="pwd" type="password" inputmode="text" placeholder="密碼" autocomplete="current-password">
+  <div class="logo">兩</div>
+  <h1>治療師後台</h1>
+  <p>九辰＋佐升 · 請輸入兩家後台密碼</p>
+  <div id="loginRows"></div>
   <button id="loginBtn">登入</button>
   <div id="loginErr"></div>
 </div>
@@ -253,6 +266,7 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
       <div class="sub" id="topSub"></div>
     </div>
     <div class="actions">
+      <div class="seg" id="clinicSeg"></div>
       <button class="iconbtn" id="refreshBtn">↻</button>
     </div>
   </div>
@@ -292,10 +306,27 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ============ 設定 ============ */
-const SUPABASE_URL='https://vmkdawpukwpsifqguljy.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZta2Rhd3B1a3dwc2lmcWd1bGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjE2MDUsImV4cCI6MjA5NTQzNzYwNX0.hq8rbjKe3NOUhV1sbViBtuQLSzQuWCnK1_4QSrCy2xM';
-const ADMIN_EMAIL='admin@ninechen2020.com';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+/* 兩家診所：各自獨立的資料庫與登入；每一筆資料都帶 _c 標記屬於哪一家，寫入時只寫回該家 */
+const CLINICS={
+  nc:{key:'nc',name:'九辰',full:'九辰物理治療所',ch:'九',url:'https://vmkdawpukwpsifqguljy.supabase.co',anon:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZta2Rhd3B1a3dwc2lmcWd1bGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjE2MDUsImV4cCI6MjA5NTQzNzYwNX0.hq8rbjKe3NOUhV1sbViBtuQLSzQuWCnK1_4QSrCy2xM',email:'admin@ninechen2020.com',color:'#c08a52',dark:'#a5703c',glow:'rgba(192,138,82,.12)',bg:'#f7f3ec',phone:'07-351-6097'},
+  zs:{key:'zs',name:'佐升',full:'佐升物理治療所',ch:'佐',url:'https://qnxuynjpifvjuigvxinf.supabase.co',anon:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueHV5bmpwaWZ2anVpZ3Z4aW5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwMDk0ODQsImV4cCI6MjEwMTU4NTQ4NH0.TLfGHAl3xWfTPnk9KJXcbv1uVHPD1DlVUBpoomZm1_A',email:'admin@zuo-sheng.com',color:'#5689bc',dark:'#3f6f9f',glow:'rgba(86,137,188,.12)',bg:'#f1f5fa',phone:'07-731-3123'}
+};
+const ALL_THEME={color:'#6b7f95',dark:'#52667b',glow:'rgba(107,127,149,.12)',bg:'#f4f5f7'};
+const CKEYS=Object.keys(CLINICS);
+const DEFAULT_VIEW='nc';            // 九辰網址預設看九辰；佐升那份改成 'zs'
+const SB={}; CKEYS.forEach(k=>{ SB[k]=supabase.createClient(CLINICS[k].url,CLINICS[k].anon,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'sb-'+k+'-auth'}}); });
+let view=(()=>{ try{ const v=localStorage.getItem('clinicView'); return CLINICS[v]?v:DEFAULT_VIEW; }catch(e){ return DEFAULT_VIEW; } })();   // 只在九辰/佐升之間切換，不做合併（榮軒：會混到）
+function activeClinics(){ return view==='all'?CKEYS.slice():[view]; }
+function cl(c){ return CLINICS[c]||CLINICS[DEFAULT_VIEW]; }
+function cbadge(c){ return view==='all'?`<span class="cbadge" style="background:${cl(c).color}">${cl(c).name}</span>`:''; }
+function cdot(c){ return view==='all'?`<span class="cdot" style="background:${cl(c).color}"></span>`:''; }
+function applyTheme(){
+  const th=view==='all'?ALL_THEME:cl(view); const r=document.documentElement.style;
+  r.setProperty('--warm',th.color); r.setProperty('--warm-d',th.dark); r.setProperty('--glow',th.glow); r.setProperty('--bg',th.bg);
+  const m=document.querySelector('meta[name=theme-color]'); if(m)m.setAttribute('content',th.bg);
+  const seg=$('clinicSeg'); if(seg) seg.innerHTML=CKEYS.map(k=>`<button class="${view===k?'on':''}" onclick="setView('${k}')">${cl(k).name}</button>`).join('');
+}
+function setView(v){ if(v===view||!CLINICS[v])return; view=v; try{localStorage.setItem('clinicView',v);}catch(e){} applyTheme(); invalidate(); switchTab(curTab); }
 
 const SHIFT_SLOTS={am:['09:00','09:30','10:00','10:30','11:00'],pm:['15:00','15:30','16:00','16:30','17:00'],eve:['18:00','18:30','19:00','19:30','20:00']};
 const ALL_SLOTS=[...SHIFT_SLOTS.am,...SHIFT_SLOTS.pm,...SHIFT_SLOTS.eve];
@@ -324,34 +355,44 @@ async function guard(promise){ // 包住查詢，session 失效就導回登入
 }
 
 /* ============ 資料 ============ */
-let therapists=[], schedules={}, customSlots={}, curDate=new Date();
-let apptCache={}; // date -> rows
+let therapists=[], schedules={}, customSlots={}, curDate=new Date();   // therapists 每筆帶 _c；schedules[c][tid]
+let apptCache={}; // (view|date) -> rows(每筆帶 _c)
+const tag=(rows,c)=>(rows||[]).map(r=>Object.assign(r,{_c:c}));
+const byTime=(a,b)=>a.appointment_time.localeCompare(b.appointment_time)||a._c.localeCompare(b._c)||a.id-b.id;
 
 async function loadTherapists(){
-  const {data}=await guard(sb.from('therapists').select('*').order('id'));
-  therapists=data||[];
-  const {data:sc}=await guard(sb.from('therapist_schedules').select('therapist_id,shifts,custom_slots'));
-  schedules={}; customSlots={}; (sc||[]).forEach(s=>{schedules[s.therapist_id]=s.shifts||{}; customSlots[s.therapist_id]=s.custom_slots||null;});
+  const out=[]; schedules={}; customSlots={};
+  for(const c of CKEYS){
+    const {data}=await guard(SB[c].from('therapists').select('*').order('id'));
+    out.push(...tag(data,c));
+    const {data:sc}=await guard(SB[c].from('therapist_schedules').select('therapist_id,shifts,custom_slots'));
+    schedules[c]={}; customSlots[c]={}; (sc||[]).forEach(s=>{schedules[c][s.therapist_id]=s.shifts||{}; customSlots[c][s.therapist_id]=s.custom_slots||null;});
+  }
+  therapists=out;
 }
+function thList(c){ return therapists.filter(t=>t._c===c); }
 async function loadDay(dateStr,force){
-  if(apptCache[dateStr]&&!force) return apptCache[dateStr];
-  const {data}=await guard(sb.from('appointments').select('*').eq('appointment_date',dateStr).order('appointment_time'));
-  apptCache[dateStr]=data||[]; return apptCache[dateStr];
+  const key=view+'|'+dateStr;
+  if(apptCache[key]&&!force) return apptCache[key];
+  const rs=await Promise.all(activeClinics().map(async c=>{ const {data}=await guard(SB[c].from('appointments').select('*').eq('appointment_date',dateStr).order('appointment_time')); return tag(data,c); }));
+  apptCache[key]=[].concat(...rs).sort(byTime); return apptCache[key];
 }
 async function loadRange(startStr,endStr){
   // 2026-10-06修:排除取消單+自動翻頁(單次上限1000筆,整月爆量會截斷後面日期)
   const all=[]; const PAGE=1000;
-  for(let off=0;;off+=PAGE){
-    const {data}=await guard(sb.from('appointments').select('*').or('status.neq.cancelled,note.like.memo:*').gte('appointment_date',startStr).lte('appointment_date',endStr).order('appointment_date').order('appointment_time').order('id').range(off,off+PAGE-1));
-    if(!data)break;
-    all.push(...data);
-    if(data.length<PAGE)break;
+  for(const c of activeClinics()){
+    for(let off=0;;off+=PAGE){
+      const {data}=await guard(SB[c].from('appointments').select('*').or('status.neq.cancelled,note.like.memo:*').gte('appointment_date',startStr).lte('appointment_date',endStr).order('appointment_date').order('appointment_time').order('id').range(off,off+PAGE-1));
+      if(!data)break;
+      all.push(...tag(data,c));
+      if(data.length<PAGE)break;
+    }
   }
-  return all;
+  return all.sort((a,b)=>a.appointment_date.localeCompare(b.appointment_date)||byTime(a,b));
 }
-function invalidate(dateStr){ if(dateStr) delete apptCache[dateStr]; else apptCache={}; try{ jc.cache={}; }catch(e){} }
-function thName(id){const t=therapists.find(x=>x.id===id);return t?t.name:(id==null?'不指定':'');}
-function thColor(id){const t=therapists.find(x=>x.id===id);return t&&t.color?t.color:'#F6BF26';}
+function invalidate(dateStr){ if(dateStr) Object.keys(apptCache).forEach(k=>{ if(k.endsWith('|'+dateStr)) delete apptCache[k]; }); else apptCache={}; try{ jc.cache={}; }catch(e){} }
+function thName(id,c){const t=therapists.find(x=>x.id===id&&(!c||x._c===c));return t?t.name:(id==null?'不指定':'');}
+function thColor(id,c){const t=therapists.find(x=>x.id===id&&(!c||x._c===c));return t&&t.color?t.color:'#F6BF26';}
 function lumOf(hex){ if(!hex||hex[0]!=='#'||hex.length<7)return 0; return 0.299*parseInt(hex.slice(1,3),16)+0.587*parseInt(hex.slice(3,5),16)+0.114*parseInt(hex.slice(5,7),16); }
 
 /* 把同病人+同治療師+時間相鄰的 confirmed 列合併成群組（60分=2列=1群） */
@@ -367,7 +408,7 @@ function groupAppts(rows){
       const last=g[g.length-1];
       // 相鄰＝後一格時間正好是前一格 +30 分（不依賴標準時段，非標準時段如 11:00 也能正確合併）
       const adjacent=hm(list[j].appointment_time)===addMin(hm(last.appointment_time),30);
-      if(adjacent&&list[j].patient_name===last.patient_name&&list[j].patient_phone===last.patient_phone&&list[j].therapist_id===last.therapist_id){
+      if(adjacent&&list[j]._c===last._c&&list[j].patient_name===last.patient_name&&list[j].patient_phone===last.patient_phone&&list[j].therapist_id===last.therapist_id){
         g.push(list[j]); used.add(list[j].id);
       }
     }
@@ -377,21 +418,33 @@ function groupAppts(rows){
 }
 
 /* ============ 登入 ============ */
+async function sessionsOf(){ const s={}; for(const c of CKEYS){ try{ const {data:{session}}=await SB[c].auth.getSession(); s[c]=!!session; }catch(e){ s[c]=false; } } return s; }
+function renderLoginRows(s){
+  $('loginRows').innerHTML=CKEYS.map(c=>`<div class="lrow"><span class="lc" style="color:${cl(c).color}">${cl(c).name}</span>${s[c]?'<span class="ok">✅ 已登入</span>':`<input id="pwd_${c}" type="password" inputmode="text" placeholder="${cl(c).name}後台密碼" autocomplete="current-password">`}</div>`).join('');
+  CKEYS.forEach(c=>{ const el=$('pwd_'+c); if(el) el.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}); });
+}
 async function tryEnter(){
-  const {data:{session}}=await sb.auth.getSession();
-  if(session){ await enterApp(); }
-  else { $('login').style.display='flex'; $('app').style.display='none'; }
+  const s=await sessionsOf();
+  if(CKEYS.every(c=>s[c])){ await enterApp(); }
+  else { renderLoginRows(s); $('login').style.display='flex'; $('app').style.display='none'; }
 }
 async function doLogin(){
-  const pwd=$('pwd').value; const err=$('loginErr');
-  err.textContent='登入中…';
-  const {error}=await sb.auth.signInWithPassword({email:ADMIN_EMAIL,password:pwd});
-  if(error){ err.textContent='密碼錯誤，請再試一次'; $('pwd').value=''; $('pwd').focus(); return; }
+  const err=$('loginErr'); err.textContent='登入中…';
+  const s=await sessionsOf(); const bad=[];
+  for(const c of CKEYS){
+    if(s[c])continue;
+    const el=$('pwd_'+c); const pwd=el?el.value:'';
+    if(!pwd){ bad.push(cl(c).name+'未填'); continue; }
+    const {error}=await SB[c].auth.signInWithPassword({email:cl(c).email,password:pwd});
+    if(error){ bad.push(cl(c).name+'密碼錯誤'); if(el){el.value='';} }
+  }
+  if(bad.length){ err.textContent=bad.join('、')+'，請再試一次'; renderLoginRows(await sessionsOf()); return; }
   err.textContent=''; await enterApp();
 }
-async function doLogout(){ try{await sb.auth.signOut();}catch(e){} location.reload(); }
+async function doLogout(){ for(const c of CKEYS){ try{await SB[c].auth.signOut();}catch(e){} } location.reload(); }
 async function enterApp(){
   $('login').style.display='none'; $('app').style.display='flex';
+  applyTheme();
   try{ await loadTherapists(); }catch(e){ return; }
   curDate=new Date(); switchTab('today');
   startRealtime();
@@ -408,13 +461,13 @@ function rtRefresh(){
 }
 function startRealtime(){
   if(_rtOn)return; _rtOn=true;
-  try{
-    sb.channel('appt-rt').on('postgres_changes',{event:'*',schema:'public',table:'appointments'},()=>{
+  CKEYS.forEach(c=>{ try{
+    SB[c].channel('appt-rt-'+c).on('postgres_changes',{event:'*',schema:'public',table:'appointments'},()=>{
       clearTimeout(_rtTimer); _rtTimer=setTimeout(rtRefresh,600);   // 一批變動只刷一次
     }).on('postgres_changes',{event:'*',schema:'public',table:'therapist_schedules'},async()=>{
       try{ await loadTherapists(); }catch(e){}                      // 班表/釋出時段變了→靜靜更新資料
     }).subscribe();
-  }catch(e){}
+  }catch(e){} });
   // App 從背景回到前景也刷一次(訂閱可能在休眠時斷線)
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden) rtRefresh(); });
 }
@@ -515,8 +568,8 @@ function drawJumpCal(rows){
   for(let d=1;d<=dim;d++){
     const ds=fmtDate(new Date(y,mo,d)); const sel=ds===fmtDate(curDate);
     const groups=groupAppts(byDay[ds]||[]);
-    const ths=[...new Set(groups.map(g=>g[0].therapist_id))].slice(0,3);
-    const dots=ths.map(id=>`<i style="background:${thColor(id)}"></i>`).join('')+(groups.length>3?'<b>+</b>':'');
+    const seen={}; const ths=[]; groups.forEach(g=>{ const k=g[0]._c+':'+g[0].therapist_id; if(!seen[k]&&ths.length<3){ seen[k]=1; ths.push(g[0]); } });
+    const dots=ths.map(a=>`<i style="background:${thColor(a.therapist_id,a._c)}"></i>`).join('')+(groups.length>3?'<b>+</b>':'');
     cal+=`<div class="mc-d ${sel?'sel':''} ${ds===t&&!sel?'today':''}" onclick="jcPick('${ds}')">${d}${ths.length?`<span class="mc-dots">${dots}</span>`:''}</div>`;
   }
   cal+='</div>';
@@ -555,10 +608,10 @@ function renderTodayList(rows){
     let start=tMin(hm(e.appointment_time)), end=start+30; evUsed.add(e.id);
     let grow=true;
     while(grow){ grow=false; for(const x of evs){ if(evUsed.has(x.id))continue;
-      if(x.note===e.note&&x.therapist_id===e.therapist_id&&tMin(hm(x.appointment_time))===end){ end+=30; evUsed.add(x.id); grow=true; } } }
-    evBlocks.push({kind:'ev',id:e.id,start,dur:end-start,name:e.patient_name||'公休/活動',who:e.therapist_id==null?'全院':thName(e.therapist_id)});
+      if(x._c===e._c&&x.note===e.note&&x.therapist_id===e.therapist_id&&tMin(hm(x.appointment_time))===end){ end+=30; evUsed.add(x.id); grow=true; } } }
+    evBlocks.push({kind:'ev',id:e.id,c:e._c,start,dur:end-start,name:e.patient_name||'公休/活動',who:(e.therapist_id==null?'全院':thName(e.therapist_id,e._c))+(view==='all'?' · '+cl(e._c).name:'')});
   });
-  const blocks=groups.map(g=>({kind:'appt',id:g[0].id,start:tMin(hm(g[0].appointment_time)),dur:g.length*30,name:g[0].patient_name||'（無名）',who:thName(g[0].therapist_id),type:g[0].type,color:thColor(g[0].therapist_id)})).concat(evBlocks);
+  const blocks=groups.map(g=>({kind:'appt',id:g[0].id,c:g[0]._c,start:tMin(hm(g[0].appointment_time)),dur:g.length*30,name:g[0].patient_name||'（無名）',who:thName(g[0].therapist_id,g[0]._c)+(view==='all'?' · '+cl(g[0]._c).name:''),type:g[0].type,color:thColor(g[0].therapist_id,g[0]._c)})).concat(evBlocks);
   // 範圍預設 08:00–22:00，有更早/更晚的預約會自動延伸
   let S=8*60, E=22*60;
   blocks.forEach(b=>{ S=Math.min(S,Math.floor(b.start/60)*60); E=Math.max(E,Math.ceil((b.start+b.dur)/60)*60); });
@@ -583,9 +636,9 @@ function renderTodayList(rows){
     const w=100/b.cols, l=b.col*w;
     const two=h>=34; // 高度夠才顯示第二行
     if(b.kind==='ev'){
-      inner+=`<div class="tl-blk ev" style="top:${top}px;height:${h}px;left:${l}%;width:calc(${w}% - 3px)" onclick="event.stopPropagation();openEventDetail(${b.id})"><div class="b1">🚫 ${esc(b.name)}</div>${two?`<div class="b2">${esc(b.who)}</div>`:''}</div>`;
+      inner+=`<div class="tl-blk ev" style="top:${top}px;height:${h}px;left:${l}%;width:calc(${w}% - 3px)" onclick="event.stopPropagation();openEventDetail('${b.c}',${b.id})"><div class="b1">${cdot(b.c)}🚫 ${esc(b.name)}</div>${two?`<div class="b2">${esc(b.who)}</div>`:''}</div>`;
     }else{
-      inner+=`<div class="tl-blk" style="top:${top}px;height:${h}px;left:${l}%;width:calc(${w}% - 3px);background:${esc(b.color)};color:${lumOf(b.color)>165?'#2b2b2b':'#fff'}" onclick="event.stopPropagation();openApptDetail(${b.id})"><div class="b1">${esc(b.name)}${b.type==='new'?'（初診）':''}</div>${two?`<div class="b2">${minT(b.start)}–${minT(b.start+b.dur)} · ${esc(b.who)}</div>`:''}</div>`;
+      inner+=`<div class="tl-blk" style="top:${top}px;height:${h}px;left:${l}%;width:calc(${w}% - 3px);background:${esc(b.color)};color:${lumOf(b.color)>165?'#2b2b2b':'#fff'}" onclick="event.stopPropagation();openApptDetail('${b.c}',${b.id})"><div class="b1">${cdot(b.c)}${esc(b.name)}${b.type==='new'?'（初診）':''}</div>${two?`<div class="b2">${minT(b.start)}–${minT(b.start+b.dur)} · ${esc(b.who)}</div>`:''}</div>`;
     }
   });
   // 現在時刻紅線（只在看「今天」時顯示）
@@ -619,13 +672,13 @@ async function renderWeek(){
     const ds=fmtDate(d); const dayRows=byDay[ds]||[];
     const groups=groupAppts(dayRows);
     const isT=ds===tstr;
-    let bars=groups.slice(0,8).map(g=>`<span class="wbar ${isT?'today':''}"><span class="wdot" style="background:${thColor(g[0].therapist_id)}"></span>${esc((g[0].patient_name||'').slice(0,4))}</span>`).join('');
+    let bars=groups.slice(0,8).map(g=>`<span class="wbar ${isT?'today':''}" style="${view==='all'?`box-shadow:inset 3px 0 0 ${cl(g[0]._c).color}`:''}"><span class="wdot" style="background:${thColor(g[0].therapist_id,g[0]._c)}"></span>${esc((g[0].patient_name||'').slice(0,4))}</span>`).join('');
     // 同一個公休/活動(同note同對象)只畫一顆籤,不再一格一顆洗版
     const seenEv={}; let evCount=0;
     dayRows.filter(a=>isEvent(a)&&a.status!=='cancelled').forEach(e=>{
-      const k=(e.note||'')+'|'+(e.therapist_id==null?'all':e.therapist_id);
+      const k=e._c+'|'+(e.note||'')+'|'+(e.therapist_id==null?'all':e.therapist_id);
       if(seenEv[k])return; seenEv[k]=1; evCount++;
-      bars+=`<span class="wbar ev">🚫${e.therapist_id==null?'全院':esc(thName(e.therapist_id).slice(0,3))} ${esc((e.patient_name||'').slice(0,5))}</span>`;
+      bars+=`<span class="wbar ev">${view==='all'?cl(e._c).ch+'·':''}🚫${e.therapist_id==null?'全院':esc(thName(e.therapist_id,e._c).slice(0,3))} ${esc((e.patient_name||'').slice(0,5))}</span>`;
     });
     if(!groups.length&&!evCount) bars='<span class="cnt">—</span>';
     return `<div class="week-day" onclick="jumpDay('${ds}')">
@@ -670,8 +723,8 @@ async function renderMonth(){
     const isT=ds===tstr;
     const MAX=4;
     let chips=groups.slice(0,MAX).map(g=>{
-      const code=(thName(g[0].therapist_id)||'未')[0];
-      return `<div class="mo-chip" style="background:${thColor(g[0].therapist_id)}">${code}-${esc((g[0].patient_name||'').slice(0,3))}</div>`;
+      const code=(thName(g[0].therapist_id,g[0]._c)||'未')[0];
+      return `<div class="mo-chip" style="background:${thColor(g[0].therapist_id,g[0]._c)};${view==='all'?`box-shadow:inset 3px 0 0 ${cl(g[0]._c).color}`:''}">${code}-${esc((g[0].patient_name||'').slice(0,3))}</div>`;
     }).join('');
     if(evs.length) chips=`<div class="mo-chip ev">🚫${esc((evs[0].patient_name||'休').slice(0,3))}</div>`+chips;
     const extra=groups.length-MAX;
@@ -708,11 +761,10 @@ async function searchPatients(q){
   const box=$('pResult'); if(!box)return;
   if(!q){ box.innerHTML=`<div class="empty"><div class="ic">🔍</div>輸入姓名或電話查詢病人</div>`; return; }
   box.innerHTML='<div class="spinner"></div>';
-  let res;
-  try{ res=await guard(sb.from('patients').select('id,name,phone,body_parts,note,first_visit').or(`name.ilike.%${q}%,phone.ilike.%${q}%`).limit(50)); }catch(e){ return; }
-  const data=res.data||[];
+  let data=[];
+  try{ for(const c of activeClinics()){ const res=await guard(SB[c].from('patients').select('id,name,phone,body_parts,note,first_visit').or(`name.ilike.%${q}%,phone.ilike.%${q}%`).limit(50)); data.push(...tag(res.data,c)); } }catch(e){ return; }
   if(!data.length){ box.innerHTML=`<div class="empty"><div class="ic">🤷</div>找不到符合的病人</div>`; return; }
-  box.innerHTML=data.map(p=>`<div class="pcard" onclick='openPatient(${JSON.stringify(p).replace(/'/g,"&#39;")})'><div class="pn">${esc(p.name)}</div><div class="pp">${esc(p.phone||'（無電話）')}${p.first_visit?' · 初診 '+esc(p.first_visit):''}</div></div>`).join('');
+  box.innerHTML=data.map(p=>`<div class="pcard" onclick='openPatient(${JSON.stringify(p).replace(/'/g,"&#39;")})'><div class="pn">${esc(p.name)}${cbadge(p._c)}</div><div class="pp">${esc(p.phone||'（無電話）')}${p.first_visit?' · 初診 '+esc(p.first_visit):''}</div></div>`).join('');
 }
 
 /* ============ 更多 ============ */
@@ -724,7 +776,7 @@ async function renderMore(){
     <div class="menu-item" onclick="openEventSheet()"><span>🚫</span> 標記公休／活動</div>
     <div class="menu-item" onclick="switchTab('today')"><span>📅</span> 回今日班表</div>
     <div class="menu-item danger" onclick="doLogout()"><span>🚪</span> 登出</div>
-    <div style="text-align:center;color:var(--sub);font-size:12px;margin-top:24px">九辰物理治療所 · 治療師後台<br>07-351-6097</div>`;
+    <div style="text-align:center;color:var(--sub);font-size:12px;margin-top:24px">${activeClinics().map(c=>cl(c).full+' '+cl(c).phone).join('<br>')}<br>治療師後台（兩家版）</div>`;
   try{
     const t=todayStr(); const today=await loadDay(t);
     $('stToday').textContent=groupAppts(today).length;
@@ -736,16 +788,17 @@ async function renderMore(){
 }
 
 /* ============ 網路釋出時段編輯器 ============ */
-let se={tid:null, wd:null, sel:null};
-function seEff(tid,wd){
-  const cs=customSlots[tid];
+let se={c:null, tid:null, wd:null, sel:null};
+function seEff(c,tid,wd){
+  const cs=(customSlots[c]||{})[tid];
   if(cs && cs[wd]) return [...cs[wd]];
-  const blocks=(schedules[tid]&&schedules[tid][wd])||[];
+  const blocks=(schedules[c]&&schedules[c][tid]&&schedules[c][tid][wd])||[];
   const out=[]; blocks.forEach(b=>(SHIFT_SLOTS[b]||[]).forEach(t=>out.push(t)));
   return out;
 }
 function openSlotEditor(){
-  se.tid=therapists[0]?therapists[0].id:null;
+  se.c=view==='all'?CKEYS[0]:view;
+  se.tid=thList(se.c)[0]?thList(se.c)[0].id:null;
   const dow=new Date().getDay();
   se.wd=String(dow===0?1:dow);
   se.sel=null;
@@ -753,15 +806,16 @@ function openSlotEditor(){
 }
 function renderSlotEditor(){
   const wdNames={'1':'一','2':'二','3':'三','4':'四','5':'五','6':'六'};
-  if(se.sel===null) se.sel=new Set(seEff(se.tid,se.wd));
-  const thChips=therapists.map(t=>`<button class="se-chip ${t.id===se.tid?'on':''}" style="${t.id===se.tid?`background:${thColor(t.id)};border-color:${thColor(t.id)};color:#fff`:''}" onclick="seSetTh(${t.id})">${esc(t.name)}</button>`).join('');
+  if(se.sel===null) se.sel=new Set(seEff(se.c,se.tid,se.wd));
+  const cChips=view==='all'?`<div class="se-row">${CKEYS.map(c=>`<button class="se-chip ${c===se.c?'on2':''}" style="${c===se.c?`border-color:${cl(c).color};color:${cl(c).dark}`:''}" onclick="seSetC('${c}')">${cl(c).name}</button>`).join('')}</div>`:'';
+  const thChips=thList(se.c).map(t=>`<button class="se-chip ${t.id===se.tid?'on':''}" style="${t.id===se.tid?`background:${thColor(t.id,se.c)};border-color:${thColor(t.id,se.c)};color:#fff`:''}" onclick="seSetTh(${t.id})">${esc(t.name)}</button>`).join('');
   const wdChips=Object.keys(wdNames).map(w=>`<button class="se-chip ${w===se.wd?'on2':''}" onclick="seSetWd('${w}')">${wdNames[w]}</button>`).join('');
   const groups=[['早診',SHIFT_SLOTS.am],['下午診',SHIFT_SLOTS.pm],['晚診',SHIFT_SLOTS.eve]];
   const slotHtml=groups.map(([label,arr],gi)=>{
     const allOn=arr.every(t=>se.sel.has(t));
     return `<div class="se-glabel" onclick="seGroup(${gi})" style="cursor:pointer">${label} <span class="se-gbtn ${allOn?'on':''}">${allOn?'整段開放中・點我關':'點我整段開放'}</span></div><div class="se-slots">${arr.map(t=>`<button class="se-slot ${se.sel.has(t)?'on':''}" onclick="seToggle('${t}')">${t}</button>`).join('')}</div>`;}).join('');
-  const html=`<h2>排班（網路釋出時段）</h2><div class="sub">亮起＝病人網路可約的「開始」時段，全暗＝這天不開放・只影響前台，後台代約不受限</div>
-    <div class="se-row">${thChips}</div>
+  const html=`<h2>排班（網路釋出時段）<span class="cbadge" style="background:${cl(se.c).color}">${cl(se.c).name}</span></h2><div class="sub">亮起＝病人網路可約的「開始」時段，全暗＝這天不開放・只影響前台，後台代約不受限</div>
+    ${cChips}<div class="se-row">${thChips}</div>
     <div class="se-row">${wdChips}</div>
     ${slotHtml}
     <div class="sheet-actions"><button class="btn primary" onclick="seSave()">儲存這一天</button><button class="btn ghost" onclick="seClear()">清空這天</button></div>
@@ -778,14 +832,15 @@ function seGroup(gi){
 }
 function seClear(){ se.sel=new Set(); renderSlotEditor(); }
 function seSetTh(id){ se.tid=id; se.sel=null; renderSlotEditor(); }
+function seSetC(c){ se.c=c; se.tid=thList(c)[0]?thList(c)[0].id:null; se.sel=null; renderSlotEditor(); }
 function seSetWd(w){ se.wd=w; se.sel=null; renderSlotEditor(); }
 function seToggle(t){ if(se.sel.has(t)) se.sel.delete(t); else se.sel.add(t); renderSlotEditor(); }
 async function seSave(){
-  const cur=customSlots[se.tid]||{};
+  const cur=(customSlots[se.c]||{})[se.tid]||{};
   const next={...cur}; next[se.wd]=[...se.sel].sort();
-  const {error}=await sb.from('therapist_schedules').update({custom_slots:next}).eq('therapist_id',se.tid);
+  const {error}=await SB[se.c].from('therapist_schedules').update({custom_slots:next}).eq('therapist_id',se.tid);
   if(error){ toast('儲存失敗：'+error.message); return; }
-  customSlots[se.tid]=next; toast('已儲存，前台立即生效'); renderSlotEditor();
+  customSlots[se.c]=customSlots[se.c]||{}; customSlots[se.c][se.tid]=next; toast('已儲存，前台立即生效'); renderSlotEditor();
 }
 
 
@@ -799,10 +854,11 @@ function closeSheet(){ const bg=$('sheetHost').querySelector('.sheet-bg'); if(!b
 
 /* ============ 預約詳情 ============ */
 /* 初診問卷檢視(App):同組找問卷,沒有退回同名病人最近一份 */
-async function openIntakeSheet(id){
+function findGroup(rows,c,id){ const rs=rows.filter(x=>x._c===c); const groups=groupAppts(rs); return groups.find(gr=>gr.some(x=>x.id===id))||rs.filter(x=>x.id===id); }
+async function openIntakeSheet(c,id){
   const ds=fmtDate(curDate); const rows=await loadDay(ds);
-  const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id))||rows.filter(x=>x.id===id);
-  if(!g.length)return; const a=g[0];
+  const g=findGroup(rows,c,id);
+  if(!g.length)return; const a=g[0]; const sb=SB[c];
   let f=null;
   try{
     let r=await sb.from('intake_forms').select('*').in('appointment_id',g.map(x=>x.id)).limit(1); f=r.data&&r.data[0];
@@ -814,24 +870,24 @@ async function openIntakeSheet(id){
     <div style="height:8px"></div>
     ${f?row('生日',f.birth_date?roc(f.birth_date):'')+row('性別',f.gender)+row('不適部位',f.discomfort_area)+row('持續多久了',f.discomfort_duration)+row('看過復健科/骨科',f.previous_pt)+row('手術史',f.surgery_history)+row('其他說明',f.other_notes)
       :`<div class="empty" style="padding:22px 0"><div class="ic">📄</div>沒有線上初診問卷<br><span style="font-size:12px;color:var(--sub)">可能由櫃檯代約，或現場填紙本</span></div>`}
-    <div class="sheet-actions" style="margin-top:12px"><button class="btn primary" onclick="openApptDetail(${a.id})">← 回預約</button><button class="btn ghost" onclick="closeSheet()">關閉</button></div>`);
+    <div class="sheet-actions" style="margin-top:12px"><button class="btn primary" onclick="openApptDetail('${c}',${a.id})">← 回預約</button><button class="btn ghost" onclick="closeSheet()">關閉</button></div>`);
 }
 
-async function openApptDetail(id){
+async function openApptDetail(c,id){
   const ds=fmtDate(curDate); const rows=await loadDay(ds);
-  const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id))||rows.filter(x=>x.id===id);
-  if(!g.length)return; const a=g[0]; const dur=g.length*30; const t=hm(a.appointment_time);
-  openSheet(`<h2>${esc(a.patient_name||'（無名）')}<span class="typebadge ${a.type==='new'?'new':''}">${a.type==='new'?'初診':'複診'}</span></h2>
+  const g=findGroup(rows,c,id);
+  if(!g.length)return; const a=g[0]; const dur=g.length*30; const t=hm(a.appointment_time); const sb=SB[c];
+  openSheet(`<h2>${esc(a.patient_name||'（無名）')}<span class="typebadge ${a.type==='new'?'new':''}">${a.type==='new'?'初診':'複診'}</span><span class="cbadge" style="background:${cl(c).color}">${cl(c).name}</span></h2>
     <div class="sub">${dur} 分鐘 · ${a.line_user_id?'LINE ✅':'LINE —'}</div>
     <div class="sub" id="pMeta" style="margin-top:2px">📞 ${esc(a.patient_phone||'—')}</div>
     <div style="height:10px"></div>
     <div class="row-info"><span class="k">日期</span><span class="v">${a.appointment_date}（${WD[parseDate(a.appointment_date).getDay()]}）</span></div>
     <div class="row-info"><span class="k">時間</span><span class="v">${t} – ${addMin(t,dur)}</span></div>
-    <div class="row-info"><span class="k">治療師</span><span class="v">${esc(thName(a.therapist_id))}</span></div>
+    <div class="row-info"><span class="k">治療師</span><span class="v">${esc(thName(a.therapist_id,c))}</span></div>
     ${a.symptoms?`<div class="row-info"><span class="k">不適部位</span><span class="v">${esc(a.symptoms)}</span></div>`:''}
     ${a.note?`<div class="row-info"><span class="k">備註</span><span class="v">${esc(a.note)}</span></div>`:''}
-    ${a.type==='new'?`<div class="sheet-actions"><button class="btn ghost" style="border-color:#e8556d;color:#e8556d" onclick="openIntakeSheet(${a.id})">📝 初診問卷</button></div>`:''}
-    <div class="sheet-actions"><button class="btn primary" onclick='openEdit(${a.id})'>編輯</button><button class="btn danger" onclick='cancelGroup(${a.id})'>取消預約</button></div>
+    ${a.type==='new'?`<div class="sheet-actions"><button class="btn ghost" style="border-color:#e8556d;color:#e8556d" onclick="openIntakeSheet('${c}',${a.id})">📝 初診問卷</button></div>`:''}
+    <div class="sheet-actions"><button class="btn primary" onclick='openEdit("${c}",${a.id})'>編輯</button><button class="btn danger" onclick='cancelGroup("${c}",${a.id})'>取消預約</button></div>
     <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">關閉</button></div>`);
   // 生日背景撈取：先找這筆的初診問卷，再退而求其次查病歷表
   (async()=>{
@@ -849,27 +905,27 @@ async function openApptDetail(id){
     if(meta&&bd){ const [y,m,d]=bd.split('-'); meta.textContent+=` · 🎂 民國${+y-1911}.${m}.${d}`; }
   })();
 }
-async function openEventDetail(id){
-  const rows=await loadDay(fmtDate(curDate)); const e=rows.find(x=>x.id===id); if(!e)return;
+async function openEventDetail(c,id){
+  const rows=await loadDay(fmtDate(curDate)); const e=rows.find(x=>x._c===c&&x.id===id); if(!e)return;
   const eid=(e.note||'').slice(6);
-  openSheet(`<h2>🚫 ${esc(e.patient_name||'公休/活動')}</h2><div class="sub">${e.therapist_id==null?'全院公休':esc(thName(e.therapist_id))+' 請假'}</div>
+  openSheet(`<h2>🚫 ${esc(e.patient_name||'公休/活動')}<span class="cbadge" style="background:${cl(c).color}">${cl(c).name}</span></h2><div class="sub">${e.therapist_id==null?'全院公休':esc(thName(e.therapist_id,c))+' 請假'}</div>
     <div class="row-info"><span class="k">日期</span><span class="v">${e.appointment_date}</span></div>
     <div class="row-info"><span class="k">時間</span><span class="v">${hm(e.appointment_time)}</span></div>
-    <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">關閉</button><button class="btn danger" onclick="deleteEvent('${esc(eid)}')">刪除此活動</button></div>`);
+    <div class="sheet-actions"><button class="btn ghost" onclick="closeSheet()">關閉</button><button class="btn danger" onclick="deleteEvent('${c}','${esc(eid)}')">刪除此活動</button></div>`);
 }
 
 /* 取消整組 */
-async function cancelGroup(id){
+async function cancelGroup(c,id){
   const ds=fmtDate(curDate); const rows=await loadDay(ds);
-  const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id)); if(!g)return;
+  const g=findGroup(rows,c,id); if(!g.length)return;
   if(!confirm('確定取消這筆預約嗎？病人若有綁 LINE 會收到取消通知。'))return;
   const ids=g.map(x=>x.id);
-  const {error}=await sb.from('appointments').update({status:'cancelled'}).in('id',ids);
+  const {error}=await SB[c].from('appointments').update({status:'cancelled'}).in('id',ids);
   if(error){ toast('取消失敗：'+error.message); return; }
   invalidate(ds); closeSheet(); toast('已取消預約'); renderToday();
 }
-async function deleteEvent(eid){
-  if(!confirm('確定刪除這個公休/活動嗎？'))return;
+async function deleteEvent(c,eid){
+  if(!confirm('確定刪除這個公休/活動嗎？'))return; const sb=SB[c];
   const {error}=await sb.from('appointments').update({status:'cancelled'}).like('note','event:'+eid+'%').neq('status','cancelled');
   // 活動本身已是 cancelled，用刪除標記：改 note 前綴為 del: 讓它不再被視為 event
   await sb.from('appointments').update({note:'del:'+eid}).like('note','event:'+eid+'%');
@@ -878,16 +934,19 @@ async function deleteEvent(eid){
 
 /* ============ 新增 / 編輯 表單 ============ */
 let form={}; // 暫存表單狀態
-function openNew(dateStr,time){
-  form={mode:'new',id:null,date:dateStr||fmtDate(curDate),time:time||'',end:time?addMin(time,60):'',therapist_id:'',type:'return',name:'',phone:'',note:'',birth:'',area:'',dur:'',prevpt:''};
+let lastC=null;   // 「兩家」模式下最近一次新增用的診所
+function pickC(){ return view==='all'?(lastC||CKEYS[0]):view; }
+function openNew(dateStr,time,c){
+  form={mode:'new',c:c||pickC(),id:null,date:dateStr||fmtDate(curDate),time:time||'',end:time?addMin(time,60):'',therapist_id:'',type:'return',name:'',phone:'',note:'',birth:'',area:'',dur:'',prevpt:''};
   renderForm();
 }
-async function openEdit(id){
+function setFormC(c){ if(form.mode==='edit'||form.c===c)return; form.c=c; form.therapist_id=''; renderForm(); }
+async function openEdit(c,id){
   const ds=fmtDate(curDate); const rows=await loadDay(ds);
-  const groups=groupAppts(rows); const g=groups.find(gr=>gr.some(x=>x.id===id))||rows.filter(x=>x.id===id);
+  const g=findGroup(rows,c,id); if(!g.length)return;
   const a=g[0]; const dur=g.length*30;
   const keepLine=(g.find(x=>x.line_user_id)||{}).line_user_id||null;   // 編輯前先留住LINE綁定,重建新列要帶回去
-  form={mode:'edit',id:a.id,groupIds:g.map(x=>x.id),line_user_id:keepLine,date:a.appointment_date,time:hm(a.appointment_time),end:addMin(hm(a.appointment_time),dur),therapist_id:a.therapist_id==null?'':a.therapist_id,type:a.type||'return',name:a.patient_name||'',phone:a.patient_phone||'',note:a.note||'',birth:'',area:a.symptoms||'',dur:'',prevpt:''};
+  form={mode:'edit',c:c,id:a.id,groupIds:g.map(x=>x.id),line_user_id:keepLine,date:a.appointment_date,time:hm(a.appointment_time),end:addMin(hm(a.appointment_time),dur),therapist_id:a.therapist_id==null?'':a.therapist_id,type:a.type||'return',name:a.patient_name||'',phone:a.patient_phone||'',note:a.note||'',birth:'',area:a.symptoms||'',dur:'',prevpt:''};
   renderForm();
 }
 /* 30分鐘間隔時間下拉（iOS的time輸入會無視step,改用select原生轉盤強制半點） */
@@ -910,7 +969,7 @@ function typeGroups(cur){
   </div>`;
 }
 function switchToAppt(t){
-  if(sheetMode!=='appt') openNew((evf&&evf.date)||fmtDate(curDate),'');
+  if(sheetMode!=='appt') openNew((evf&&evf.date)||fmtDate(curDate),'',evf&&evf.c);
   form.type=t;
   if(form.time&&!form.end) form.end=addMin(form.time, t==='new'?30:60);
   renderForm();
@@ -935,7 +994,9 @@ function renderForm(){
   sheetMode='appt';
   const isNew=form.type==='new';
   const endFrom=form.time?tMin(form.time)+30:6*60+30;
-  openSheet(`<h2>${form.mode==='edit'?'編輯預約':'新增預約'}</h2><div class="sub">${form.date}${form.time?' · '+form.time:''}</div>
+  const cSel=view!=='all'?'':`<div class="field"><label>診所${form.mode==='edit'?'（已屬於此家，不可改）':''}</label><div class="cchips">${CKEYS.map(c=>`<div class="chip ${form.c===c?'on':''} ${form.mode==='edit'&&form.c!==c?'lock':''}" style="${form.c===c?`border-color:${cl(c).color};color:${cl(c).dark};background:${cl(c).glow}`:''}" onclick="setFormC('${c}')">${cl(c).full}</div>`).join('')}</div></div>`;
+  openSheet(`<h2>${form.mode==='edit'?'編輯預約':'新增預約'}<span class="cbadge" style="background:${cl(form.c).color}">${cl(form.c).name}</span></h2><div class="sub">${form.date}${form.time?' · '+form.time:''}</div>
+    ${cSel}
     <div class="grid2">
       <div class="field"><label>姓名 *</label><input id="fName" value="${esc(form.name)}" oninput="setF('name',this.value)"></div>
       <div class="field"><label>電話${isNew?' *':''}</label><input id="fPhone" type="tel" value="${esc(form.phone)}" oninput="setF('phone',this.value)"></div>
@@ -943,7 +1004,7 @@ function renderForm(){
     <div class="field"><label>類型</label>${typeGroups(form.type)}</div>
     <div class="field"><label>治療師</label><select id="fTh" onchange="setF('therapist_id',this.value)">
       <option value="" ${form.therapist_id===''?'selected':''}>不指定</option>
-      ${therapists.map(t=>`<option value="${t.id}" ${String(form.therapist_id)===String(t.id)?'selected':''}>${esc(t.name)}</option>`).join('')}
+      ${thList(form.c).map(t=>`<option value="${t.id}" ${String(form.therapist_id)===String(t.id)?'selected':''}>${esc(t.name)}</option>`).join('')}
     </select></div>
     <div class="field"><label>日期</label><input id="fDate" type="date" value="${form.date}" onchange="setF('date',this.value)"></div>
     <div class="grid2">
@@ -985,12 +1046,13 @@ async function saveForm(){
     const selfIds=form.groupIds||[];
     const ns=tMin(form.time), ne=ns+need*30;
     const clash=dayRows.some(a=>{
-      if(a.status!=='confirmed'||a.therapist_id!==thId||selfIds.includes(a.id))return false;
+      if(a._c!==form.c||a.status!=='confirmed'||a.therapist_id!==thId||selfIds.includes(a.id))return false;
       const s=tMin(hm(a.appointment_time));
       return s<ne&&ns<s+30;
     });
     if(clash&&!confirm('這位治療師該時段已有預約，仍要新增嗎？')){ resetSaveBtn(); return; }
   }
+  const sb=SB[form.c]; lastC=form.c;
   try{
     if(form.mode==='edit'){
       // 防撞車:存檔前跟資料庫核對這組還在不在(可能剛被別台裝置改掉)
@@ -1002,7 +1064,7 @@ async function saveForm(){
       // 先刪舊組（改 cancelled），再重建（簡單可靠）
       await sb.from('appointments').update({status:'cancelled',line_user_id:null}).in('id',form.groupIds);
     }
-    const rows=times.map((t,i)=>({therapist_id:thId,patient_name:name,patient_phone:phone,appointment_date:form.date,appointment_time:t+':00',type:form.type,service:i===0?svc:svc+'（續）',symptoms:form.area||'',note:form.note||'',status:'confirmed',line_user_id:form.line_user_id||null,therapist_name:thId==null?'不指定':thName(thId)}));
+    const rows=times.map((t,i)=>({therapist_id:thId,patient_name:name,patient_phone:phone,appointment_date:form.date,appointment_time:t+':00',type:form.type,service:i===0?svc:svc+'（續）',symptoms:form.area||'',note:form.note||'',status:'confirmed',line_user_id:form.line_user_id||null,therapist_name:thId==null?'不指定':thName(thId,form.c)}));
     const {data:ins,error}=await sb.from('appointments').insert(rows).select();
     if(error)throw error;
     if(form.type==='new'&&ins&&ins[0]){
@@ -1020,22 +1082,25 @@ function resetSaveBtn(){ const b=$('saveBtn'); if(b){b.textContent=form.mode==='
 let evf={};
 function openEventKind(kind){
   if(sheetMode==='event'){ evf.kind=kind; renderEventSheet(); return; }
-  evf={kind,date:(form&&form.date)||fmtDate(curDate),dateEnd:(form&&form.date)||fmtDate(curDate),therapist_id:'',timeStart:'09:00',timeEnd:'21:00',name:''};
+  evf={kind,c:(form&&form.c)||pickC(),date:(form&&form.date)||fmtDate(curDate),dateEnd:(form&&form.date)||fmtDate(curDate),therapist_id:'',timeStart:'09:00',timeEnd:'21:00',name:''};
   renderEventSheet();
 }
 function openEventSheet(){
-  evf={kind:'rest',date:fmtDate(curDate),dateEnd:fmtDate(curDate),therapist_id:'',timeStart:'09:00',timeEnd:'21:00',name:''};
+  evf={kind:'rest',c:pickC(),date:fmtDate(curDate),dateEnd:fmtDate(curDate),therapist_id:'',timeStart:'09:00',timeEnd:'21:00',name:''};
   renderEventSheet();
 }
+function setEvC(c){ if(evf.c===c)return; evf.c=c; evf.therapist_id=''; renderEventSheet(); }
 function renderEventSheet(){
   sheetMode='event';
   const isAct=evf.kind==='act';
   const multi=evf.dateEnd&&evf.dateEnd!==evf.date;
-  openSheet(`<h2>${isAct?'標記活動':'標記休診'}</h2><div class="sub">把時段標成不可約，會顯示在班表與 LINE 休診公告</div>
+  const cSel=view!=='all'?'':`<div class="field"><label>診所</label><div class="cchips">${CKEYS.map(c=>`<div class="chip ${evf.c===c?'on':''}" style="${evf.c===c?`border-color:${cl(c).color};color:${cl(c).dark};background:${cl(c).glow}`:''}" onclick="setEvC('${c}')">${cl(c).full}</div>`).join('')}</div></div>`;
+  openSheet(`<h2>${isAct?'標記活動':'標記休診'}<span class="cbadge" style="background:${cl(evf.c).color}">${cl(evf.c).name}</span></h2><div class="sub">把時段標成不可約，會顯示在班表與 LINE 休診公告</div>
+    ${cSel}
     <div class="field"><label>名稱</label><input id="evName" value="${esc(evf.name||'')}" oninput="evf.name=this.value" placeholder="${isAct?'如：上課、教育訓練':'如：國定假日、出國'}"></div>
     <div class="field"><label>類型</label>${typeGroups(evf.kind)}</div>
     <div class="field"><label>對象</label><select onchange="evf.therapist_id=this.value">
-      <option value="" ${evf.therapist_id===''?'selected':''}>全院</option>${therapists.map(t=>`<option value="${t.id}" ${String(evf.therapist_id)===String(t.id)?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
+      <option value="" ${evf.therapist_id===''?'selected':''}>全院</option>${thList(evf.c).map(t=>`<option value="${t.id}" ${String(evf.therapist_id)===String(t.id)?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
     <div class="grid2">
       <div class="field"><label>開始日期</label><input type="date" value="${evf.date}" onchange="evf.date=this.value;if(!evf.dateEnd||evf.dateEnd<evf.date)evf.dateEnd=evf.date;renderEventSheet()"></div>
       <div class="field"><label>結束日期</label><input type="date" value="${evf.dateEnd}" min="${evf.date}" onchange="evf.dateEnd=this.value;renderEventSheet()"></div>
@@ -1072,38 +1137,40 @@ async function saveEvent(){
   const rows=[];
   while(d<=end){
     const ds=fmtDate(d);
-    times.forEach(t=>rows.push({therapist_id:thId,patient_name:name,patient_phone:'',appointment_date:ds,appointment_time:t+':00',type:'return',service:name,note:'event:'+eid,status:'confirmed',therapist_name:thId==null?'全部':thName(thId)}));
+    times.forEach(t=>rows.push({therapist_id:thId,patient_name:name,patient_phone:'',appointment_date:ds,appointment_time:t+':00',type:'return',service:name,note:'event:'+eid,status:'confirmed',therapist_name:thId==null?'全部':thName(thId,evf.c)}));
     d.setDate(d.getDate()+1);
   }
-  const {error}=await sb.from('appointments').insert(rows);
+  lastC=evf.c;
+  const {error}=await SB[evf.c].from('appointments').insert(rows);
   if(error){ toast('標記失敗：'+error.message); return; }
   invalidate(); closeSheet(); toast('已標記'+name); curDate=parseDate(evf.date); if(curTab==='today')renderToday(); else if(curTab==='week')renderWeek();
 }
 
 /* ============ 病人詳情 ============ */
 async function openPatient(p){
-  openSheet(`<h2>${esc(p.name)}</h2><div class="sub">${esc(p.phone||'（無電話）')}</div>
+  const c=p._c||pickC();
+  openSheet(`<h2>${esc(p.name)}<span class="cbadge" style="background:${cl(c).color}">${cl(c).name}</span></h2><div class="sub">${esc(p.phone||'（無電話）')}</div>
     ${p.first_visit?`<div class="row-info"><span class="k">初診日</span><span class="v">${esc(p.first_visit)}</span></div>`:''}
     ${p.body_parts&&p.body_parts.length?`<div class="row-info"><span class="k">不適部位</span><span class="v">${esc(p.body_parts.join('、'))}</span></div>`:''}
     ${p.note?`<div class="row-info"><span class="k">備註</span><span class="v">${esc(p.note)}</span></div>`:''}
     <div id="pHistory"><div class="spinner"></div></div>`);
   try{
-    const {data}=await guard(sb.from('appointments').select('appointment_date,appointment_time,therapist_id,type,service,status,patient_name,patient_phone').or(`patient_phone.eq.${p.phone},patient_name.eq.${p.name}`).order('appointment_date',{ascending:false}).limit(200));
-    const rows=(data||[]).filter(a=>!isEvent(a));
+    const {data}=await guard(SB[c].from('appointments').select('appointment_date,appointment_time,therapist_id,type,service,status,patient_name,patient_phone').or(`patient_phone.eq.${p.phone},patient_name.eq.${p.name}`).order('appointment_date',{ascending:false}).limit(200));
+    const rows=tag(data,c).filter(a=>!isEvent(a));
     const groups=groupAppts(rows.filter(a=>a.status==='confirmed'));
     const box=$('pHistory'); if(!box)return;
     box.innerHTML=`<div style="margin:16px 0 8px;font-weight:600">就診紀錄 · 共 ${groups.length} 次</div>`+
-      (groups.length?groups.slice(0,40).map(g=>{const a=g[0];return `<div class="row-info"><span class="k">${a.appointment_date}</span><span class="v">${hm(a.appointment_time)} · ${esc(thName(a.therapist_id))} · ${g.length*30}分</span></div>`;}).join(''):'<div class="sub">尚無就診紀錄</div>');
+      (groups.length?groups.slice(0,40).map(g=>{const a=g[0];return `<div class="row-info"><span class="k">${a.appointment_date}</span><span class="v">${hm(a.appointment_time)} · ${esc(thName(a.therapist_id,c))} · ${g.length*30}分</span></div>`;}).join(''):'<div class="sub">尚無就診紀錄</div>');
   }catch(e){}
 }
 
 /* ============ 綁定 & 啟動 ============ */
 $('loginBtn').addEventListener('click',doLogin);
-$('pwd').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+applyTheme();
 $('refreshBtn').addEventListener('click',()=>{invalidate();switchTab(curTab);toast('已重新整理');});
 $('fab').addEventListener('click',()=>openNew(fmtDate(curDate),''));
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
-window.addEventListener('load',()=>{ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); } });
+window.addEventListener('load',()=>{ if('serviceWorker' in navigator&&!/app2\.html/.test(location.pathname)){ navigator.serviceWorker.register('sw.js').catch(()=>{}); } });
 tryEnter();
 </script>
 </body>

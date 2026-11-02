@@ -363,7 +363,7 @@ const byTime=(a,b)=>a.appointment_time.localeCompare(b.appointment_time)||a._c.l
 async function loadTherapists(){
   const out=[]; schedules={}; customSlots={};
   for(const c of CKEYS){
-    const {data}=await guard(SB[c].from('therapists').select('*').order('id'));
+    const {data}=await guard(SB[c].from('therapists').select('*').order('sort_order',{ascending:true,nullsFirst:false}).order('id'));
     out.push(...tag(data,c));
     const {data:sc}=await guard(SB[c].from('therapist_schedules').select('therapist_id,shifts,custom_slots'));
     schedules[c]={}; customSlots[c]={}; (sc||[]).forEach(s=>{schedules[c][s.therapist_id]=s.shifts||{}; customSlots[c][s.therapist_id]=s.custom_slots||null;});

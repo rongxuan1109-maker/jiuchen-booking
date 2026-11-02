@@ -1398,7 +1398,7 @@ async function loadData(){
   if(cached){
     appointments=cached.data;
     if(!therapists.length){
-      const{data:ths}=await sb.from('therapists').select('*').order('id');
+      const{data:ths}=await sb.from('therapists').select('*').order('sort_order',{ascending:true,nullsFirst:false}).order('id');
       if(ths)therapists=ths;
     }
     render();
@@ -1412,7 +1412,7 @@ async function loadData(){
   }
   // 無快取：治療師 & 預約同時查
   const[thRes,apptData]=await Promise.all([
-    therapists.length?Promise.resolve({data:therapists}):sb.from('therapists').select('*').order('id'),
+    therapists.length?Promise.resolve({data:therapists}):sb.from('therapists').select('*').order('sort_order',{ascending:true,nullsFirst:false}).order('id'),
     _fetchAppts(s,e,key)
   ]);
   if(thRes.data)therapists=thRes.data;
@@ -1571,7 +1571,7 @@ async function loadSchedules(){
 }
 
 async function openShiftScheduler(){   // 排班按鈕入口:直接開細格編輯器
-  if(!therapists.length){const{data}=await sb.from('therapists').select('*').order('id');if(data)therapists=data;}
+  if(!therapists.length){const{data}=await sb.from('therapists').select('*').order('sort_order',{ascending:true,nullsFirst:false}).order('id');if(data)therapists=data;}
   await loadSchedules();
   if(_shiftTid===null)_shiftTid=therapists[0]?therapists[0].id:1;
   openSlotScheduler();

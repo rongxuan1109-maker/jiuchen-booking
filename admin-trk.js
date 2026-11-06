@@ -534,7 +534,7 @@ window.rcptEnsureStyle=function(){
       '#a6print .rcpt-doc h1{font-size:21px;margin-bottom:4px}'+
       '#a6print .rcpt-doc .rlic,#a6print .rcpt-doc .rdt{font-size:13px;margin:1px 0}'+
       '#a6print .rcpt-doc .rdt input{font-size:15px !important}'+
-      '#a6print .rcpt-doc .rlogo{height:52px}'+
+      '#a6print .rcpt-doc .rlogo{height:68px;top:-2px}'+
       '#a6print .rcpt-doc .rbar{margin:4px 0}'+
       '#a6print .rcpt-doc h2{font-size:15px;margin:5px 0 3px}'+
       '#a6print .rcpt-doc .rinfo{font-size:17px;line-height:1.45;font-weight:600}'+

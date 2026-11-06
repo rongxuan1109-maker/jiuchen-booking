@@ -538,8 +538,10 @@ window.rcptEnsureStyle=function(){
       '#a6print .rcpt-doc h2{font-size:15px;margin:8px 0 5px}'+
       '#a6print .rcpt-doc .rinfo{font-size:17px;line-height:1.9;font-weight:600}'+
       '#a6print .rcpt-doc .rinfo input{font-size:17px !important;font-weight:600}'+
-      '#a6print .rcpt-doc .rinfo input{width:140px !important}'+
-      '#a6print .rcpt-doc .rinfo input:nth-of-type(2){width:215px !important}'+
+      '.rcpt-doc .rfld{display:inline-block;white-space:nowrap;margin-right:14px}'+   /* 欄位標籤跟值綁一起,換行只在欄位之間 */
+      '#a6print .rcpt-doc .rinfo .rfld{display:block}'+   /* 列印版三個欄位各自一行,放大後才不會擠出邊 */
+      '#a6print .rcpt-doc .rinfo input{width:150px !important}'+
+      '#a6print .rcpt-doc .rinfo .rfld:nth-of-type(2) input{width:230px !important}'+
       '#a6print .rcpt-doc input{font-size:14px !important}'+
       '#a6print .rcpt-doc table{font-size:14px}'+
       '#a6print .rcpt-doc th,#a6print .rcpt-doc td{padding:6px 9px}'+
@@ -597,7 +599,7 @@ window.trkReceiptBuild=async function(name,bd,pid,roc,now){
     '<div class="rdt">開立日期：民國 <input style="width:34px;text-align:center" value="'+(now.getFullYear()-1911)+'"> 年 <input style="width:24px;text-align:center" value="'+(now.getMonth()+1)+'"> 月 <input style="width:24px;text-align:center" value="'+now.getDate()+'"> 日</div></div>'+
     '<hr class="rbar">'+
     '<h2>一、個案基本資料</h2>'+
-    '<div class="rinfo">姓　　名：<input style="width:110px" value="'+String(name).replace(/"/g,'')+'">　出生年月日：<input style="width:150px" value="'+roc+'"><br>病歷號碼：<input style="width:110px" value="'+pid+'"></div>'+
+    '<div class="rinfo"><span class="rfld">姓　　名：<input style="width:110px" value="'+String(name).replace(/"/g,'')+'"></span><span class="rfld">出生年月日：<input style="width:150px" value="'+roc+'"></span><br><span class="rfld">病歷號碼：<input style="width:110px" value="'+pid+'"></span></div>'+
     '<h2>二、費用明細</h2>'+
     '<table><tr><th>費用明細</th><th class="cqt">數量</th><th class="cam">金額（元）</th></tr>'+body+
     '<tr class="rtot"><td>實收總計共</td><td class="cqt"></td><td class="cam rsum">$ <span id="rcptTotal">　</span></td></tr></table>'+

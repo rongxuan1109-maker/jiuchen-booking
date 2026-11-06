@@ -517,7 +517,9 @@ window.rcptEnsureStyle=function(){
       '.rcpt-doc .rlic,.rcpt-doc .rdt{font-size:12.5px;margin:4px 0;font-weight:600}'+
       '.rcpt-doc h2{font-size:14px;margin:12px 0 7px;font-weight:900}'+
       '.rcpt-doc .rinfo{font-size:12.5px;line-height:2.3;margin-left:6px}'+
-      '.rcpt-doc input{border:none;border-bottom:1px solid #c9bda9;font-size:12.5px;font-family:inherit;background:transparent}'+
+      '.rcpt-doc input{border:none !important;border-bottom:1px solid #c9bda9 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;padding:0 4px !important;font-size:12.5px;font-family:inherit}'+
+      /* 全域皮膚把 input 蓋成圓角實框(!important),收據要壓回底線;列印版連底線都拿掉,印出來只有字沒有框 */
+      '#a6print .rcpt-doc input{border:none !important}'+
       '.rcpt-doc table{width:100%;border-collapse:collapse;font-size:12px}'+
       '.rcpt-doc th,.rcpt-doc td{border:1px solid #574c3c;padding:6px 8px;text-align:left}'+
       '.rcpt-doc th{background:#faf6ee;font-weight:900}'+
@@ -527,8 +529,8 @@ window.rcptEnsureStyle=function(){
       '.rcpt-doc .rsub{font-size:10px;color:#7a6c57;font-weight:400}'+
       '.rcpt-doc td label{cursor:pointer;display:flex;align-items:center;gap:7px}'+
       '.rcpt-doc .rk{width:16px;height:16px;flex:none;margin:0;-webkit-appearance:checkbox;appearance:auto;accent-color:#b0541f;border-radius:0;background:none;border:none}'+
-      '.rcpt-doc .rqty{width:70%;text-align:center;border-bottom-style:dashed}'+
-      '.rcpt-doc .ramt{width:62%;border-bottom-style:dashed}'+
+      '.rcpt-doc .rqty{width:70%;text-align:center;border-bottom-style:dashed !important}'+
+      '.rcpt-doc .ramt{width:62%;border-bottom-style:dashed !important}'+
       '.rcpt-doc tr.rtot td{font-weight:900;font-size:14px;border-top:2px solid #574c3c}'+
       '.rcpt-doc tr.rtot .rsum{color:#b0541f}'+
       '.rcpt-doc .rsign td{height:108px;vertical-align:top;font-weight:700}'+

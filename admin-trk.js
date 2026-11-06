@@ -478,7 +478,9 @@ window.rcptPrint=function(){
   cl.querySelectorAll('.rk').forEach(function(ck){ ck.checked=false; ck.removeAttribute('checked'); });
   area.appendChild(cl);
   var st=document.createElement('style'); st.id='rcptPageStyle';
-  st.textContent='@page{size:A4;margin:12mm} #a6print .rcpt-doc{width:184mm;padding:0;box-shadow:none}';
+  /* 診所收據紙=A5(2026-11-06);一項都沒勾=印空白全表(11列塞不進A5)則用A4 */
+  st.textContent=anyChecked?'@page{size:A5;margin:8mm} #a6print .rcpt-doc{width:132mm;padding:0;box-shadow:none}'
+                           :'@page{size:A4;margin:12mm} #a6print .rcpt-doc{width:184mm;padding:0;box-shadow:none}';
   document.head.appendChild(st);
   document.body.classList.add('printing-card');
   var done=function(){ document.body.classList.remove('printing-card'); var x=document.getElementById('rcptPageStyle'); if(x)x.remove(); area.innerHTML=''; window.removeEventListener('afterprint',done); };
@@ -527,22 +529,27 @@ window.rcptEnsureStyle=function(){
       /* 全域皮膚把 input 蓋成圓角實框(!important),收據要壓回底線;列印版連底線都拿掉,印出來只有字沒有框 */
       '#a6print .rcpt-doc input{border:none !important}'+
       '#a6print .rcpt-doc .rk{display:none !important}'+   /* 列印版不印打勾方格,只留項目名稱 */
-      /* 列印版放大(2026-11-06 榮軒):字體整體加大、簽章區加高,螢幕開單畫面不動 */
-      '#a6print .rcpt-doc h1{font-size:28px;margin-bottom:14px}'+
-      '#a6print .rcpt-doc .rlic,#a6print .rcpt-doc .rdt{font-size:16px;margin:6px 0}'+
-      '#a6print .rcpt-doc .rlogo{height:72px}'+
-      '#a6print .rcpt-doc .rbar{margin:16px 0}'+
-      '#a6print .rcpt-doc h2{font-size:19px;margin:18px 0 10px}'+
-      '#a6print .rcpt-doc .rinfo{font-size:16px;line-height:2.4}'+
-      '#a6print .rcpt-doc input{font-size:16px !important}'+
-      '#a6print .rcpt-doc table{font-size:16px}'+
-      '#a6print .rcpt-doc th,#a6print .rcpt-doc td{padding:10px 12px}'+
-      '#a6print .rcpt-doc .rsub{font-size:12px}'+
-      '#a6print .rcpt-doc tr.rtot td{font-size:19px}'+
-      '#a6print .rcpt-doc .rsign td{height:180px;font-size:17px;padding:12px 14px}'+
-      '#a6print .rcpt-doc .rsign img{height:150px !important;margin:10px 20px 6px 0 !important}'+
-      '#a6print .rcpt-doc .rft{font-size:15px;margin-top:14px}'+
-      '#a6print .rcpt-doc .rnote{font-size:12px;margin-top:6px}'+
+      /* 列印版放大(2026-11-06 榮軒):A5 紙,字體加大(個人資料特別大)、簽章區加高,螢幕開單畫面不動 */
+      '#a6print .rcpt-doc h1{font-size:22px;margin-bottom:6px}'+
+      '#a6print .rcpt-doc .rlic,#a6print .rcpt-doc .rdt{font-size:13.5px;margin:2px 0}'+
+      '#a6print .rcpt-doc .rdt input{font-size:15px !important}'+
+      '#a6print .rcpt-doc .rlogo{height:52px}'+
+      '#a6print .rcpt-doc .rbar{margin:7px 0}'+
+      '#a6print .rcpt-doc h2{font-size:15px;margin:8px 0 5px}'+
+      '#a6print .rcpt-doc .rinfo{font-size:17px;line-height:1.9;font-weight:600}'+
+      '#a6print .rcpt-doc .rinfo input{font-size:17px !important;font-weight:600}'+
+      '#a6print .rcpt-doc .rinfo input{width:140px !important}'+
+      '#a6print .rcpt-doc .rinfo input:nth-of-type(2){width:215px !important}'+
+      '#a6print .rcpt-doc input{font-size:14px !important}'+
+      '#a6print .rcpt-doc table{font-size:14px}'+
+      '#a6print .rcpt-doc th,#a6print .rcpt-doc td{padding:6px 9px}'+
+      '#a6print .rcpt-doc tr.rsec td{padding:4px 9px}'+
+      '#a6print .rcpt-doc .rsub{font-size:10.5px}'+
+      '#a6print .rcpt-doc tr.rtot td{font-size:16px}'+
+      '#a6print .rcpt-doc .rsign td{height:100px;font-size:15px;padding:8px 11px}'+
+      '#a6print .rcpt-doc .rsign img{height:90px !important;margin:4px 8px 2px 0 !important}'+
+      '#a6print .rcpt-doc .rft{font-size:12.5px;margin-top:6px}'+
+      '#a6print .rcpt-doc .rnote{font-size:10.5px;margin-top:3px}'+
       '.rcpt-doc table{width:100%;border-collapse:collapse;font-size:12px}'+
       '.rcpt-doc th,.rcpt-doc td{border:1px solid #574c3c;padding:6px 8px;text-align:left}'+
       '.rcpt-doc th{background:#faf6ee;font-weight:900}'+

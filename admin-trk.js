@@ -539,7 +539,8 @@ window.rcptEnsureStyle=function(){
       '#a6print .rcpt-doc .rinfo{font-size:17px;line-height:1.9;font-weight:600}'+
       '#a6print .rcpt-doc .rinfo input{font-size:17px !important;font-weight:600}'+
       '.rcpt-doc .rfld{display:inline-block;white-space:nowrap;margin-right:14px}'+   /* 欄位標籤跟值綁一起,換行只在欄位之間 */
-      '#a6print .rcpt-doc .rinfo .rfld{display:block}'+   /* 列印版三個欄位各自一行,放大後才不會擠出邊 */
+      '#a6print .rcpt-doc .rinfo .rfld{display:block}'+
+      '#a6print .rcpt-doc .rinfo br{display:none}'+   /* 列印版三個欄位各自一行,放大後才不會擠出邊 */
       '#a6print .rcpt-doc .rinfo input{width:150px !important}'+
       '#a6print .rcpt-doc .rinfo .rfld:nth-of-type(2) input{width:230px !important}'+
       '#a6print .rcpt-doc input{font-size:14px !important}'+

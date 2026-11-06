@@ -479,8 +479,9 @@ window.rcptPrint=function(){
   area.appendChild(cl);
   var st=document.createElement('style'); st.id='rcptPageStyle';
   /* 診所收據紙=A5(2026-11-06);一項都沒勾=印空白全表(11列塞不進A5)則用A4 */
-  st.textContent=anyChecked?'@page{size:A5;margin:8mm} #a6print .rcpt-doc{width:132mm;padding:0;box-shadow:none}'
-                           :'@page{size:A4;margin:12mm} #a6print .rcpt-doc{width:184mm;padding:0;box-shadow:none}';
+  /* 寬度不寫死:Safari 不吃 @page 的紙張/邊界,會用自己的預設邊界,寫死 132mm 會溢出 → 改成填滿可印範圍、最多 132mm */
+  st.textContent=anyChecked?'@page{size:A5;margin:8mm} body.printing-card #a6print{left:0;right:0;width:auto} #a6print .rcpt-doc{width:auto;max-width:132mm;padding:0;box-shadow:none}'
+                           :'@page{size:A4;margin:12mm} body.printing-card #a6print{left:0;right:0;width:auto} #a6print .rcpt-doc{width:auto;max-width:184mm;padding:0;box-shadow:none}';
   document.head.appendChild(st);
   document.body.classList.add('printing-card');
   var done=function(){ document.body.classList.remove('printing-card'); var x=document.getElementById('rcptPageStyle'); if(x)x.remove(); area.innerHTML=''; window.removeEventListener('afterprint',done); };

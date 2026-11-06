@@ -469,7 +469,13 @@ window.rcptPrint=function(){
   });
   var area=document.getElementById('a6print')||(function(){var d=document.createElement('div');d.id='a6print';document.body.appendChild(d);return d;})();
   area.innerHTML=''; var cl=src.cloneNode(true);
-  cl.querySelectorAll('.rk').forEach(function(ck){ ck.checked=false; ck.removeAttribute('checked'); });  /* 列印版勾選一律空格,打勾只是開單時的操作開關 */
+  /* 列印版只留有勾選的項目列;沒勾的整列不印。一個都沒勾就印空白全表。空掉的分類標題(甲/乙)也一併拿掉 */
+  var anyChecked=Array.prototype.some.call(src.querySelectorAll('.rk'),function(ck){return ck.checked;});
+  if(anyChecked){
+    cl.querySelectorAll('tr').forEach(function(tr){ var ck=tr.querySelector('.rk'); if(ck&&!ck.checked)tr.remove(); });
+    cl.querySelectorAll('tr.rsec').forEach(function(tr){ var nx=tr.nextElementSibling; if(!nx||!nx.querySelector('.rk'))tr.remove(); });
+  }
+  cl.querySelectorAll('.rk').forEach(function(ck){ ck.checked=false; ck.removeAttribute('checked'); });
   area.appendChild(cl);
   var st=document.createElement('style'); st.id='rcptPageStyle';
   st.textContent='@page{size:A4;margin:12mm} #a6print .rcpt-doc{width:184mm;padding:0;box-shadow:none}';

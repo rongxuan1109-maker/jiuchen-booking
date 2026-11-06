@@ -530,13 +530,13 @@ window.rcptEnsureStyle=function(){
       '#a6print .rcpt-doc input{border:none !important}'+
       '#a6print .rcpt-doc .rk{display:none !important}'+   /* 列印版不印打勾方格,只留項目名稱 */
       /* 列印版放大(2026-11-06 榮軒):A5 紙,字體加大(個人資料特別大)、簽章區加高,螢幕開單畫面不動 */
-      '#a6print .rcpt-doc h1{font-size:22px;margin-bottom:6px}'+
-      '#a6print .rcpt-doc .rlic,#a6print .rcpt-doc .rdt{font-size:13.5px;margin:2px 0}'+
+      '#a6print .rcpt-doc h1{font-size:21px;margin-bottom:4px}'+
+      '#a6print .rcpt-doc .rlic,#a6print .rcpt-doc .rdt{font-size:13px;margin:1px 0}'+
       '#a6print .rcpt-doc .rdt input{font-size:15px !important}'+
       '#a6print .rcpt-doc .rlogo{height:52px}'+
-      '#a6print .rcpt-doc .rbar{margin:7px 0}'+
-      '#a6print .rcpt-doc h2{font-size:15px;margin:8px 0 5px}'+
-      '#a6print .rcpt-doc .rinfo{font-size:17px;line-height:1.9;font-weight:600}'+
+      '#a6print .rcpt-doc .rbar{margin:4px 0}'+
+      '#a6print .rcpt-doc h2{font-size:15px;margin:5px 0 3px}'+
+      '#a6print .rcpt-doc .rinfo{font-size:17px;line-height:1.45;font-weight:600}'+
       '#a6print .rcpt-doc .rinfo input{font-size:17px !important;font-weight:600}'+
       '.rcpt-doc .rfld{display:inline-block;white-space:nowrap;margin-right:14px}'+   /* 欄位標籤跟值綁一起,換行只在欄位之間 */
       '#a6print .rcpt-doc .rinfo .rfld{display:block}'+
@@ -545,14 +545,14 @@ window.rcptEnsureStyle=function(){
       '#a6print .rcpt-doc .rinfo .rfld:nth-of-type(2) input{width:230px !important}'+
       '#a6print .rcpt-doc input{font-size:14px !important}'+
       '#a6print .rcpt-doc table{font-size:14px}'+
-      '#a6print .rcpt-doc th,#a6print .rcpt-doc td{padding:6px 9px}'+
-      '#a6print .rcpt-doc tr.rsec td{padding:4px 9px}'+
+      '#a6print .rcpt-doc th,#a6print .rcpt-doc td{padding:4px 9px}'+
+      '#a6print .rcpt-doc tr.rsec td{padding:3px 9px}'+
       '#a6print .rcpt-doc .rsub{font-size:10.5px}'+
       '#a6print .rcpt-doc tr.rtot td{font-size:16px}'+
-      '#a6print .rcpt-doc .rsign td{height:100px;font-size:15px;padding:8px 11px}'+
-      '#a6print .rcpt-doc .rsign img{height:90px !important;margin:4px 8px 2px 0 !important}'+
-      '#a6print .rcpt-doc .rft{font-size:12.5px;margin-top:6px}'+
-      '#a6print .rcpt-doc .rnote{font-size:10.5px;margin-top:3px}'+
+      '#a6print .rcpt-doc .rsign td{height:176px;font-size:15px;padding:8px 11px}'+   /* 格子接近正方形(寬約66mm),章是正方形 */
+      '#a6print .rcpt-doc .rsign img{height:140px !important;margin:4px 10px 0 0 !important}'+
+      '#a6print .rcpt-doc .rft{font-size:12.5px;margin-top:4px}'+
+      '#a6print .rcpt-doc .rnote{font-size:10.5px;margin-top:2px}'+
       '.rcpt-doc table{width:100%;border-collapse:collapse;font-size:12px}'+
       '.rcpt-doc th,.rcpt-doc td{border:1px solid #574c3c;padding:6px 8px;text-align:left}'+
       '.rcpt-doc th{background:#faf6ee;font-weight:900}'+

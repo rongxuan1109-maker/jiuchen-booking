@@ -400,18 +400,24 @@ textarea.input { display: block; width: 100%; resize: vertical; }
 }
 
 /* 先後(2026-11-25 榮軒追加):先做 = 左邊一條紅色細條;慢慢來 = 整張淡一點;一般照常。 */
-/* 紅條用內陰影畫在卡片裡面,會跟著圓角彎,不會凸出去 */
-.card.p-first { box-shadow: inset 4px 0 0 #e5484d; }
-.card.p-first.is-open { box-shadow: inset 4px 0 0 #e5484d, 0 4px 18px rgba(22, 24, 29, 0.06); }
-.card.p-later:not(.is-open) { background: var(--soft); border-color: var(--line-soft); border-style: dashed; }
-.card.p-later:not(.is-open) .tile { filter: grayscale(1); opacity: 0.45; }
-.card.p-later:not(.is-open) .c-title { color: var(--ink-3); font-weight: 500; }
-.card.p-later:not(.is-open) .c-next { color: #9aa0ab; }
+/* 先後三級(榮軒:要一眼分得出、慢慢來不可以變淡):三級都是正常亮度的白卡片,左邊一條該級顏色的細條(內陰影,跟著圓角彎)。
+   先做紅、一般藍、慢慢來綠(黃綠,跟九辰的青綠分得開)。完成和擱置沒有細條、照舊比較淡。 */
+:root { --p0: #e5484d; --p1: #3b82f6; --p2: #65a30d; }
+.card.p-0 { box-shadow: inset 4px 0 0 var(--p0); }
+.card.p-1 { box-shadow: inset 4px 0 0 var(--p1); }
+.card.p-2 { box-shadow: inset 4px 0 0 var(--p2); }
+.card.p-0.is-open { box-shadow: inset 4px 0 0 var(--p0), 0 4px 18px rgba(22, 24, 29, 0.06); }
+.card.p-1.is-open { box-shadow: inset 4px 0 0 var(--p1), 0 4px 18px rgba(22, 24, 29, 0.06); }
+.card.p-2.is-open { box-shadow: inset 4px 0 0 var(--p2), 0 4px 18px rgba(22, 24, 29, 0.06); }
+/* 每段上面的小標題 */
+.grp { display: flex; align-items: center; gap: 8px; margin: 6px 0 -2px; padding-left: 4px; font-size: var(--fs-sm); font-weight: 650; color: var(--ink-2); }
+.grp:first-child { margin-top: 0; }
+.grp-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.grp-0 .grp-dot { background: var(--p0); }
+.grp-1 .grp-dot { background: var(--p1); }
+.grp-2 .grp-dot { background: var(--p2); }
+.grp-n { font-family: var(--font-num); font-weight: 600; color: var(--ink-3); }
 .c-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.pri-tag {
-  flex: none; display: inline-grid; place-items: center; height: 20px; padding: 0 6px; border-radius: 6px;
-  background: #e7e9ee; color: var(--ink-2); font-size: 13px; font-weight: 600; line-height: 1;
-}
 /* 先後的三顆小膠囊(按得到的範圍還是 44 高,看起來的膠囊比較小) */
 .pri-row { display: flex; flex-wrap: wrap; gap: 4px 8px; width: 100%; margin-top: 4px; }
 .pri-pill { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0; border: 0; background: transparent; cursor: pointer; }
@@ -420,13 +426,13 @@ textarea.input { display: block; width: 100%; resize: vertical; }
   border: 1.5px solid currentColor; font-size: var(--fs-sm); font-weight: 600; line-height: 1; white-space: nowrap;
 }
 .pri-0 { color: #d93036; }
-.pri-1 { color: #6b707b; }
-.pri-2 { color: #3d6bb8; }
-.pri-2 .pill { border-color: #a9c3ee; }
+.pri-1 { color: #2563eb; }
+.pri-2 { color: #4d7c0f; }
+.pri-2 .pill { border-color: var(--p2); }
 .pri-pill.is-on .pill { color: #ffffff; }
 .pri-0.is-on .pill { background: #d93036; border-color: #d93036; }
-.pri-1.is-on .pill { background: #6b707b; border-color: #6b707b; }
-.pri-2.is-on .pill { background: #3d6bb8; border-color: #3d6bb8; }
+.pri-1.is-on .pill { background: #2563eb; border-color: #2563eb; }
+.pri-2.is-on .pill { background: #4d7c0f; border-color: #4d7c0f; }
 .pri-pill:focus-visible { outline-offset: 0; }
 .form .pri-row { margin-top: 0; }
 .done-line .ic { color: var(--ok); }
@@ -434,7 +440,6 @@ textarea.input { display: block; width: 100%; resize: vertical; }
 /* 極簡版(2026-11-25 榮軒):收合時標題下面淡灰一行筆記、一條細進度條;展開後五格進度、筆記、先後、小字按鈕 */
 .c-prog { display: block; height: 4px; margin-top: 6px; border-radius: 4px; background: var(--line-soft); overflow: hidden; max-width: 100%; }
 .c-prog i { display: block; height: 100%; border-radius: 4px; background: var(--ok); }
-.card.p-later:not(.is-open) .c-prog i { background: #9aa0ab; }
 .pct-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding-top: 4px; }
 .pct {
   min-height: var(--tap); border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
@@ -1268,14 +1273,14 @@ function viewCard(m) {
   var open = state.openId === m.id;
   var closed = isClosed(m);
   var cls = "card" + (open ? " is-open" : "") + (closed ? " is-closed" : "") + (m.status === ST_REVIEW ? " is-review" : "") +
-    (!closed && m.priority === PRI_FIRST ? " p-first" : !closed && m.priority === PRI_LATER ? " p-later" : "");
+    (closed ? "" : " p-" + priRank(m.priority));
   var id = esc(m.id);
   var head = '<button class="card-head" type="button" data-act="toggle" data-id="' + id + '" aria-expanded="' + open + '">';
   var unknown = m.known ? "" : '<span class="flag">狀態看不懂</span>';
   var h = '<article class="' + cls + '" data-key="card-' + id + '" data-id="' + id + '" data-priority="' + esc(m.priority) + '"><div class="row">';
   var single = m.clinics.length <= 1 ? " c-" + ckey(m.clinics[0] || "其他") : "";
   h += head + '<span class="tile' + single + '"' + tileStyle(m.clinics) + ' role="img" aria-label="' + esc((m.clinics.length ? m.clinics : ["其他"]).join("、")) + '">' + todoIcon(m.icon) + "</span>" +
-    '<span class="c-text"><span class="c-line">' + (!closed && m.priority === PRI_LATER ? '<span class="pri-tag" aria-hidden="true">慢</span>' : "") +
+    '<span class="c-text"><span class="c-line">' +
     '<span class="c-title">' + esc(m.title) + "</span></span>" + unknown +
     (m.note ? '<span class="c-next">' + esc(m.note.replace(/\s+/g, " ")) + "</span>" : "") +
     (!closed ? '<span class="c-prog" role="img" aria-label="進度 ' + m.progress + '%"><i style="width:' + m.progress + '%"></i></span>' : "") +
@@ -1420,7 +1425,16 @@ function viewApp() {
     return priRank(a.priority) - priRank(b.priority) || idNumber(a.id) - idNumber(b.id) || (a.id < b.id ? -1 : 1);
   });
   h += '<main class="cards" data-key="cards" id="cards">';
-  if (active.length) h += active.map(viewCard).join("");
+  /* 分三段(榮軒:三種要自動排順序、一眼分得出):先做、一般、慢慢來各一段,段上面一個小標題;沒有件數的那段不顯示 */
+  if (active.length) {
+    PRIORITIES.forEach(function (p) {
+      var group = active.filter(function (m) { return m.priority === p; });
+      if (!group.length) return;
+      var r = priRank(p);
+      h += '<h2 class="grp grp-' + r + '" data-key="grp-' + r + '" data-group="' + esc(p) + '"><i class="grp-dot" aria-hidden="true"></i><span>' + esc(p) + '</span><span class="grp-n">' + group.length + "</span></h2>";
+      h += group.map(viewCard).join("");
+    });
+  }
   else h += '<p class="none pad" data-key="none-active">' + (state.filter ? "這一家沒有還在進行的待辦。" : "沒有還在進行的待辦。") + "</p>";
   h += "</main>";
   h += viewShelf("done", "完成", "check", seen.filter(function (m) { return m.status === ST_DONE; }));

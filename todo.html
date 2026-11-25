@@ -1,0 +1,2345 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>診所待辦</title>
+<style>
+/* 版面:單欄清單,內容最寬 880。由上到下是一排數字(點了可以篩選「等誰的」)、哪一家的篩選、
+   一件一行的清單,完成和擱置收在最下面,最後是「最近改了什麼」。
+   顏色照極簡風格:白底、細邊框,藍色只留給「主要動作」和「球在我手上」。 */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-soft: #f3f6f4;
+  --panel: #ffffff;
+  --line: #e0e3eb;
+  --line-soft: #f0f3fa;
+  --line-strong: #c3c8d4;
+  --ink: #131722;
+  --ink-2: #434651;
+  --ink-3: #636874;
+  --accent: #2962ff;
+  --accent-strong: #1e4fd6;
+  --accent-ink: #1e4fd6;
+  --accent-soft: #e8f0ff;
+  --on-accent: #ffffff;
+  --ok: #067a67;
+  --ok-soft: #e3f4ef;
+  --warn: #8a5300;
+  --warn-soft: #fdf1dc;
+  --bad: #b3261e;
+  --bad-bg: #b3261e;
+  --shadow: 0 1px 2px rgba(19, 23, 34, 0.05);
+  --shadow-lg: 0 6px 24px rgba(19, 23, 34, 0.18);
+
+  --font: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Heiti TC", sans-serif;
+  --font-num: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --fs-cap: 13px;
+  --fs-sm: 14px;
+  --fs: 15px;
+  --fs-title: 16px;
+  --fs-h1: 20px;
+  --fs-num: 24px;
+  --tap: 44px;
+  --r: 10px;
+}
+/* 榮軒 2026-11-25 指定:白色背景。所以這一頁固定用淺色,不跟著裝置或瀏覽器的深色模式變。 */
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--fs);
+  line-height: 1.6;
+  line-break: strict;
+}
+[hidden] { display: none !important; }
+h1, h2, h3, p, ul { margin: 0; padding: 0; }
+ul { list-style: none; }
+button, input, textarea, select { font: inherit; color: inherit; margin: 0; }
+button { -webkit-tap-highlight-color: transparent; appearance: none; -webkit-appearance: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app {
+  max-width: 880px;
+  margin: 0 auto;
+  padding-block: 16px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+#root { display: flex; flex-direction: column; gap: 12px; }
+
+/* 圖示 */
+.ic {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ic .fill { fill: currentColor; }
+.ic .on-fill { stroke: var(--panel); stroke-width: 2; }
+
+/* 最上面 */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: var(--tap); }
+.brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.brand-mark { width: 26px; height: 26px; color: var(--accent-ink); }
+h1 { font-size: var(--fs-h1); font-weight: 650; line-height: 1.3; letter-spacing: 0.02em; white-space: nowrap; }
+.top-right { display: flex; align-items: center; gap: 4px; flex: none; }
+.who-btn { padding: 0 10px; color: var(--ink-2); }
+.h2 { display: flex; align-items: center; gap: 8px; font-size: var(--fs); font-weight: 600; line-height: 1.4; }
+.h2 .ic { color: var(--ink-3); }
+
+/* 按鈕 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  white-space: nowrap;
+  cursor: pointer;
+}
+@media (hover: hover) { .btn:hover { background: var(--line-soft); } }
+.btn .ic { width: 18px; height: 18px; }
+.btn.line { border-color: var(--line); background: var(--panel); }
+@media (hover: hover) { .btn.line:hover { border-color: var(--line-strong); } }
+.btn.primary { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+@media (hover: hover) { .btn.primary:hover { background: var(--accent-strong); } }
+.btn.more { align-self: flex-start; padding-left: 6px; color: var(--ink-3); }
+.btn.small { align-self: flex-start; padding: 0 12px; }
+.linkbtn {
+  min-height: var(--tap);
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--accent-ink);
+  font-size: var(--fs-cap);
+  cursor: pointer;
+}
+.icon-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+@media (hover: hover) { .icon-btn:hover { background: var(--line-soft); } }
+.icon-btn .ic { width: 18px; height: 18px; }
+
+/* 提醒 */
+.note { display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; border-radius: 8px; font-size: var(--fs-cap); line-height: 1.5; }
+.note .ic { width: 18px; height: 18px; margin-top: 1px; }
+.note-demo { background: var(--accent-soft); color: var(--accent-ink); }
+.note-stale { background: var(--warn-soft); color: var(--warn); }
+.note-edit { background: var(--warn-soft); color: var(--warn); margin-bottom: 12px; }
+.loading { color: var(--ink-3); font-size: var(--fs-sm); padding: 24px 2px; }
+.down {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 24px 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.down-art { width: 36px; height: 36px; color: var(--warn); }
+.down-text { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.down-title { font-size: var(--fs-title); font-weight: 600; line-height: 1.4; }
+.down-sub { font-size: var(--fs-sm); color: var(--ink-2); }
+
+/* 輸入密碼、選我是誰 */
+.gate { max-width: 460px; }
+.who-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.who-pick { flex: 1 1 120px; min-height: 52px; font-size: var(--fs); }
+.who-pick.is-on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+
+/* 一排數字(也是「等誰的」篩選) */
+.counts { display: flex; flex-direction: column; gap: 2px; }
+.count-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.count {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  min-height: var(--tap);
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+  text-align: left;
+  cursor: pointer;
+}
+@media (hover: hover) { .count:hover { border-color: var(--line-strong); } }
+.count.is-on { border-color: var(--accent); background: var(--accent-soft); }
+.count .num {
+  font-family: var(--font-num);
+  font-size: var(--fs-num);
+  font-weight: 600;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.count.is-mine .num { color: var(--accent-ink); }
+.count .lbl { display: flex; align-items: center; gap: 3px; font-size: var(--fs-cap); line-height: 1.4; color: var(--ink-2); white-space: nowrap; }
+.count .lbl .ic { width: 14px; height: 14px; color: var(--ink-3); }
+.count.is-mine .lbl .ic { color: var(--accent-ink); }
+.count-note { font-size: var(--fs-cap); color: var(--ink-3); padding-left: 2px; font-variant-numeric: tabular-nums; min-height: 24px; }
+
+/* 哪一家的篩選:排成一排,放不下就左右滑 */
+.filters {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.filters::-webkit-scrollbar { display: none; }
+.filters > .ic { width: 16px; height: 16px; color: var(--ink-3); margin-right: 2px; }
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: var(--tap);
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  white-space: nowrap;
+  cursor: pointer;
+}
+@media (hover: hover) { .chip:hover { background: var(--line-soft); } }
+.chip.is-on { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.chip.pick { border-color: var(--line); background: var(--panel); padding: 0 12px; }
+.chip.pick.is-on { border-color: var(--accent); background: var(--accent-soft); }
+.chip .ic { width: 16px; height: 16px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* 一件一行 */
+.cards { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); overflow: hidden; }
+.card + .card { border-top: 1px solid var(--line-soft); }
+.card.is-open { background: #fbfcfe; }
+.row { display: flex; align-items: stretch; }
+.done-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  min-height: var(--tap);
+  padding: 0 0 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--line-strong);
+  cursor: pointer;
+}
+.done-btn .ic { width: 26px; height: 26px; }
+@media (hover: hover) { .done-btn:hover { color: var(--ok); } }
+.done-btn.is-done { color: var(--ok); }
+.done-btn.is-shelved { color: var(--ink-3); cursor: default; }
+.done-btn.is-shelved .ic { width: 20px; height: 20px; }
+.card-head {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: var(--tap);
+  padding: 9px 12px 9px 4px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.r1 { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+.c-icon { flex: none; display: grid; place-items: center; width: 22px; height: 22px; color: var(--ink-3); }
+.c-icon .ic { width: 18px; height: 18px; }
+.card.is-mine .c-icon { color: var(--accent-ink); }
+.c-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fs-title);
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.c-ball {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 1px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  font-size: var(--fs-cap);
+  line-height: 1.6;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.c-ball .ic { width: 14px; height: 14px; }
+.c-ball.is-me { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.r2 { display: flex; align-items: center; gap: 8px; min-width: 0; padding-left: 28px; font-size: var(--fs-cap); line-height: 1.5; color: var(--ink-3); }
+.c-clinics { flex: none; white-space: nowrap; }
+.c-next { flex: 1 1 auto; min-width: 0; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.c-next.is-none { color: var(--ink-3); }
+.flag { flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 0 6px 0 3px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); white-space: nowrap; }
+.flag .ic { width: 14px; height: 14px; }
+.card.is-closed .c-title { color: var(--ink-2); font-weight: 500; }
+
+/* 展開的內容 */
+.card-detail { display: flex; flex-direction: column; padding: 0 14px 14px 50px; }
+.sec { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; }
+.sec + .sec { border-top: 1px solid var(--line-soft); }
+.sec-title { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: 600; line-height: 1.4; }
+.sec-title .ic { width: 18px; height: 18px; color: var(--ink-3); }
+.sec-note { margin-left: auto; font-size: var(--fs-cap); font-weight: 400; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.sec-sub { font-size: var(--fs-cap); color: var(--ink-3); }
+.none { font-size: var(--fs-sm); color: var(--ink-3); }
+.none.pad { padding: 20px 14px; }
+.plain { display: flex; flex-direction: column; gap: 10px; font-size: var(--fs); }
+.q { display: flex; flex-direction: column; gap: 6px; }
+.q-text { overflow-wrap: anywhere; }
+
+.steps { display: flex; flex-direction: column; }
+.step-row { display: flex; align-items: center; gap: 2px; }
+.step {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  padding: 4px 8px 4px 2px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  font-size: var(--fs);
+  line-height: 1.5;
+  cursor: pointer;
+}
+@media (hover: hover) { .step:hover { background: var(--line-soft); } }
+.step[disabled] { cursor: default; }
+@media (hover: hover) { .step[disabled]:hover { background: transparent; } }
+.step .ic { width: 22px; height: 22px; color: var(--line-strong); }
+.step.is-done .ic { color: var(--ok); }
+.step-text { min-width: 0; overflow-wrap: anywhere; }
+.step.is-done .step-text { color: var(--ink-3); text-decoration: line-through; }
+.step-edit { display: flex; flex-direction: column; gap: 8px; padding: 6px 0; }
+
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.input::placeholder { color: var(--ink-3); }
+.input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+textarea.input { display: block; width: 100%; resize: vertical; }
+.inline-form { display: flex; align-items: flex-start; gap: 8px; }
+.log-form { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+
+.log { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; }
+.log-item { display: flex; flex-direction: column; gap: 2px; }
+.log-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: var(--fs-cap); color: var(--ink-3); }
+.log-meta .ic { width: 16px; height: 16px; }
+.log-text { font-size: var(--fs); overflow-wrap: anywhere; white-space: pre-wrap; }
+.log-src { font-size: var(--fs-cap); color: var(--ink-3); overflow-wrap: anywhere; }
+
+.links { display: flex; flex-direction: column; gap: 10px; }
+.links li { display: flex; flex-direction: column; gap: 2px; }
+.link-name { font-size: var(--fs); overflow-wrap: anywhere; }
+.link-where { font-size: var(--fs-cap); color: var(--ink-3); overflow-wrap: anywhere; }
+.link-web { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--accent-ink); font-size: var(--fs); overflow-wrap: anywhere; }
+.due-text { display: flex; align-items: center; gap: 6px; font-size: var(--fs-sm); color: var(--ink-2); }
+.due-text .ic { width: 16px; height: 16px; color: var(--ink-3); }
+.quote-text { font-size: var(--fs-sm); color: var(--ink-2); overflow-wrap: anywhere; }
+.meta { font-size: var(--fs-cap); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.act-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.act-label { font-size: var(--fs-cap); color: var(--ink-3); }
+.act-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); overflow: hidden; }
+.seg-btn {
+  min-height: var(--tap);
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.seg-btn + .seg-btn { border-left: 1px solid var(--line); }
+@media (hover: hover) { .seg-btn:hover { background: var(--line-soft); } }
+.seg-btn.is-on { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.seg-btn:focus-visible { outline-offset: -2px; }
+
+/* 表單 */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px; }
+.form { display: flex; flex-direction: column; gap: 14px; }
+.card-detail > .form { padding: 12px 0 0; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: var(--fs-cap); font-weight: 600; color: var(--ink-2); }
+.field-hint { font-weight: 400; color: var(--ink-3); }
+.field-error { font-size: var(--fs-cap); color: var(--bad); }
+.form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.iconpick { display: flex; flex-wrap: wrap; gap: 8px; }
+.iconbtn {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+@media (hover: hover) { .iconbtn:hover { border-color: var(--line-strong); } }
+.iconbtn.is-on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+.iconbtn .ic { width: 22px; height: 22px; }
+.due-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.select-wrap { position: relative; display: inline-flex; }
+.select { flex: none; appearance: none; -webkit-appearance: none; padding-right: 34px; cursor: pointer; }
+.select-chev { position: absolute; right: 10px; top: 50%; width: 16px; height: 16px; margin-top: -8px; color: var(--ink-3); pointer-events: none; }
+
+/* 一件都沒有的時候 */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 28px 20px;
+  background: var(--panel);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r);
+}
+.art { width: 160px; height: 110px; max-width: 100%; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.art-line { stroke: var(--ink-2); }
+.art-soft { stroke: var(--line-strong); }
+.art-accent { stroke: var(--accent); }
+.empty-title { font-size: var(--fs-title); font-weight: 600; line-height: 1.4; }
+.empty-sub { font-size: var(--fs-sm); color: var(--ink-2); padding-bottom: 6px; }
+
+/* 最下面:完成的、擱置的、最近改了什麼 */
+.shelf { display: flex; flex-direction: column; gap: 6px; }
+.shelf-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+}
+@media (hover: hover) { .shelf-head:hover { background: var(--line-soft); } }
+.shelf-head > .ic:first-child { width: 18px; height: 18px; color: var(--ink-3); }
+.shelf-head .c-chev { margin-left: auto; color: var(--ink-3); transition: transform 0.15s ease; }
+.shelf.is-open > .shelf-head .c-chev { transform: rotate(180deg); }
+.shelf-n { font-variant-numeric: tabular-nums; font-weight: 600; }
+.changes { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--line); }
+.change-list { display: flex; flex-direction: column; }
+.change { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: 10px; row-gap: 2px; padding: 8px 0; }
+.change + .change { border-top: 1px solid var(--line-soft); }
+.ch-ic { grid-row: 1 / span 2; width: 18px; height: 18px; margin-top: 1px; color: var(--ink-3); }
+.ch-meta { display: flex; flex-wrap: wrap; gap: 0 10px; font-size: var(--fs-cap); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.ch-who { color: var(--ink-2); font-weight: 600; }
+.ch-what { display: flex; flex-direction: column; font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.ch-todo { color: var(--ink-2); }
+.foot { display: flex; justify-content: flex-start; padding-top: 4px; }
+
+/* 最下面跳出來的一句話(有時多一顆「復原」) */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: min(520px, calc(100% - 32px));
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  box-shadow: var(--shadow-lg);
+  z-index: 20;
+  pointer-events: none;
+}
+.toast.has-act { pointer-events: auto; padding: 4px 6px 4px 16px; }
+.toast.is-bad { background: var(--bad-bg); color: var(--on-accent); }
+.toast-btn {
+  flex: none;
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 手機寬度 */
+@media (max-width: 640px) {
+  .app { padding-block: 10px 80px; }
+  .card-detail { padding: 0 12px 12px; }
+  .act-status { flex: 1 1 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+<div class="app">
+  <div id="root">
+    <header class="top" data-key="top">
+      <div class="brand"><h1>診所待辦</h1></div>
+    </header>
+    <p class="loading" data-key="loading">正在打開診所待辦…</p>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script>
+(function () {
+"use strict";
+/* ===== icons.js ===== */
+/* 圖示:全部是畫在頁面裡的線條圖,不從外面載入。 */
+
+/* 待辦可以挑的圖示(名稱就是存進資料本的字)。第一個是預設。 */
+var TODO_ICONS = {
+  "記事": '<path d="M7 4h10a1 1 0 0 1 1 1v15H6V5a1 1 0 0 1 1-1z"/><path d="M9 9h6M9 13h6M9 17h3"/>',
+  "收據": '<path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21z"/><path d="M9 8h6M9 12h6"/>',
+  "通知": '<path d="M6 17v-6a6 6 0 0 1 12 0v6l1.5 2h-15z"/><path d="M10 21.5h4"/>',
+  "行事曆": '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/>',
+  "照護": '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  "招牌": '<path d="M3 4.500h18M8 4.500v3.500M16 4.500v3.500"/><rect x="4" y="8" width="16" height="10.500" rx="1.500"/><path d="M8 13.200h8"/>',
+  "立牌": '<rect x="8" y="3" width="8" height="13" rx="1"/><path d="M12 16v5M8 21h8M10.5 7h3M10.5 10h3"/>',
+  "電話": '<path d="M6 4h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4 6a2 2 0 0 1 2-2z"/>',
+  "人": '<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+  "錢": '<circle cx="12" cy="12" r="8"/><path d="M12 7v10M14.6 9.6c-.5-.9-1.5-1.4-2.6-1.4-1.5 0-2.6.8-2.6 1.9 0 2.6 5.2 1.2 5.2 3.8 0 1.1-1.1 1.9-2.6 1.9-1.2 0-2.2-.6-2.6-1.5"/>',
+  "工具": '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.2-.5-.5-2.2z"/>',
+  "點子": '<path d="M8.5 14a6 6 0 1 1 7 0c-.6.6-1 1.3-1 2h-5c0-.7-.4-1.4-1-2z"/><path d="M9.5 19h5M10.5 21.5h3"/>',
+  "採買": '<path d="M6 8h12l1 12H5z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/>',
+  "訊息": '<path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-7l-4 4v-4H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>'
+};
+var DEFAULT_ICON = "記事";
+
+/* 畫面上用的小圖示。 */
+var UI_ICONS = {
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  chevron: '<path d="M6 9l6 6 6-6"/>',
+  me: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+  claude: '<path d="M12 3v5M12 16v5M3 12h5M16 12h5M5.6 5.6l3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/>',
+  others: '<circle cx="9" cy="8.5" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5.6a3 3 0 0 1 0 5.8M17.5 14.4c2 .9 3.5 3 3.5 5.6"/>',
+  filter: '<path d="M4 6h16l-6 7v5l-4 2v-7z"/>',
+  steps: '<path d="M4 6.5l1.5 1.5L8 5.5M4 12.5l1.5 1.5L8 11.5M4 18.5l1.5 1.5L8 17.5M11 7h9M11 13h9M11 19h9"/>',
+  question: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 4 2c-.9.6-1.6 1.2-1.6 2.3M12 17h.01"/>',
+  log: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13 7l4 4"/>',
+  file: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
+  due: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>',
+  quote: '<path d="M5 6h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-8l-4 4v-4H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/>',
+  history: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4 9.5"/><path d="M4 5v4.5h4.5M12 8v4.5l3 1.8"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/>',
+  shelve: '<path d="M4 6h16v4H4z"/><path d="M6 10v9h12v-9M10 14h4"/>',
+  back: '<path d="M8 8l-4 4 4 4"/><path d="M4 12h11a4 4 0 0 1 0 8h-3"/>',
+  offline: '<path d="M7 18a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 9.5a4.25 4.25 0 0 1 1 8.4"/><path d="M4 4l16 16"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
+  book: '<rect x="6" y="3" width="13" height="18" rx="2"/><path d="M10 3v18M4 7.5h3.5M4 12h3.5M4 16.5h3.5"/><path d="M12.6 12.2l1.7 1.7 3-3.4"/>',
+  box: '<rect x="5" y="5" width="14" height="14" rx="3"/>',
+  boxOn: '<rect x="5" y="5" width="14" height="14" rx="3" class="fill"/><path d="M8.5 12.3l2.4 2.4 4.6-5" class="on-fill"/>',
+  stTodo: '<circle cx="12" cy="12" r="7"/>',
+  stDoing: '<circle cx="12" cy="12" r="7"/><path d="M12 5a7 7 0 0 1 0 14z" class="fill"/>',
+  stReview: '<circle cx="12" cy="12" r="7"/><path d="M9 12.2l2.1 2.1 3.9-4.2"/>',
+  stDone: '<circle cx="12" cy="12" r="7" class="fill"/><path d="M9 12.2l2.1 2.1 3.9-4.2" class="on-fill"/>',
+  circle: '<circle cx="12" cy="12" r="8.5"/>',
+  circleOn: '<circle cx="12" cy="12" r="8.5" class="fill"/><path d="M8.3 12.3l2.5 2.5 4.9-5.2" class="on-fill"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+  stShelved: '<path d="M5 7h14v3.5H5z"/><path d="M6.5 10.5V18h11v-7.5"/>'
+};
+
+function svg(body, cls) {
+  return '<svg class="ic' + (cls ? " " + cls : "") + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + body + "</svg>";
+}
+function uiIcon(name, cls) {
+  return svg(UI_ICONS[name] || "", cls);
+}
+function todoIcon(name, cls) {
+  return svg(TODO_ICONS[name] || TODO_ICONS[DEFAULT_ICON], cls);
+}
+
+/* 還沒有任何待辦時的插圖:一本攤開的本子和一支筆。 */
+var EMPTY_ART = '<svg class="art" viewBox="0 0 160 110" aria-hidden="true" focusable="false">' +
+  '<path class="art-soft" d="M22 92h116"/>' +
+  '<path class="art-line" d="M80 28c-12-7-28-8-46-4v56c18-4 34-3 46 4 12-7 28-8 46-4V24c-18-4-34-3-46 4z"/>' +
+  '<path class="art-line" d="M80 28v56"/>' +
+  '<path class="art-soft" d="M44 40c9-1.500 18-.800 26 2M44 52c9-1.500 18-.800 26 2M44 64c7-1.200 13-.900 19 .600"/>' +
+  '<path class="art-accent" d="M92 43l4 4 8-9"/>' +
+  '<path class="art-soft" d="M110 41h8M92 56h26M92 67h18"/>' +
+  '<path class="art-accent" d="M131 52l12-12 5 5-12 12-6.500 1.500z"/>' +
+  '<path class="art-soft" d="M30 14v6M27 17h6M140 78v6M137 81h6"/>' +
+  "</svg>";
+
+/* ===== morph.js ===== */
+/* 把新算出來的畫面「對」到現在的畫面上:只動有變的地方。
+   這樣別的裝置改了東西、畫面跟著更新時,正在打字的那一格不會被洗掉。 */
+
+function nodeKey(n) {
+  return n.nodeType === 1 ? (n.getAttribute("data-key") || n.id || "") : "";
+}
+
+function sameKind(a, b) {
+  return a.nodeType === b.nodeType && a.nodeName === b.nodeName;
+}
+
+function morphNode(o, n) {
+  if (o.nodeType !== 1) {
+    if (o.nodeValue !== n.nodeValue) o.nodeValue = n.nodeValue;
+    return;
+  }
+  var i, a;
+  var oa = o.attributes;
+  var na = n.attributes;
+  for (i = oa.length - 1; i >= 0; i--) {
+    a = oa[i];
+    if (!n.hasAttribute(a.name)) o.removeAttribute(a.name);
+  }
+  for (i = 0; i < na.length; i++) {
+    a = na[i];
+    if (o.getAttribute(a.name) !== a.value) o.setAttribute(a.name, a.value);
+  }
+  var tag = o.nodeName;
+  if (tag === "INPUT" || tag === "TEXTAREA") {
+    /* 正在打字的那一格不碰。 */
+    if (o !== document.activeElement) {
+      var v = tag === "INPUT" ? (n.getAttribute("value") || "") : n.value;
+      if (o.value !== v) o.value = v;
+    }
+    return;
+  }
+  morphChildren(o, n);
+  if (tag === "SELECT" && o !== document.activeElement) {
+    var want = n.getAttribute("data-value") || "";
+    if (o.value !== want) o.value = want;
+  }
+}
+
+function morphChildren(oldParent, newParent) {
+  var keyed = {};
+  var c = oldParent.firstChild;
+  while (c) {
+    var ck = nodeKey(c);
+    if (ck) keyed[ck] = c;
+    c = c.nextSibling;
+  }
+  var cur = oldParent.firstChild;
+  var n = newParent.firstChild;
+  while (n) {
+    var nextNew = n.nextSibling;
+    var k = nodeKey(n);
+    var match = null;
+    if (k) {
+      if (keyed[k] && sameKind(keyed[k], n)) {
+        match = keyed[k];
+        keyed[k] = null;
+      }
+    } else {
+      var s = cur;
+      while (s && (nodeKey(s) || !sameKind(s, n))) s = s.nextSibling;
+      match = s || null;
+    }
+    if (match) {
+      if (match === cur) cur = cur.nextSibling;
+      else oldParent.insertBefore(match, cur);
+      morphNode(match, n);
+    } else {
+      oldParent.insertBefore(n, cur);
+    }
+    n = nextNew;
+  }
+  while (cur) {
+    var after = cur.nextSibling;
+    oldParent.removeChild(cur);
+    cur = after;
+  }
+}
+
+function morphInto(root, html) {
+  var active = document.activeElement;
+  var sel = null;
+  if (active && root.contains(active) && typeof active.selectionStart === "number") {
+    sel = [active.selectionStart, active.selectionEnd];
+  }
+  var tpl = document.createElement("template");
+  tpl.innerHTML = html;
+  morphChildren(root, tpl.content);
+  if (active && active !== document.activeElement && root.contains(active)) {
+    try {
+      active.focus({ preventScroll: true });
+      if (sel) active.setSelectionRange(sel[0], sel[1]);
+    } catch (e) { /* 有些輸入格不能設定游標位置,不影響使用 */ }
+  }
+}
+
+/* ===== platform-supabase.js ===== */
+/* 正式頁(todo.html)和測試頁(todo-test.html)的「讀寫資料那一層」:
+   透過九辰資料庫裡的「待辦窗口」讀寫。每次呼叫都附上這台裝置記住的待辦密碼。
+   第 1 段只寫好樣子、不連線、不測;第 2 段才把網址和一般鑰匙填進來(見 build.py 和「資料格式.md」)。
+   不載入任何外部程式,直接用網址呼叫資料庫。 */
+
+var SB_URL = "https://vmkdawpukwpsifqguljy.supabase.co";          /* 九辰資料庫的網址,第 2 段填 */
+var SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZta2Rhd3B1a3dwc2lmcWd1bGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjE2MDUsImV4cCI6MjA5NTQzNzYwNX0.hq8rbjKe3NOUhV1sbViBtuQLSzQuWCnK1_4QSrCy2xM";    /* 九辰網站本來就公開的那把一般鑰匙,第 2 段填 */
+var SB_PREFIX = "todo_";        /* 正式頁是 todo_,測試頁是 todo_test_(build.py 填) */
+var SB_WAIT_MS = 8000;
+var SB_KEY_NAME = "clinicTodo.key." + SB_PREFIX;
+
+function sbStoreGet(name) {
+  try { return window.localStorage.getItem(name) || ""; } catch (e) { return ""; }
+}
+function sbStoreSet(name, value) {
+  try {
+    if (value) window.localStorage.setItem(name, value);
+    else window.localStorage.removeItem(name);
+  } catch (e) { /* 這台裝置不讓記,就每次都要輸入 */ }
+}
+
+var sbKey = sbStoreGet(SB_KEY_NAME);
+
+/* 呼叫一個待辦窗口。失敗時丟出 { code }:
+   not_ready 還沒接上、bad_key 密碼不對、offline 連不上或太久沒回應、failed 其他沒存到的情況。 */
+function sbCall(name, body) {
+  if (!/^https:\/\//.test(SB_URL) || SB_ANON.indexOf("@@") === 0) {
+    return Promise.reject({ code: "not_ready" });
+  }
+  var ctrl = typeof AbortController === "function" ? new AbortController() : null;
+  var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, SB_WAIT_MS);
+  var payload = { p_key: sbKey };
+  Object.keys(body || {}).forEach(function (k) { payload[k] = body[k]; });
+  return fetch(SB_URL + "/rest/v1/rpc/" + SB_PREFIX + name, {
+    method: "POST",
+    headers: {
+      "apikey": SB_ANON,
+      "Authorization": "Bearer " + SB_ANON,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload),
+    signal: ctrl ? ctrl.signal : undefined
+  }).then(function (res) {
+    clearTimeout(timer);
+    return res.text().then(function (raw) {
+      var data = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch (e) { data = null; }
+      if (res.ok) return data;
+      var msg = data && (data.message || data.hint || "") || "";
+      if (res.status === 401 || res.status === 403 || /bad_key/.test(msg)) throw { code: "bad_key" };
+      throw { code: "failed" };
+    });
+  }, function () {
+    clearTimeout(timer);
+    throw { code: "offline" };
+  });
+}
+
+var Platform = {
+  demo: false,
+  note: SB_PREFIX === "todo_test_" ? "這是測試頁，只拿來試寫，裡面不是真的待辦。" : "",
+  needsKey: true,
+  hasKey: function () { return !!sbKey; },
+  setKey: function (key) {
+    sbKey = String(key || "").trim();
+    sbStoreSet(SB_KEY_NAME, sbKey);
+  },
+  clearKey: function () {
+    sbKey = "";
+    sbStoreSet(SB_KEY_NAME, "");
+  },
+  /* 回傳 { todos: [一件一件], changes: [最近 20 筆留底,新的在前] } */
+  load: function () {
+    return sbCall("load", {}).then(function (data) {
+      return {
+        todos: data && Array.isArray(data.todos) ? data.todos : [],
+        changes: data && Array.isArray(data.changes) ? data.changes : []
+      };
+    });
+  },
+  /* 回傳 { id, at, changeId }。編號以資料庫實際用的為準。 */
+  create: function (doc, change) {
+    return sbCall("create", { p_todo: doc, p_by: change.by, p_what: change.what });
+  },
+  update: function (id, patch, change) {
+    return sbCall("update", { p_id: id, p_patch: patch, p_by: change.by, p_what: change.what, p_before: change.before || {} });
+  }
+};
+
+/* ===== app.js ===== */
+/* 診所待辦的畫面和操作。
+   資料一律透過 Platform 那一層讀寫(示範版接記憶體,正式頁接九辰資料庫的待辦窗口)。
+   資料長什麼樣子寫在「資料格式.md」。 */
+
+var CLINICS = ["九辰", "佐升", "德佐中醫", "其他"];
+var ST_TODO = "還沒開始";
+var ST_DOING = "進行中";
+var ST_REVIEW = "做好了等確認";
+var ST_DONE = "完成";
+var ST_SHELVED = "擱置";
+var OPEN_STATUSES = [ST_TODO, ST_DOING, ST_REVIEW];
+var ALL_STATUSES = [ST_TODO, ST_DOING, ST_REVIEW, ST_DONE, ST_SHELVED];
+var PEOPLE = ["軒", "維"];
+var OWNER = "軒";
+var AI = "Claude";
+var SHOW_CHANGES = 20;
+var LOG_PREVIEW = 3;
+var WAIT_MS = 8000;
+var REFRESH_MS = 15000;
+var QUIET_MS = 700;
+var UNDO_MS = 6000;
+var STEP_HOLD_MS = 350;
+var WHO_KEY = "clinicTodo.who";
+
+var root = document.getElementById("root");
+
+var state = {
+  phase: "loading",      /* loading 打開中 / key 要輸入待辦密碼 / who 要選我是誰 / ready 有資料了 / down 連不上 */
+  downKind: "",
+  stale: false,
+  me: "",
+  choosingWho: false,
+  base: {},              /* 資料庫確認過的樣子,一件一份 */
+  pend: [],              /* 已經按了、還沒確認存好的改動,疊在 base 上面顯示 */
+  changes: [],
+  filter: "",
+  whoFilter: "",
+  openId: "",
+  shelfOpen: { done: false, shelved: false },
+  logAll: {},
+  adding: false,
+  add: { icon: DEFAULT_ICON, clinics: [] },
+  edit: null,            /* { id, clinics, ballKind, orig } */
+  stepEdit: null,        /* { id, key } */
+  answering: null,       /* { id, key } */
+  drafts: {},
+  errors: {},
+  keyError: "",
+  focus: "",
+  reveal: ""
+};
+
+/* ---------- 小工具 ---------- */
+
+function esc(s) {
+  return String(s === undefined || s === null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function clone(x) {
+  return x === undefined ? undefined : JSON.parse(JSON.stringify(x));
+}
+function text(v) {
+  return typeof v === "string" ? v : "";
+}
+function pad(n) {
+  return (n < 10 ? "0" : "") + n;
+}
+function isPlain(x) {
+  return !!x && typeof x === "object" && !Array.isArray(x);
+}
+/* 一層一層往裡合併;值是 null 代表拿掉那一格。跟資料庫的合併規則一樣。 */
+function merge(base, patch) {
+  var out = isPlain(base) ? clone(base) : {};
+  Object.keys(patch).forEach(function (k) {
+    var v = patch[k];
+    if (v === null) delete out[k];
+    else if (isPlain(v) && isPlain(out[k])) out[k] = merge(out[k], v);
+    else out[k] = clone(v);
+  });
+  return out;
+}
+function memGet(k) {
+  try { return window.localStorage.getItem(k) || ""; } catch (e) { return ""; }
+}
+function memSet(k, v) {
+  try {
+    if (v) window.localStorage.setItem(k, v);
+    else window.localStorage.removeItem(k);
+  } catch (e) { /* 這台裝置不讓記,下次再選一次 */ }
+}
+/* 一律用台灣時間(比世界標準時間快 8 小時),不看裝置設定的時區。 */
+function twParts(shiftDays) {
+  var t = new Date(Date.now() + 8 * 3600 * 1000 + (shiftDays || 0) * 86400 * 1000);
+  return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate(), hh: t.getUTCHours(), mm: t.getUTCMinutes(), ss: t.getUTCSeconds(), ms: t.getUTCMilliseconds() };
+}
+function dayOf(p) {
+  return p.y + "-" + pad(p.m) + "-" + pad(p.d);
+}
+function today() {
+  return dayOf(twParts());
+}
+function nowStamp() {
+  var p = twParts();
+  return dayOf(p) + "T" + pad(p.hh) + ":" + pad(p.mm) + ":" + pad(p.ss) + "." + String(1000 + p.ms).slice(1) + "+08:00";
+}
+function compactNow() {
+  var p = twParts();
+  return "" + p.y + pad(p.m) + pad(p.d) + pad(p.hh) + pad(p.mm) + pad(p.ss);
+}
+function rnd(n) {
+  var s = "";
+  while (s.length < n) s += "abcdefghijklmnopqrstuvwxyz".charAt(Math.floor(Math.random() * 26));
+  return s;
+}
+function showDate(s) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || "");
+  if (!m) return text(s);
+  return (+m[1] !== twParts().y ? +m[1] + " 年 " : "") + (+m[2]) + " 月 " + (+m[3]) + " 日";
+}
+function showStamp(s) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s || "");
+  if (!m) return showDate(s);
+  var day = m[1] + "-" + m[2] + "-" + m[3];
+  var label = day === today() ? "今天" : day === dayOf(twParts(-1)) ? "昨天" : showDate(day);
+  var hh = +m[4];
+  var mm = +m[5];
+  var part = hh < 5 ? "凌晨" : hh < 11 ? "早上" : hh < 13 ? "中午" : hh < 18 ? "下午" : "晚上";
+  var h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return label + " " + part + " " + h12 + " 點" + (mm ? " " + mm + " 分" : "");
+}
+/* 名字前後如果是英文或數字,跟中文之間留一格。 */
+function spaced(name) {
+  var s = String(name);
+  return (/^[A-Za-z0-9]/.test(s) ? " " : "") + s + (/[A-Za-z0-9]$/.test(s) ? " " : "");
+}
+function shorten(s, n) {
+  s = String(s);
+  return s.length > n ? s.slice(0, n) + "…" : s;
+}
+function sameList(a, b) {
+  return a.length === b.length && a.every(function (x, i) { return x === b[i]; });
+}
+
+/* 小步驟、問題、檔案、進度紀錄在資料裡是「一包有名字的小項目」,這裡排成清單。 */
+function listOf(v) {
+  var out = [];
+  if (Array.isArray(v)) {
+    v.forEach(function (x, i) {
+      if (!x || typeof x !== "object") return;
+      var o = clone(x);
+      o.key = "#" + i;
+      o.fixed = true;
+      if (typeof o.order !== "number") o.order = i;
+      out.push(o);
+    });
+  } else if (isPlain(v)) {
+    Object.keys(v).forEach(function (k) {
+      var x = v[k];
+      if (!x || typeof x !== "object") return;
+      var o = clone(x);
+      o.key = k;
+      if (typeof o.order !== "number") o.order = 0;
+      out.push(o);
+    });
+  }
+  out.sort(function (a, b) {
+    return a.order - b.order || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+  });
+  return out;
+}
+function maxOrder(list) {
+  var n = 0;
+  list.forEach(function (x) { if (x.order > n) n = x.order; });
+  return n;
+}
+function groupOf(ball) {
+  return ball === OWNER ? "軒" : ball === "維" ? "維" : ball === AI ? "Claude" : "others";
+}
+
+/* 把資料裡的一件事,整理成畫面好用的樣子。 */
+function model(t) {
+  var ball = text(t.ball).trim() || OWNER;
+  var log = listOf(t.log);
+  log.sort(function (a, b) {
+    var da = text(a.date);
+    var db = text(b.date);
+    if (da !== db) return da < db ? 1 : -1;
+    return b.order - a.order || (a.key < b.key ? 1 : -1);
+  });
+  return {
+    id: t.id,
+    title: text(t.title),
+    icon: text(t.icon),
+    clinics: Array.isArray(t.clinics) ? t.clinics.filter(function (c) { return typeof c === "string"; }) : [],
+    status: text(t.status),
+    known: ALL_STATUSES.indexOf(t.status) >= 0,
+    ball: ball,
+    group: groupOf(ball),
+    steps: listOf(t.steps),
+    questions: listOf(t.questions).filter(function (q) { return !q.answered; }),
+    links: listOf(t.links),
+    log: log,
+    next: text(t.next),
+    due: text(t.due),
+    quote: text(t.quote),
+    created: text(t.created),
+    updated: text(t.updated),
+    backTo: text(t.backTo)
+  };
+}
+function isClosed(m) {
+  return m.status === ST_DONE || m.status === ST_SHELVED;
+}
+function idNumber(id) {
+  var m = /^T(\d+)$/.exec(id || "");
+  return m ? +m[1] : 0;
+}
+function idFrom(n) {
+  return "T" + pad(n);
+}
+/* 畫面上看到的 = 資料庫確認過的 + 還沒確認的改動。 */
+function viewRaw() {
+  var map = {};
+  Object.keys(state.base).forEach(function (id) { map[id] = state.base[id]; });
+  state.pend.forEach(function (p) {
+    if (p.kind === "create") map[p.id] = clone(p.doc);
+    else if (map[p.id]) map[p.id] = merge(map[p.id], p.patch);
+  });
+  return map;
+}
+function allModels() {
+  var map = viewRaw();
+  return Object.keys(map).map(function (id) { return map[id]; })
+    .filter(function (t) { return t && text(t.title).trim(); })
+    .map(model)
+    .sort(function (a, b) { return idNumber(a.id) - idNumber(b.id) || (a.id < b.id ? -1 : 1); });
+}
+function findModel(id) {
+  var t = viewRaw()[id];
+  return t ? model(t) : null;
+}
+function findRaw(id) {
+  return viewRaw()[id] || null;
+}
+function nextId() {
+  var max = 0;
+  Object.keys(viewRaw()).forEach(function (id) { max = Math.max(max, idNumber(id)); });
+  return idFrom(max + 1);
+}
+function tally(list) {
+  var c = { "軒": 0, "維": 0, "Claude": 0, others: 0, done: 0, shelved: 0, total: list.length };
+  list.forEach(function (m) {
+    if (m.status === ST_DONE) c.done += 1;
+    else if (m.status === ST_SHELVED) c.shelved += 1;
+    else c[m.group] += 1;
+  });
+  return c;
+}
+function editDirty() {
+  var e = state.edit;
+  if (!e) return false;
+  var d = state.drafts;
+  return text(d["edit:title"]).trim() !== e.orig.title || text(d["edit:next"]).trim() !== e.orig.next ||
+    !sameList(CLINICS.filter(function (c) { return e.clinics.indexOf(c) >= 0; }), CLINICS.filter(function (c) { return e.orig.clinics.indexOf(c) >= 0; })) ||
+    e.ballKind !== e.orig.ballKind || (e.ballKind === "other" && text(d["edit:ballName"]).trim() !== e.orig.ballName) ||
+    dueFromDrafts() !== e.orig.due;
+}
+/* 修改表單開著的時候,別人(或另一台裝置)改了這一件:
+   你沒動過的欄位換成最新的值;你動過的欄位留著你打的字。表單上方說一聲是誰改的。 */
+function syncEdit() {
+  var e = state.edit;
+  if (!e) return;
+  var m = findModel(e.id);
+  if (!m) return;
+  var o = e.orig;
+  var d = state.drafts;
+  var moved = 0;
+  var kept = 0;
+  if (m.title !== o.title) {
+    if (text(d["edit:title"]).trim() === o.title) {
+      d["edit:title"] = m.title;
+      setField("edit-title", m.title);
+      o.title = m.title;
+      moved += 1;
+    } else kept += 1;
+  }
+  if (m.next !== o.next) {
+    if (text(d["edit:next"]).trim() === o.next) {
+      d["edit:next"] = m.next;
+      setField("edit-next", m.next);
+      o.next = m.next;
+      moved += 1;
+    } else kept += 1;
+  }
+  if (!sameList(m.clinics, o.clinics)) {
+    if (sameList(pickClinics(e.clinics), pickClinics(o.clinics))) {
+      e.clinics = m.clinics.slice();
+      o.clinics = m.clinics.slice();
+      moved += 1;
+    } else kept += 1;
+  }
+  if (m.ball !== o.ball) {
+    var untouched = e.ballKind === o.ballKind && (e.ballKind !== "other" || text(d["edit:ballName"]).trim() === o.ballName);
+    if (untouched) {
+      var kind = PEOPLE.indexOf(m.ball) >= 0 || m.ball === AI ? m.ball : "other";
+      e.ballKind = kind;
+      o.ball = m.ball;
+      o.ballKind = kind;
+      o.ballName = kind === "other" ? m.ball : "";
+      d["edit:ballName"] = o.ballName;
+      moved += 1;
+    } else kept += 1;
+  }
+  if (m.due !== o.due) {
+    if (dueFromDrafts() === o.due) {
+      var dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(m.due);
+      d["edit:dueY"] = dm ? String(+dm[1]) : "";
+      d["edit:dueM"] = dm ? String(+dm[2]) : "";
+      d["edit:dueD"] = dm ? String(+dm[3]) : "";
+      ["Y", "M", "D"].forEach(function (part) { setField("edit-due-" + part, d["edit:due" + part]); });
+      o.due = m.due;
+      moved += 1;
+    } else kept += 1;
+  }
+  if (!moved && !kept) return;
+  var who = "";
+  state.changes.forEach(function (c) { if (!who && text(c.todo) === e.id) who = text(c.by); });
+  var lead = !who ? "剛剛有人改過這一件" : who === state.me ? "剛剛在另一台裝置改過這一件" : spaced(who).replace(/^ /, "") + "剛剛改過這一件";
+  e.notice = lead + (moved ? "，表單裡沒動過的欄位已經換成最新的" : "") + (kept ? "，動過的欄位會用剛剛打的字" : "") + "。";
+}
+function dueFromDrafts() {
+  var y = text(state.drafts["edit:dueY"]);
+  var m = text(state.drafts["edit:dueM"]);
+  var d = text(state.drafts["edit:dueD"]);
+  if (!(y && m && d)) return y || m || d ? "?" : "";
+  return y + "-" + pad(+m) + "-" + pad(+d);
+}
+
+/* ---------- 畫面 ---------- */
+
+function viewTop() {
+  var ready = state.phase === "ready" && !state.choosingWho;
+  var h = '<header class="top" data-key="top"><div class="brand">' + uiIcon("book", "brand-mark") + "<h1>診所待辦</h1></div>";
+  h += '<div class="top-right">';
+  if (ready && state.me) {
+    h += '<button class="btn who-btn" type="button" data-act="who-open" aria-label="現在是' + esc(state.me) + '，按這裡換人">' + uiIcon("me") + "<span>" + esc(state.me) + "</span></button>";
+  }
+  if (ready && !state.adding && allModels().length) {
+    h += '<button class="btn primary" type="button" id="add-open" data-act="add-open">' + uiIcon("plus") + "<span>新增</span></button>";
+  }
+  return h + "</div></header>";
+}
+function viewNote(kind, msg, iconName) {
+  return '<p class="note note-' + kind + '" data-key="note-' + kind + '">' + uiIcon(iconName) + "<span>" + esc(msg) + "</span></p>";
+}
+function viewDown() {
+  var notReady = state.downKind === "not_ready";
+  return '<section class="down" data-key="down" role="alert">' + uiIcon("offline", "down-art") +
+    '<div class="down-text"><p class="down-title">' + (notReady ? "這一頁還沒接上資料庫。" : "現在連不上待辦資料。") + "</p>" +
+    '<p class="down-sub">' + (notReady ? "接好之後，這裡才會顯示待辦。" : "請確認網路通了，再按一次「再試一次」。") + "</p>" +
+    (notReady ? "" : '<button class="btn line" type="button" data-act="retry">再試一次</button>') + "</div></section>";
+}
+function viewKey() {
+  return '<form class="panel form gate" data-form="key" data-key="keyform" novalidate>' +
+    '<h2 class="h2">' + uiIcon("lock") + "<span>請輸入待辦密碼</span></h2>" +
+    '<p class="sec-sub">這組密碼只打得開診所待辦。輸入一次之後，這台裝置會記住。</p>' +
+    '<input class="input" id="key-input" type="password" data-draft="key" aria-label="待辦密碼" autocomplete="current-password" value="">' +
+    (state.keyError ? '<p class="field-error" role="alert">' + esc(state.keyError) + "</p>" : "") +
+    '<div class="form-actions"><button class="btn primary" type="submit">進去</button></div></form>';
+}
+function viewWho() {
+  var h = '<section class="panel form gate" data-key="who"><h2 class="h2">' + uiIcon("me") + "<span>你是誰？</span></h2>" +
+    '<p class="sec-sub">選了之後，你在這台裝置上改的東西都會記上你的名字。之後按右上角的名字可以換人。</p><div class="who-row">';
+  PEOPLE.forEach(function (p) {
+    h += '<button class="btn line who-pick' + (state.me === p ? " is-on" : "") + '" type="button" data-act="who-pick" data-value="' + esc(p) + '">' + uiIcon("me") + "<span>我是" + esc(p) + "</span></button>";
+  });
+  h += "</div>";
+  if (state.me) h += '<div class="form-actions"><button class="btn" type="button" data-act="who-cancel">不換了</button></div>';
+  return h + "</section>";
+}
+function viewCounts(c) {
+  function cell(kind, n, iconName, label) {
+    var on = state.whoFilter === kind;
+    var mine = kind === state.me;
+    return '<button class="count' + (mine ? " is-mine" : "") + (on ? " is-on" : "") + '" type="button" data-act="who-filter" data-value="' + esc(kind) + '" aria-pressed="' + on + '">' +
+      '<span class="num" data-count="' + esc(kind) + '">' + n + "</span>" +
+      '<span class="lbl">' + label + "</span></button>";
+  }
+  var h = '<section class="counts" data-key="counts" aria-label="現在的狀況"><div class="count-row">' +
+    cell("軒", c["軒"], "me", "等軒的") +
+    cell("維", c["維"], "me", "等維的") +
+    cell("Claude", c.Claude, "claude", "等 Claude 的") +
+    (c.others > 0 || state.whoFilter === "others" ? cell("others", c.others, "others", "等其他人的") : "") +
+    cell("done", c.done, "check", "完成的") + "</div>";
+  h += '<p class="count-note">' + (state.filter ? "「" + esc(state.filter) + "」" : "") + "一共 <span data-count=\"total\">" + c.total + "</span> 件，擱置 " +
+    '<span data-count="shelved">' + c.shelved + "</span> 件。" +
+    (state.whoFilter ? '<button class="linkbtn" type="button" data-act="who-filter" data-value="' + esc(state.whoFilter) + '">看全部</button>' : "") + "</p></section>";
+  return h;
+}
+function viewFilters() {
+  var h = '<nav class="filters" data-key="filters" aria-label="只看哪一家">' + uiIcon("filter");
+  h += '<button class="chip' + (state.filter === "" ? " is-on" : "") + '" type="button" data-act="filter" data-clinic="" aria-pressed="' + (state.filter === "") + '">全部</button>';
+  CLINICS.forEach(function (c) {
+    var on = state.filter === c;
+    h += '<button class="chip' + (on ? " is-on" : "") + '" type="button" data-act="filter" data-clinic="' + esc(c) + '" aria-pressed="' + on + '">' + esc(c) + "</button>";
+  });
+  return h + "</nav>";
+}
+function pickChip(act, value, label, on) {
+  return '<button class="chip pick' + (on ? " is-on" : "") + '" type="button" data-act="' + act + '" data-value="' + esc(value) + '" aria-pressed="' + on + '">' + (on ? uiIcon("check") : "") + "<span>" + esc(label) + "</span></button>";
+}
+function viewAddForm() {
+  var h = '<form class="panel form" data-form="add" data-key="addform" novalidate>' +
+    '<h2 class="h2">' + uiIcon("plus") + "<span>新增一件</span></h2>" +
+    '<div class="field"><span class="field-label" id="lbl-new-title">這件事叫什麼</span>' +
+    '<input class="input" id="new-title" type="text" data-draft="add:title" aria-labelledby="lbl-new-title" placeholder="例如：訂下個月的耗材" autocomplete="off" value="' + esc(state.drafts["add:title"] || "") + '">' +
+    (state.errors.add ? '<p class="field-error" role="alert">' + esc(state.errors.add) + "</p>" : "") + "</div>";
+  h += '<div class="field"><span class="field-label">挑一個圖示</span><div class="iconpick" role="group" aria-label="挑一個圖示">';
+  Object.keys(TODO_ICONS).forEach(function (name) {
+    var on = state.add.icon === name;
+    h += '<button class="iconbtn' + (on ? " is-on" : "") + '" type="button" data-act="add-icon" data-value="' + esc(name) + '" aria-pressed="' + on + '" aria-label="' + esc(name) + '">' + todoIcon(name) + "</button>";
+  });
+  h += "</div></div>";
+  h += '<div class="field"><span class="field-label">哪一家<span class="field-hint">　可以選好幾家，沒選就放「其他」</span></span><div class="chips">';
+  CLINICS.forEach(function (c) { h += pickChip("add-clinic", c, c, state.add.clinics.indexOf(c) >= 0); });
+  h += "</div></div>";
+  h += '<div class="form-actions"><button class="btn primary" type="submit">加進去</button>' +
+    '<button class="btn" type="button" data-act="add-cancel">先不要</button></div></form>';
+  return h;
+}
+function viewEmpty() {
+  return '<section class="empty" data-key="empty">' + EMPTY_ART +
+    '<p class="empty-title">這裡還沒有任何待辦。</p>' +
+    '<p class="empty-sub">想到要做的事，先記下來，之後再慢慢補細節。</p>' +
+    '<button class="btn primary" type="button" data-act="add-open">' + uiIcon("plus") + "<span>新增第一件</span></button></section>";
+}
+function viewCard(m) {
+  var open = state.openId === m.id;
+  var closed = isClosed(m);
+  var done = m.status === ST_DONE;
+  var mine = !closed && m.ball === state.me;
+  var cls = "card" + (open ? " is-open" : "") + (mine ? " is-mine" : "") + (closed ? " is-closed" : "");
+  var id = esc(m.id);
+  var h = '<article class="' + cls + '" data-key="card-' + id + '" data-id="' + id + '"><div class="row">';
+  if (m.status === ST_SHELVED) {
+    h += '<span class="done-btn is-shelved" aria-hidden="true">' + uiIcon("shelve") + "</span>";
+  } else {
+    h += '<button class="done-btn' + (done ? " is-done" : "") + '" type="button" data-act="' + (done ? "undo-done" : "quick-done") + '" data-id="' + id + '" aria-label="' +
+      (done ? "拿回來，改成還沒完成：" : "標完成：") + esc(m.title) + '">' + uiIcon(done ? "circleOn" : "circle") + "</button>";
+  }
+  h += '<button class="card-head" type="button" data-act="toggle" data-id="' + id + '" aria-expanded="' + open + '">';
+  h += '<span class="r1"><span class="c-icon">' + todoIcon(m.icon) + '</span><span class="c-title">' + esc(m.title) + "</span>";
+  if (!closed) h += '<span class="c-ball' + (mine ? " is-me" : "") + '">' + uiIcon(m.group === "Claude" ? "claude" : m.group === "others" ? "others" : "me") + "<span>等" + esc(spaced(shorten(m.ball, 6)).replace(/ $/, "")) + "</span></span>";
+  h += "</span>";
+  h += '<span class="r2">';
+  if (m.status === ST_REVIEW) h += '<span class="flag">' + uiIcon("stReview") + "<span>等確認</span></span>";
+  if (!m.known) h += '<span class="flag">狀態看不懂</span>';
+  h += '<span class="c-clinics">' + esc(m.clinics.length ? m.clinics.join("・") : "還沒選哪一家") + "</span>";
+  if (!closed) h += '<span class="c-next' + (m.next ? "" : " is-none") + '">' + esc(m.next ? m.next.replace(/\s+/g, " ") : "還沒寫下一步") + "</span>";
+  else h += '<span class="c-next">' + (done ? "完成" : "擱置") + "</span>";
+  h += "</span></button></div>";
+  if (open) h += viewDetail(m, closed);
+  return h + "</article>";
+}
+function secTitle(iconName, label, note) {
+  return '<h3 class="sec-title">' + uiIcon(iconName) + "<span>" + label + "</span>" + (note ? '<span class="sec-note">' + note + "</span>" : "") + "</h3>";
+}
+function viewStep(m, s, closed) {
+  var id = esc(m.id);
+  var se = state.stepEdit;
+  if (se && se.id === m.id && se.key === s.key && !closed) {
+    return '<form class="step-edit" data-form="step-edit" data-id="' + id + '" data-key="stepedit-' + esc(s.key) + '" novalidate>' +
+      '<input class="input" id="step-edit-input" type="text" data-draft="stepEdit" aria-label="改這一步的字" autocomplete="off" value="' + esc(state.drafts.stepEdit || "") + '">' +
+      '<div class="form-actions"><button class="btn primary" type="submit">存起來</button>' +
+      '<button class="btn line" type="button" data-act="step-remove" data-id="' + id + '">拿掉這一步</button>' +
+      '<button class="btn" type="button" data-act="step-edit-cancel">先不改</button></div></form>';
+  }
+  var h = '<div class="step-row" data-key="step-' + esc(s.key) + '">' +
+    '<button class="step' + (s.done ? " is-done" : "") + '" type="button" role="checkbox" aria-checked="' + !!s.done + '" data-act="toggle-step" data-id="' + id + '" data-step="' + esc(s.key) + '"' +
+    (closed || s.fixed ? " disabled" : "") + ">" + uiIcon(s.done ? "boxOn" : "box") + '<span class="step-text">' + esc(text(s.text)) + "</span></button>";
+  if (!closed && !s.fixed) {
+    h += '<button class="icon-btn" type="button" data-act="step-edit" data-id="' + id + '" data-step="' + esc(s.key) + '" aria-label="改或拿掉這一步">' + uiIcon("edit") + "</button>";
+  }
+  return h + "</div>";
+}
+function viewDetail(m, closed) {
+  var id = esc(m.id);
+  var h = '<div class="card-detail">';
+  if (state.edit && state.edit.id === m.id && !closed) return h + viewEditForm(m) + "</div>";
+
+  /* 小步驟 */
+  var doneCount = m.steps.filter(function (s) { return s.done; }).length;
+  h += '<section class="sec" data-key="sec-steps">' + secTitle("steps", "小步驟", m.steps.length ? "做完 " + doneCount + " / " + m.steps.length + " 步" : "");
+  if (m.steps.length) {
+    h += '<div class="steps">';
+    m.steps.forEach(function (s) { h += viewStep(m, s, closed); });
+    h += "</div>";
+  } else {
+    h += '<p class="none">還沒有小步驟。</p>';
+  }
+  if (!closed) {
+    h += '<form class="inline-form" data-form="step" data-id="' + id + '" novalidate>' +
+      '<input class="input" id="step-input-' + id + '" type="text" data-draft="step:' + id + '" aria-label="要加的小步驟" placeholder="加一個小步驟" autocomplete="off" value="' + esc(state.drafts["step:" + m.id] || "") + '">' +
+      '<button class="btn line" type="submit">加一步</button></form>';
+  }
+  h += "</section>";
+
+  /* 待回答的問題 */
+  if (m.questions.length) {
+    h += '<section class="sec" data-key="sec-questions">' + secTitle("question", "待回答的問題");
+    h += '<ul class="plain">';
+    m.questions.forEach(function (q) {
+      var an = state.answering;
+      h += '<li class="q" data-key="q-' + esc(q.key) + '"><p class="q-text">' + esc(text(q.text)) + "</p>";
+      if (an && an.id === m.id && an.key === q.key && !closed) {
+        h += '<form class="log-form" data-form="answer" data-id="' + id + '" novalidate>' +
+          '<textarea class="input" id="answer-input" rows="2" data-draft="answer" aria-label="你的回答" placeholder="寫下你的回答">' + esc(state.drafts.answer || "") + "</textarea>" +
+          '<div class="form-actions"><button class="btn primary" type="submit">送出回答</button><button class="btn" type="button" data-act="answer-cancel">先不要</button></div></form>';
+      } else if (!closed && !q.fixed) {
+        h += '<button class="btn line small" type="button" data-act="answer-open" data-id="' + id + '" data-value="' + esc(q.key) + '">' + uiIcon("log") + "<span>回答</span></button>";
+      }
+      h += "</li>";
+    });
+    h += "</ul></section>";
+  }
+
+  /* 進度紀錄 */
+  h += '<section class="sec" data-key="sec-log">' + secTitle("log", "進度紀錄", m.log.length ? "共 " + m.log.length + " 筆" : "");
+  if (!closed) {
+    h += '<form class="log-form" data-form="log" data-id="' + id + '" novalidate>' +
+      '<textarea class="input" id="log-input-' + id + '" rows="2" data-draft="log:' + id + '" aria-label="要記的進度" placeholder="今天做了什麼，寫一句就好">' + esc(state.drafts["log:" + m.id] || "") + "</textarea>" +
+      '<button class="btn line" type="submit">記一筆</button></form>';
+  }
+  if (m.log.length) {
+    var showAll = !!state.logAll[m.id];
+    var shown = showAll ? m.log : m.log.slice(0, LOG_PREVIEW);
+    h += '<ul class="log">';
+    shown.forEach(function (g) {
+      var by = text(g.by) || AI;
+      var who = spaced(by).replace(/^ /, "") + "記的";
+      h += '<li class="log-item" data-key="log-' + esc(g.key) + '"><p class="log-meta">' + uiIcon(by === AI ? "claude" : PEOPLE.indexOf(by) >= 0 ? "me" : "others") +
+        "<span>" + esc(showDate(g.date)) + '</span><span class="log-by">' + esc(who) + "</span></p>" +
+        '<p class="log-text">' + esc(text(g.text)) + "</p>" +
+        (text(g.source) ? '<p class="log-src">根據：' + esc(g.source) + "</p>" : "") + "</li>";
+    });
+    h += "</ul>";
+    if (!showAll && m.log.length > LOG_PREVIEW) {
+      h += '<button class="btn more" type="button" data-act="log-more" data-id="' + id + '">' + uiIcon("chevron") + "<span>再看更早的 " + (m.log.length - LOG_PREVIEW) + " 筆</span></button>";
+    }
+  } else {
+    h += '<p class="none">還沒有進度紀錄。</p>';
+  }
+  h += "</section>";
+
+  /* 相關檔案 */
+  if (m.links.length) {
+    h += '<section class="sec" data-key="sec-links">' + secTitle("file", "相關檔案") + '<ul class="links">';
+    m.links.forEach(function (f) {
+      var where = text(f.where);
+      var isWeb = /^https?:\/\//i.test(where);
+      h += '<li data-key="f-' + esc(f.key) + '">';
+      if (isWeb) h += '<a class="link-web" href="' + esc(where) + '" target="_blank" rel="noopener noreferrer">' + esc(text(f.name) || where) + "</a>";
+      else h += '<span class="link-name">' + esc(text(f.name)) + '</span><span class="link-where">' + esc(where) + "</span>";
+      h += "</li>";
+    });
+    h += "</ul></section>";
+  }
+
+  /* 期限、原話、編號 */
+  var facts = "期限：" + (m.due ? showDate(m.due) : "還沒定");
+  h += '<section class="sec" data-key="sec-due"><p class="due-text">' + uiIcon("due") + "<span>" + esc(facts) + "</span></p>";
+  if (m.quote) h += '<p class="quote-text">軒當時說：「' + esc(m.quote) + "」</p>";
+  h += '<p class="meta">編號 ' + id + (m.created ? "・" + esc(showDate(m.created)) + "建立" : "") + (m.updated ? "・" + esc(showDate(m.updated)) + "更新" : "") + "</p></section>";
+
+  /* 可以做的動作 */
+  h += '<div class="actions" data-key="actions">';
+  if (closed) {
+    h += '<button class="btn line" type="button" data-act="restore" data-id="' + id + '">' + uiIcon("back") + "<span>拿回來</span></button>";
+  } else {
+    h += '<div class="act-status"><span class="act-label">狀態</span><div class="seg" role="group" aria-label="狀態">';
+    OPEN_STATUSES.forEach(function (s) {
+      var on = m.status === s;
+      h += '<button class="seg-btn' + (on ? " is-on" : "") + '" type="button" data-act="set-status" data-id="' + id + '" data-value="' + esc(s) + '" aria-pressed="' + on + '">' + esc(s) + "</button>";
+    });
+    h += '</div></div><div class="act-buttons">' +
+      '<button class="btn line" type="button" data-act="edit-open" data-id="' + id + '">' + uiIcon("edit") + "<span>修改內容</span></button>" +
+      '<button class="btn line" type="button" data-act="mark-done" data-id="' + id + '">' + uiIcon("check") + "<span>標完成</span></button>" +
+      '<button class="btn line" type="button" data-act="shelve" data-id="' + id + '">' + uiIcon("shelve") + "<span>收起來</span></button></div>";
+  }
+  return h + "</div></div>";
+}
+function dueSelect(part, unit, numbers, value) {
+  var h = '<span class="select-wrap"><select class="input select" id="edit-due-' + part + '" data-draft="edit:due' + part + '" data-value="' + esc(value) + '" aria-label="期限的' + unit + '">' +
+    '<option value=""' + (value === "" ? " selected" : "") + ">" + unit + "</option>";
+  numbers.forEach(function (n) {
+    h += '<option value="' + n + '"' + (String(n) === value ? " selected" : "") + ">" + n + " " + unit + "</option>";
+  });
+  return h + "</select>" + uiIcon("chevron", "select-chev") + "</span>";
+}
+function viewEditForm(m) {
+  var id = esc(m.id);
+  var e = state.edit;
+  var d = state.drafts;
+  var h = '<form class="form" data-form="edit" data-id="' + id + '" data-key="editform" novalidate>';
+  if (e.notice) h += viewNote("edit", e.notice, "info");
+  h += '<div class="field"><span class="field-label" id="lbl-edit-title">標題</span>' +
+    '<input class="input" id="edit-title" type="text" data-draft="edit:title" aria-labelledby="lbl-edit-title" autocomplete="off" value="' + esc(d["edit:title"] || "") + '"></div>';
+  h += '<div class="field"><span class="field-label">哪一家<span class="field-hint">　可以選好幾家</span></span><div class="chips">';
+  CLINICS.forEach(function (c) { h += pickChip("edit-clinic", c, c, e.clinics.indexOf(c) >= 0); });
+  h += "</div></div>";
+  h += '<div class="field"><span class="field-label" id="lbl-edit-next">下一步</span>' +
+    '<textarea class="input" id="edit-next" rows="3" data-draft="edit:next" aria-labelledby="lbl-edit-next" placeholder="接下來要做的一件事">' + esc(d["edit:next"] || "") + "</textarea></div>";
+  h += '<div class="field"><span class="field-label">球在誰手上</span><div class="chips">' +
+    pickChip("edit-ball", "軒", "軒", e.ballKind === "軒") +
+    pickChip("edit-ball", "維", "維", e.ballKind === "維") +
+    pickChip("edit-ball", "Claude", "Claude", e.ballKind === "Claude") +
+    pickChip("edit-ball", "other", "其他人", e.ballKind === "other") + "</div>";
+  if (e.ballKind === "other") {
+    h += '<input class="input" id="edit-ballname" type="text" data-draft="edit:ballName" aria-label="對方的名字" placeholder="對方的名字，例如招牌廠商" autocomplete="off" value="' + esc(d["edit:ballName"] || "") + '">';
+  }
+  h += "</div>";
+  var thisYear = twParts().y;
+  var years = [thisYear, thisYear + 1, thisYear + 2, thisYear + 3];
+  var pickedYear = +(d["edit:dueY"] || 0);
+  if (pickedYear && years.indexOf(pickedYear) < 0) years.unshift(pickedYear);
+  var months = [];
+  var days = [];
+  var i;
+  for (i = 1; i <= 12; i++) months.push(i);
+  for (i = 1; i <= 31; i++) days.push(i);
+  h += '<div class="field"><span class="field-label">期限<span class="field-hint">　可以不填</span></span><div class="due-row">' +
+    dueSelect("Y", "年", years, d["edit:dueY"] || "") + dueSelect("M", "月", months, d["edit:dueM"] || "") + dueSelect("D", "日", days, d["edit:dueD"] || "") +
+    '<button class="btn" type="button" data-act="edit-due-clear">不設期限</button></div></div>';
+  if (state.errors.edit) h += '<p class="field-error" role="alert">' + esc(state.errors.edit) + "</p>";
+  h += '<div class="form-actions"><button class="btn primary" type="submit">存起來</button>' +
+    '<button class="btn" type="button" data-act="edit-cancel">先不改</button></div></form>';
+  return h;
+}
+function viewShelf(name, label, iconName, list) {
+  if (!list.length) return "";
+  var open = !!state.shelfOpen[name];
+  var h = '<section class="shelf' + (open ? " is-open" : "") + '" data-key="shelf-' + name + '">' +
+    '<button class="shelf-head" type="button" data-act="shelf" data-value="' + name + '" aria-expanded="' + open + '">' + uiIcon(iconName) +
+    "<span>" + label + ' <span class="shelf-n">' + list.length + "</span> 件</span>" + uiIcon("chevron", "c-chev") + "</button>";
+  if (open) h += '<div class="cards">' + list.map(viewCard).join("") + "</div>";
+  return h + "</section>";
+}
+function shownChanges() {
+  var local = state.pend.filter(function (p) { return p.change && p.sent !== false; }).map(function (p) { return p.change; }).reverse();
+  return local.concat(state.changes).slice(0, SHOW_CHANGES);
+}
+function viewChanges(all) {
+  var titles = {};
+  all.forEach(function (m) { titles[m.id] = m.title; });
+  var h = '<section class="changes" data-key="changes"><h2 class="h2">' + uiIcon("history") + "<span>最近改了什麼</span></h2>";
+  var list = shownChanges();
+  if (!list.length) return h + '<p class="none">還沒有任何改動。之後每改一次，這裡都會記一筆。</p></section>';
+  h += '<p class="sec-sub">只顯示最近 ' + SHOW_CHANGES + ' 筆。</p><ul class="change-list">';
+  list.forEach(function (c) {
+    var by = text(c.by) || "不知道是誰";
+    var who = by;
+    var tid = text(c.todo);
+    h += '<li class="change" data-key="ch-' + esc(c.id) + '">' + uiIcon(by === AI ? "claude" : PEOPLE.indexOf(by) >= 0 ? "me" : "others", "ch-ic") +
+      '<p class="ch-meta"><span class="ch-who">' + esc(who) + '</span><span class="ch-when">' + esc(showStamp(c.at)) + "</span></p>" +
+      '<p class="ch-what"><span class="ch-todo">' + esc(tid) + (titles[tid] ? " " + esc(titles[tid]) : "") + "</span>" +
+      '<span class="ch-text">' + esc(text(c.what)) + "</span></p></li>";
+  });
+  return h + "</ul></section>";
+}
+function viewFoot() {
+  if (!Platform.needsKey) return "";
+  return '<div class="foot" data-key="foot"><button class="btn" type="button" data-act="logout">' + uiIcon("lock") + "<span>登出這台裝置</span></button></div>";
+}
+function viewApp() {
+  var h = viewTop();
+  if (Platform.note) h += viewNote("demo", Platform.note, "info");
+  if (state.phase === "key") return h + viewKey();
+  if (state.phase === "loading") return h + '<p class="loading" data-key="loading">正在打開診所待辦…</p>';
+  if (state.phase === "down") return h + viewDown();
+  if (state.phase === "who" || state.choosingWho) return h + viewWho();
+  if (state.stale) h += viewNote("stale", "現在連不上資料庫，畫面上的內容可能不是最新的。", "offline");
+  var all = allModels();
+  if (!all.length) {
+    return h + (state.adding ? viewAddForm() : viewEmpty()) + viewChanges(all) + viewFoot();
+  }
+  var seen = all.filter(function (m) { return !state.filter || m.clinics.indexOf(state.filter) >= 0; });
+  h += viewCounts(tally(seen));
+  h += viewFilters();
+  if (state.adding) h += viewAddForm();
+  var active = seen.filter(function (m) { return !isClosed(m) && (!state.whoFilter || m.group === state.whoFilter); });
+  active.sort(function (a, b) {
+    var x = a.ball === state.me ? 0 : 1;
+    var y = b.ball === state.me ? 0 : 1;
+    return x - y || idNumber(a.id) - idNumber(b.id);
+  });
+  h += '<main class="cards" data-key="cards" id="cards">';
+  if (active.length) h += active.map(viewCard).join("");
+  else h += '<p class="none pad" data-key="none-active">' + (state.whoFilter || state.filter ? "這樣篩選之後，沒有還在進行的待辦。" : "手上沒有還在進行的待辦。") + "</p>";
+  h += "</main>";
+  if (!state.whoFilter) {
+    h += viewShelf("done", "完成的", "check", seen.filter(function (m) { return m.status === ST_DONE; }));
+    h += viewShelf("shelved", "擱置的", "shelve", seen.filter(function (m) { return m.status === ST_SHELVED; }));
+  }
+  h += viewChanges(all);
+  return h + viewFoot();
+}
+function render() {
+  morphInto(root, viewApp());
+  if (state.focus) {
+    var el = document.getElementById(state.focus);
+    state.focus = "";
+    if (el) el.focus();
+  }
+  if (state.reveal) {
+    var card = root.querySelector('.card[data-id="' + state.reveal + '"]');
+    if (card) {
+      state.reveal = "";
+      if (card.scrollIntoView) card.scrollIntoView({ block: "nearest" });
+    }
+  }
+}
+
+var toastTimer = 0;
+var toastAction = null;
+/* 最下面跳出來的一句話。keep 是 true 的時候不會自己消失;action 是 { label, run } 時多一顆按鈕。 */
+function toast(msg, bad, keep, action) {
+  var el = document.getElementById("toast");
+  if (!el) return;
+  toastAction = action || null;
+  el.innerHTML = '<span class="toast-text">' + esc(msg) + "</span>" +
+    (action ? '<button class="toast-btn" type="button" data-toast="act">' + esc(action.label) + "</button>" : "");
+  el.className = "toast" + (bad ? " is-bad" : "") + (action ? " has-act" : "");
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  if (!keep) toastTimer = setTimeout(hideToast, action ? UNDO_MS : bad ? 7000 : 3200);
+}
+function hideToast() {
+  var el = document.getElementById("toast");
+  clearTimeout(toastTimer);
+  toastAction = null;
+  if (el) el.hidden = true;
+}
+function toastText() {
+  var el = document.getElementById("toast");
+  return el && !el.hidden ? el.textContent : "";
+}
+document.getElementById("toast").addEventListener("click", function (ev) {
+  if (ev.target.closest && ev.target.closest("[data-toast]") && toastAction) {
+    var run = toastAction.run;
+    hideToast();
+    run();
+  }
+});
+
+/* ---------- 寫進資料庫 ---------- */
+
+var MSG_BAD_KEY = "待辦密碼不對，或是已經換過了，剛剛那一筆沒有存到。請重新輸入密碼。";
+var MSG_SLOW = "有一筆還沒存好，網路可能不太穩。先不要關掉這一頁。";
+
+var pendSeq = 0;
+var queue = Promise.resolve();
+var writesDone = 0;
+
+/* 按下去畫面馬上變(先疊在畫面上),背後一筆一筆送出去。
+   送成功:併進確認過的資料;送失敗:只有那一筆退回原樣,告訴使用者沒存到。
+   hold 有值時先等一下再送,這段時間裡同一格再按一次會直接取消(連點小步驟用)。 */
+function submitWrite(entry, okMsg, onFail, hold) {
+  pendSeq += 1;
+  entry.seq = pendSeq;
+  if (entry.change) {
+    entry.change.id = "local-" + pendSeq;
+    entry.change.at = nowStamp();
+    entry.change.todo = entry.id;
+  }
+  entry.sent = hold ? false : true;
+  state.pend.push(entry);
+  render();
+  function go() {
+    if (entry.cancelled) return;
+    entry.sent = true;
+    render();
+    queue = queue.then(function () { return send(entry, okMsg, onFail); });
+  }
+  if (hold) entry.timer = setTimeout(go, hold);
+  else go();
+}
+function dropPend(entry) {
+  state.pend = state.pend.filter(function (p) { return p !== entry; });
+}
+function send(entry, okMsg, onFail) {
+  var slow = setTimeout(function () { toast(MSG_SLOW, true, true); }, WAIT_MS);
+  var change = { by: entry.change.by, what: entry.change.what, before: entry.change.before };
+  var run = entry.kind === "create" ? Platform.create(entry.doc, change) : Platform.update(entry.id, entry.patch, change);
+  return Promise.resolve(run).then(function (res) {
+    clearTimeout(slow);
+    if (toastText() === MSG_SLOW) hideToast();
+    var realId = res && res.id ? res.id : entry.id;
+    dropPend(entry);
+    writesDone += 1;
+    if (entry.kind === "create") {
+      var doc = clone(entry.doc);
+      doc.id = realId;
+      state.base[realId] = doc;
+      if (realId !== entry.id) {
+        state.pend.forEach(function (p) { if (p.id === entry.id) p.id = realId; });
+        if (state.openId === entry.id) state.openId = realId;
+      }
+    } else if (state.base[entry.id]) {
+      state.base[entry.id] = merge(state.base[entry.id], entry.patch);
+      state.base[entry.id].updated = today();
+    }
+    var rec = clone(entry.change);
+    rec.todo = realId;
+    if (res && res.at) rec.at = res.at;
+    if (res && res.changeId !== undefined) rec.id = res.changeId;
+    state.changes.unshift(rec);
+    state.changes = state.changes.slice(0, SHOW_CHANGES);
+    if (okMsg) toast(typeof okMsg === "function" ? okMsg(realId) : okMsg);
+    render();
+  }, function (err) {
+    clearTimeout(slow);
+    dropPend(entry);
+    if (onFail) onFail();
+    if (err && err.code === "bad_key") {
+      Platform.clearKey();
+      state.phase = "key";
+      state.keyError = MSG_BAD_KEY;
+    }
+    if (err && err.code === "bad_key") toast(MSG_BAD_KEY, true);
+    else toast(notSavedMsg(entry), true);
+    render();
+  });
+}
+/* 沒存到時說清楚是哪一筆;短時間內好幾筆都沒存到,一起列出來。 */
+var failList = [];
+var failAt = 0;
+function notSavedMsg(entry) {
+  var now = Date.now();
+  if (now - failAt > 7000) failList = [];
+  failAt = now;
+  var what = entry && entry.change ? text(entry.change.what) : "";
+  var tid = entry ? text(entry.id) : "";
+  failList.push((tid ? tid + " " : "") + (what ? shorten(what, 30) : "剛剛那一筆"));
+  if (failList.length === 1) return "沒有存到：" + failList[0] + "。畫面已經退回原樣，請再試一次。";
+  return "有 " + failList.length + " 筆沒有存到：" + failList.join("、") + "。畫面已經退回原樣，請再試一次。";
+}
+function changeOf(what, before) {
+  return { by: state.me, what: what, before: before || {} };
+}
+function saveTodo(m, patch, what, before, okMsg, onFail, hold) {
+  var entry = { kind: "update", id: m.id, patch: patch, change: changeOf(what, before) };
+  submitWrite(entry, okMsg, onFail, hold);
+  return entry;
+}
+
+/* ---------- 讀資料庫 ---------- */
+
+var loadSeq = 0;
+function reload() {
+  var mine = ++loadSeq;
+  var mark = writesDone;
+  return Promise.resolve().then(function () { return Platform.load(); }).then(function (data) {
+    if (mine !== loadSeq) return;
+    /* 讀的途中剛好有一筆存好了:這次讀到的可能是舊的,丟掉重讀。 */
+    if (writesDone !== mark) {
+      setTimeout(reload, 300);
+      return;
+    }
+    var map = {};
+    (data.todos || []).forEach(function (t) { if (t && t.id) map[t.id] = t; });
+    state.base = map;
+    state.changes = (data.changes || []).slice(0, SHOW_CHANGES);
+    state.stale = false;
+    syncEdit();
+    if (state.phase !== "ready") state.phase = state.me ? "ready" : "who";
+    render();
+  }, function (err) {
+    if (mine !== loadSeq) return;
+    var code = err && err.code;
+    if (code === "bad_key") {
+      Platform.clearKey();
+      state.base = {};
+      state.changes = [];
+      state.phase = "key";
+      state.keyError = state.keyError || "待辦密碼不對，請再確認一次。";
+    } else if (state.phase === "ready" || state.phase === "who") {
+      state.stale = true;
+    } else {
+      state.phase = "down";
+      state.downKind = code === "not_ready" ? "not_ready" : "offline";
+    }
+    render();
+  });
+}
+var pollTimer = 0;
+function startPolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(function () {
+    if (document.visibilityState !== "hidden" && state.phase === "ready") reload();
+  }, REFRESH_MS);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && state.phase === "ready") reload();
+  });
+}
+function begin() {
+  state.phase = "loading";
+  render();
+  reload();
+  startPolling();
+}
+
+/* ---------- 操作 ---------- */
+
+var quietUntil = 0;
+function quiet() {
+  return Date.now() < quietUntil;
+}
+function hush() {
+  quietUntil = Date.now() + QUIET_MS;
+}
+var circleUntil = {};
+function circleQuiet(id) {
+  var now = Date.now();
+  if (circleUntil[id] && now < circleUntil[id]) return true;
+  circleUntil[id] = now + QUIET_MS;
+  return false;
+}
+function doubleTap(ev) {
+  return !!ev && typeof ev.detail === "number" && ev.detail >= 2;
+}
+function toggleIn(list, value) {
+  var out = list.filter(function (x) { return x !== value; });
+  if (out.length === list.length) out.push(value);
+  return out;
+}
+function pickClinics(list) {
+  var out = CLINICS.filter(function (c) { return list.indexOf(c) >= 0; });
+  return out.length ? out : ["其他"];
+}
+/* 字太多時說清楚,不偷偷切掉。 */
+var MAX = { title: 80, step: 80, next: 200, log: 500, answer: 500, ballName: 30 };
+function tooLong(value, max, label) {
+  var n = Array.from ? Array.from(value).length : value.length;
+  return n > max ? label + "最多 " + max + " 個字，現在是 " + n + " 個字，請刪短一點。" : "";
+}
+function setField(id, value) {
+  var el = document.getElementById(id);
+  if (el) el.value = value;
+}
+function blockIfEditing(id) {
+  if (state.edit && editDirty()) {
+    toast("還在修改內容，先按「存起來」或「先不改」。", true);
+    return true;
+  }
+  state.edit = null;
+  return false;
+}
+function markDone(id, fromCircle) {
+  var m = findModel(id);
+  if (!m || isClosed(m)) return;
+  if (state.edit && state.edit.id === id) {
+    /* 這一件的修改表單改到一半:跟點別件一樣先擋下來,改的字不會不見。 */
+    if (editDirty()) {
+      toast("還在修改內容，先按「存起來」或「先不改」。", true);
+      return;
+    }
+    state.edit = null;
+  }
+  if (state.openId === id) state.openId = "";
+  saveTodo(m, { status: ST_DONE, backTo: m.status }, "標成完成", { status: m.status, backTo: m.backTo }, "", function () {
+    if (!fromCircle) state.openId = id;
+  });
+  toast("已標完成。", false, false, { label: "復原", run: function () { restore(id, true); } });
+}
+function restore(id, isUndo) {
+  var m = findModel(id);
+  if (!m || !isClosed(m)) return;
+  var back = OPEN_STATUSES.indexOf(m.backTo) >= 0 ? m.backTo : ST_DOING;
+  state.reveal = id;
+  saveTodo(m, { status: back, backTo: "" }, (isUndo ? "復原：" : "") + "從" + (m.status === ST_DONE ? "完成" : "擱置") + "拿回來，狀態回到「" + back + "」",
+    { status: m.status, backTo: m.backTo }, isUndo ? "復原了。" : "拿回來了。");
+}
+
+var actions = {
+  "who-open": function () {
+    state.choosingWho = true;
+    render();
+  },
+  "who-cancel": function () {
+    state.choosingWho = false;
+    render();
+  },
+  "who-pick": function (el) {
+    var p = el.getAttribute("data-value");
+    if (PEOPLE.indexOf(p) < 0) return;
+    state.me = p;
+    memSet(WHO_KEY, p);
+    state.choosingWho = false;
+    state.whoFilter = "";
+    if (state.phase === "who") state.phase = "ready";
+    toast("好，之後記成" + p + "改的。");
+    render();
+  },
+  "retry": function () {
+    begin();
+  },
+  "logout": function () {
+    Platform.clearKey();
+    state.base = {};
+    state.changes = [];
+    state.pend = [];
+    state.keyError = "";
+    state.phase = "key";
+    render();
+  },
+  "add-open": function () {
+    state.adding = true;
+    state.errors.add = "";
+    state.focus = "new-title";
+    render();
+  },
+  "add-cancel": function () {
+    state.adding = false;
+    state.errors.add = "";
+    state.drafts["add:title"] = "";
+    state.add = { icon: DEFAULT_ICON, clinics: [] };
+    render();
+  },
+  "add-icon": function (el) {
+    state.add.icon = el.getAttribute("data-value");
+    render();
+  },
+  "add-clinic": function (el) {
+    state.add.clinics = toggleIn(state.add.clinics, el.getAttribute("data-value"));
+    render();
+  },
+  "filter": function (el) {
+    var c = el.getAttribute("data-clinic");
+    state.filter = state.filter === c ? "" : c;
+    render();
+  },
+  "who-filter": function (el) {
+    var v = el.getAttribute("data-value");
+    if (v === "done") {
+      state.whoFilter = "";
+      state.shelfOpen.done = !state.shelfOpen.done;
+      render();
+      var shelf = root.querySelector('[data-key="shelf-done"]');
+      if (state.shelfOpen.done && shelf && shelf.scrollIntoView) shelf.scrollIntoView({ block: "nearest" });
+      return;
+    }
+    state.whoFilter = state.whoFilter === v ? "" : v;
+    render();
+  },
+  "toggle": function (el, id) {
+    if (state.edit && state.edit.id === id && editDirty()) {
+      toast("還在修改內容，先按「存起來」或「先不改」。", true);
+      return;
+    }
+    if (state.openId !== id && blockIfEditing(id)) return;
+    if (state.edit && state.edit.id === id) state.edit = null;
+    state.openId = state.openId === id ? "" : id;
+    state.stepEdit = null;
+    state.answering = null;
+    render();
+  },
+  "shelf": function (el) {
+    var name = el.getAttribute("data-value");
+    state.shelfOpen[name] = !state.shelfOpen[name];
+    render();
+  },
+  "log-more": function (el, id) {
+    state.logAll[id] = true;
+    render();
+  },
+  /* 防連按只擋「同一件」:同一件 0.7 秒內再按不算;
+     連按兩下的第二下(滑鼠或手指在同一個位置快速點第二次)也不算,免得按到剛好移上來的下一件。
+     不同件分開按,各算各的。 */
+  "quick-done": function (el, id, ev) {
+    if (doubleTap(ev) || circleQuiet(id)) return;
+    markDone(id, true);
+  },
+  "undo-done": function (el, id, ev) {
+    if (doubleTap(ev) || circleQuiet(id)) return;
+    restore(id, false);
+  },
+  "toggle-step": function (el, id) {
+    if (quiet()) return;
+    var key = el.getAttribute("data-step");
+    /* 同一格還沒送出去又按一次:直接取消前一下,等於沒按。 */
+    var waiting = null;
+    state.pend.forEach(function (p) { if (p.stepKey === id + "/" + key && p.sent === false) waiting = p; });
+    if (waiting) {
+      waiting.cancelled = true;
+      clearTimeout(waiting.timer);
+      dropPend(waiting);
+      render();
+      return;
+    }
+    var m = findModel(id);
+    if (!m) return;
+    var step = null;
+    m.steps.forEach(function (s) { if (s.key === key) step = s; });
+    if (!step || step.fixed) return;
+    var patch = { steps: {} };
+    var before = { steps: {} };
+    patch.steps[key] = { done: !step.done };
+    before.steps[key] = { done: !!step.done };
+    var entry = saveTodo(m, patch, (step.done ? "取消勾選小步驟" : "勾掉小步驟") + "「" + text(step.text) + "」", before, "", null, STEP_HOLD_MS);
+    entry.stepKey = id + "/" + key;
+  },
+  "step-edit": function (el, id) {
+    var key = el.getAttribute("data-step");
+    var m = findModel(id);
+    if (!m) return;
+    m.steps.forEach(function (s) { if (s.key === key) state.drafts.stepEdit = text(s.text); });
+    state.stepEdit = { id: id, key: key };
+    state.focus = "step-edit-input";
+    render();
+  },
+  "step-edit-cancel": function () {
+    state.stepEdit = null;
+    render();
+  },
+  "step-remove": function (el, id) {
+    var se = state.stepEdit;
+    var m = findModel(id);
+    if (!se || !m) return;
+    var step = null;
+    m.steps.forEach(function (s) { if (s.key === se.key) step = s; });
+    state.stepEdit = null;
+    if (!step) { render(); return; }
+    var patch = { steps: {} };
+    var before = { steps: {} };
+    patch.steps[se.key] = null;
+    before.steps[se.key] = { text: text(step.text), done: !!step.done, order: step.order };
+    saveTodo(m, patch, "拿掉小步驟「" + text(step.text) + "」", before, "拿掉了。");
+  },
+  "answer-open": function (el, id) {
+    state.answering = { id: id, key: el.getAttribute("data-value") };
+    state.drafts.answer = "";
+    state.focus = "answer-input";
+    render();
+  },
+  "answer-cancel": function () {
+    state.answering = null;
+    render();
+  },
+  "set-status": function (el, id) {
+    var m = findModel(id);
+    var to = el.getAttribute("data-value");
+    if (!m || to === m.status || OPEN_STATUSES.indexOf(to) < 0) return;
+    var patch = { status: to };
+    var before = { status: m.status };
+    var what = "狀態改成「" + to + "」";
+    if (to === ST_REVIEW && PEOPLE.indexOf(m.ball) < 0) {
+      patch.ball = OWNER;
+      before.ball = m.ball;
+      what += "，球回到" + OWNER + "手上";
+    }
+    saveTodo(m, patch, what, before);
+  },
+  "mark-done": function (el, id) {
+    markDone(id, false);
+  },
+  "shelve": function (el, id) {
+    var m = findModel(id);
+    if (!m) return;
+    state.openId = "";
+    saveTodo(m, { status: ST_SHELVED, backTo: m.status }, "收進擱置", { status: m.status, backTo: m.backTo },
+      "收起來了，放在最下面的「擱置的」，隨時可以拿回來。", function () { state.openId = id; });
+  },
+  "restore": function (el, id) {
+    restore(id, false);
+  },
+  "edit-open": function (el, id) {
+    var m = findModel(id);
+    if (!m) return;
+    var kind = PEOPLE.indexOf(m.ball) >= 0 || m.ball === AI ? m.ball : "other";
+    var orig = { title: m.title, clinics: m.clinics.slice(), next: m.next, ball: m.ball, ballKind: kind, ballName: kind === "other" ? m.ball : "", due: m.due };
+    state.edit = { id: id, clinics: m.clinics.slice(), ballKind: kind, orig: orig };
+    state.drafts["edit:title"] = m.title;
+    state.drafts["edit:next"] = m.next;
+    state.drafts["edit:ballName"] = orig.ballName;
+    var dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(m.due);
+    state.drafts["edit:dueY"] = dm ? String(+dm[1]) : "";
+    state.drafts["edit:dueM"] = dm ? String(+dm[2]) : "";
+    state.drafts["edit:dueD"] = dm ? String(+dm[3]) : "";
+    state.errors.edit = "";
+    state.openId = id;
+    state.focus = "edit-title";
+    render();
+  },
+  "edit-cancel": function () {
+    state.edit = null;
+    state.errors.edit = "";
+    render();
+  },
+  "edit-clinic": function (el) {
+    if (!state.edit) return;
+    state.edit.clinics = toggleIn(state.edit.clinics, el.getAttribute("data-value"));
+    render();
+  },
+  "edit-ball": function (el) {
+    if (!state.edit) return;
+    state.edit.ballKind = el.getAttribute("data-value");
+    if (state.edit.ballKind === "other") state.focus = "edit-ballname";
+    render();
+  },
+  "edit-due-clear": function () {
+    ["Y", "M", "D"].forEach(function (part) {
+      state.drafts["edit:due" + part] = "";
+      setField("edit-due-" + part, "");
+    });
+    render();
+  }
+};
+
+var submits = {
+  "key": function () {
+    var key = text(state.drafts.key).trim();
+    if (!key) {
+      state.keyError = "請先輸入待辦密碼。";
+      state.focus = "key-input";
+      render();
+      return;
+    }
+    state.drafts.key = "";
+    state.keyError = "";
+    Platform.setKey(key);
+    begin();
+  },
+  "add": function () {
+    var title = text(state.drafts["add:title"]).trim();
+    if (!title) {
+      state.errors.add = "先幫這件事取個名字。";
+      state.focus = "new-title";
+      render();
+      return;
+    }
+    if (tooLong(title, MAX.title, "標題")) {
+      state.errors.add = tooLong(title, MAX.title, "標題");
+      state.focus = "new-title";
+      render();
+      return;
+    }
+    var keep = { title: state.drafts["add:title"], icon: state.add.icon, clinics: state.add.clinics.slice() };
+    var icon = TODO_ICONS[state.add.icon] ? state.add.icon : DEFAULT_ICON;
+    var clinics = pickClinics(state.add.clinics);
+    var id = nextId();
+    var day = today();
+    var doc = {
+      id: id, title: title, icon: icon, clinics: clinics, status: ST_TODO, backTo: "",
+      steps: {}, next: "", ball: state.me, due: "", questions: {}, links: {}, log: {},
+      quote: "", created: day, updated: day
+    };
+    state.adding = false;
+    state.errors.add = "";
+    state.drafts["add:title"] = "";
+    state.add = { icon: DEFAULT_ICON, clinics: [] };
+    if (state.filter && clinics.indexOf(state.filter) < 0) state.filter = "";
+    state.whoFilter = "";
+    state.reveal = id;
+    submitWrite({ kind: "create", id: id, doc: doc, change: changeOf("新增了這一件", {}) },
+      function (realId) { return "加進去了，編號 " + realId + "。"; },
+      function () {
+        state.adding = true;
+        state.drafts["add:title"] = keep.title;
+        state.add = { icon: keep.icon, clinics: keep.clinics };
+      });
+  },
+  "step": function (form, id) {
+    var m = findModel(id);
+    var draftKey = "step:" + id;
+    var value = text(state.drafts[draftKey]).trim();
+    if (!m) return;
+    if (!value) {
+      state.focus = "step-input-" + id;
+      render();
+      return;
+    }
+    if (tooLong(value, MAX.step, "小步驟")) {
+      toast(tooLong(value, MAX.step, "小步驟"), true);
+      return;
+    }
+    hush();
+    var key = "s" + compactNow() + rnd(2);
+    var patch = { steps: {} };
+    patch.steps[key] = { text: value, done: false, order: maxOrder(m.steps) + 1 };
+    state.drafts[draftKey] = "";
+    setField("step-input-" + id, "");
+    saveTodo(m, patch, "加了小步驟「" + value + "」", {}, "", function () {
+      state.drafts[draftKey] = value;
+      setField("step-input-" + id, value);
+    });
+  },
+  "step-edit": function (form, id) {
+    var se = state.stepEdit;
+    var m = findModel(id);
+    if (!se || !m) return;
+    var value = text(state.drafts.stepEdit).trim();
+    var step = null;
+    m.steps.forEach(function (s) { if (s.key === se.key) step = s; });
+    if (!step) { state.stepEdit = null; render(); return; }
+    if (!value) {
+      toast("小步驟不能空白；不要這一步的話，按「拿掉這一步」。", true);
+      return;
+    }
+    if (tooLong(value, MAX.step, "小步驟")) {
+      toast(tooLong(value, MAX.step, "小步驟"), true);
+      return;
+    }
+    state.stepEdit = null;
+    if (value === text(step.text)) { render(); return; }
+    var patch = { steps: {} };
+    var before = { steps: {} };
+    patch.steps[se.key] = { text: value };
+    before.steps[se.key] = { text: text(step.text) };
+    saveTodo(m, patch, "小步驟「" + text(step.text) + "」改成「" + value + "」", before, "改好了。");
+  },
+  "answer": function (form, id) {
+    var an = state.answering;
+    var m = findModel(id);
+    if (!an || !m) return;
+    var value = text(state.drafts.answer).trim();
+    if (!value) {
+      state.focus = "answer-input";
+      render();
+      return;
+    }
+    if (tooLong(value, MAX.answer, "回答")) {
+      toast(tooLong(value, MAX.answer, "回答"), true);
+      return;
+    }
+    var q = null;
+    m.questions.forEach(function (x) { if (x.key === an.key) q = x; });
+    state.answering = null;
+    state.drafts.answer = "";
+    if (!q) { render(); return; }
+    var gkey = "g" + compactNow() + rnd(2);
+    var patch = { questions: {}, log: {} };
+    patch.questions[an.key] = { answered: true, answer: value, answeredBy: state.me, answeredOn: today() };
+    patch.log[gkey] = { date: today(), text: "回答了「" + text(q.text) + "」：" + value, by: state.me, order: maxOrder(m.log) + 1 };
+    var before = { questions: {} };
+    before.questions[an.key] = { answered: false };
+    saveTodo(m, patch, "回答了問題「" + shorten(text(q.text), 30) + "」", before, "回答記下來了。");
+  },
+  "log": function (form, id) {
+    var m = findModel(id);
+    var draftKey = "log:" + id;
+    var value = text(state.drafts[draftKey]).trim();
+    if (!m) return;
+    if (!value) {
+      state.focus = "log-input-" + id;
+      render();
+      return;
+    }
+    if (tooLong(value, MAX.log, "進度")) {
+      toast(tooLong(value, MAX.log, "進度"), true);
+      return;
+    }
+    var key = "g" + compactNow() + rnd(2);
+    var patch = { log: {} };
+    patch.log[key] = { date: today(), text: value, by: state.me, order: maxOrder(m.log) + 1 };
+    state.drafts[draftKey] = "";
+    setField("log-input-" + id, "");
+    saveTodo(m, patch, "記了一筆進度「" + shorten(value.replace(/\s+/g, " "), 40) + "」", {}, "記下來了。", function () {
+      state.drafts[draftKey] = value;
+      setField("log-input-" + id, value);
+    });
+  },
+  /* 修改表單:拿「表單裡的字」跟「打開表單那一刻的樣子」比,只送真的改過的欄位。
+     別人在表單開著時改了別的欄位,不會被蓋回去。 */
+  "edit": function (form, id) {
+    var m = findModel(id);
+    var raw = findRaw(id);
+    var e = state.edit;
+    if (!m || !raw || !e) return;
+    var o = e.orig;
+    var title = text(state.drafts["edit:title"]).trim();
+    var next = text(state.drafts["edit:next"]).trim();
+    var dueY = text(state.drafts["edit:dueY"]);
+    var dueM = text(state.drafts["edit:dueM"]);
+    var dueD = text(state.drafts["edit:dueD"]);
+    var due = "";
+    var ball = e.ballKind === "other" ? text(state.drafts["edit:ballName"]).trim() : e.ballKind;
+    if (/^claude$/i.test(ball)) ball = AI;
+    if (!title) {
+      state.errors.edit = "標題不能空白。";
+      state.focus = "edit-title";
+      render();
+      return;
+    }
+    if (!ball) {
+      state.errors.edit = "請寫對方的名字。";
+      state.focus = "edit-ballname";
+      render();
+      return;
+    }
+    var long = (title !== o.title && tooLong(title, MAX.title, "標題")) ||
+      (next !== o.next && tooLong(next, MAX.next, "下一步")) ||
+      (e.ballKind === "other" && ball !== o.ball && tooLong(ball, MAX.ballName, "對方的名字"));
+    if (long) {
+      state.errors.edit = long;
+      render();
+      return;
+    }
+    if (dueY || dueM || dueD) {
+      if (!(dueY && dueM && dueD)) {
+        state.errors.edit = "期限要把年、月、日都選好，或是按「不設期限」。";
+        render();
+        return;
+      }
+      if (new Date(Date.UTC(+dueY, +dueM - 1, +dueD)).getUTCMonth() !== +dueM - 1) {
+        state.errors.edit = "沒有 " + dueM + " 月 " + dueD + " 日這一天，請再選一次。";
+        render();
+        return;
+      }
+      due = dueY + "-" + pad(+dueM) + "-" + pad(+dueD);
+    }
+    var clinics = pickClinics(e.clinics);
+    var patch = {};
+    var before = {};
+    var parts = [];
+    if (title !== o.title && title !== m.title) {
+      patch.title = title;
+      before.title = m.title;
+      parts.push("標題改成「" + title + "」");
+    }
+    if (!sameList(clinics, pickClinics(o.clinics)) && !sameList(clinics, m.clinics)) {
+      patch.clinics = clinics;
+      before.clinics = Array.isArray(raw.clinics) ? clone(raw.clinics) : [];
+      parts.push("哪一家改成" + clinics.join("、"));
+    }
+    if (next !== o.next && next !== m.next) {
+      patch.next = next;
+      before.next = m.next;
+      parts.push(next ? "下一步改成「" + shorten(next, 40) + "」" : "把下一步清空");
+    }
+    if (ball !== o.ball && ball !== m.ball) {
+      patch.ball = ball;
+      before.ball = text(raw.ball);
+      parts.push("球交到" + spaced(ball) + "手上");
+      if (m.status === ST_REVIEW && PEOPLE.indexOf(ball) < 0) {
+        patch.status = ST_DOING;
+        before.status = ST_REVIEW;
+        parts.push("狀態改回「" + ST_DOING + "」");
+      }
+    }
+    if (due !== o.due && due !== m.due) {
+      patch.due = due;
+      before.due = m.due;
+      parts.push(due ? "期限改成 " + showDate(due) : "拿掉期限");
+    }
+    state.edit = null;
+    state.errors.edit = "";
+    if (!parts.length) {
+      toast("沒有改到東西。");
+      render();
+      return;
+    }
+    saveTodo(m, patch, parts.join("；"), before, "改好了。", function () {
+      state.edit = e;
+      state.openId = id;
+    });
+  }
+};
+
+root.addEventListener("click", function (ev) {
+  var el = ev.target.closest ? ev.target.closest("[data-act]") : null;
+  if (!el || !root.contains(el) || el.disabled) return;
+  var act = actions[el.getAttribute("data-act")];
+  if (act) act(el, el.getAttribute("data-id") || "", ev);
+});
+/* 用注音、倉頡打字時,選字也是按 Enter。那一下不可以當成「送出」。 */
+var imeEnterAt = 0;
+root.addEventListener("keydown", function (ev) {
+  if (ev.key === "Enter" && (ev.isComposing || ev.keyCode === 229)) imeEnterAt = Date.now();
+}, true);
+root.addEventListener("submit", function (ev) {
+  var form = ev.target.closest ? ev.target.closest("form[data-form]") : null;
+  if (!form) return;
+  ev.preventDefault();
+  if (Date.now() - imeEnterAt < 150) return;
+  var go = submits[form.getAttribute("data-form")];
+  if (go) go(form, form.getAttribute("data-id") || "");
+});
+function keepDraft(ev) {
+  var key = ev.target.getAttribute ? ev.target.getAttribute("data-draft") : "";
+  if (key) state.drafts[key] = ev.target.value;
+}
+root.addEventListener("input", keepDraft);
+root.addEventListener("change", keepDraft);
+
+/* ---------- 開始 ---------- */
+
+function start() {
+  document.documentElement.lang = "zh-Hant";
+  var who = memGet(WHO_KEY);
+  state.me = PEOPLE.indexOf(who) >= 0 ? who : "";
+  if (Platform.demo) window.__todoApp = { reload: reload, state: state };
+  if (Platform.needsKey && !Platform.hasKey()) {
+    state.phase = "key";
+    render();
+    return;
+  }
+  begin();
+}
+
+start();
+})();
+</script>
+</body>
+</html>

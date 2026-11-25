@@ -9,33 +9,42 @@
 <body>
 <title>診所待辦 測試頁</title>
 <style>
-/* 版面:單欄清單,內容最寬 880。由上到下是一排數字(點了可以篩選「等誰的」)、哪一家的篩選、
-   一件一行的清單,完成和擱置收在最下面,最後是「最近改了什麼」。
-   顏色照極簡風格:白底、細邊框,藍色只留給「主要動作」和「球在我手上」。 */
+/* 第 3 版(2026-11-25 版面重設計)的共用樣子;榮軒選了「卡片風」,卡片本身的樣子在 look-B.css。
+   白底、極簡、留白多;顏色只有三種意思:
+   藍 = 主要動作(新增、存起來);綠 = 完成;哪一家 = 固定四個顏色(色點、色塊、篩選鈕都用同一組)。
+   (清單風 look-A.css 留在 git 分支「版面重設計-二選一」的歷史裡,main 不再用。) */
 :root {
   color-scheme: light;
   --bg: #ffffff;
-  --bg-soft: #f3f6f4;
   --panel: #ffffff;
-  --line: #e0e3eb;
-  --line-soft: #f0f3fa;
-  --line-strong: #c3c8d4;
-  --ink: #131722;
-  --ink-2: #434651;
-  --ink-3: #636874;
+  --soft: #f6f7f9;
+  --line: #e7e9ee;
+  --line-soft: #f1f2f5;
+  --line-strong: #c9cdd6;
+  --ink: #16181d;
+  --ink-2: #4a4f5a;
+  --ink-3: #6b707b;
   --accent: #2962ff;
   --accent-strong: #1e4fd6;
   --accent-ink: #1e4fd6;
-  --accent-soft: #e8f0ff;
+  --accent-soft: #edf2ff;
   --on-accent: #ffffff;
-  --ok: #067a67;
-  --ok-soft: #e3f4ef;
-  --warn: #8a5300;
-  --warn-soft: #fdf1dc;
+  --ok: #0b8a5f;
+  --warn: #9a5b00;
+  --warn-soft: #fdf3e2;
+  --review: #d98a00;
   --bad: #b3261e;
-  --bad-bg: #b3261e;
-  --shadow: 0 1px 2px rgba(19, 23, 34, 0.05);
-  --shadow-lg: 0 6px 24px rgba(19, 23, 34, 0.18);
+  --shadow-lg: 0 8px 28px rgba(22, 24, 29, 0.16);
+
+  /* 哪一家的顏色:九辰青綠、佐升橘、德佐中醫紫、其他灰 */
+  --c-jc: #10a37f;
+  --c-zs: #f08c00;
+  --c-dz: #8b5cf6;
+  --c-ot: #9aa0ab;
+  --t-jc: #def5ee;
+  --t-zs: #fdeed8;
+  --t-dz: #ede6fe;
+  --t-ot: #eef0f3;
 
   --font: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Heiti TC", sans-serif;
   --font-num: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
@@ -43,12 +52,10 @@
   --fs-sm: 14px;
   --fs: 15px;
   --fs-title: 16px;
-  --fs-h1: 20px;
-  --fs-num: 24px;
   --tap: 44px;
-  --r: 10px;
+  --r: 14px;
 }
-/* 榮軒 2026-11-25 指定:白色背景。所以這一頁固定用淺色,不跟著裝置或瀏覽器的深色模式變。 */
+/* 榮軒 2026-11-25 指定:白色背景,固定淺色,不跟著裝置的深色模式變。 */
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -58,7 +65,7 @@ body {
   color: var(--ink);
   font-family: var(--font);
   font-size: var(--fs);
-  line-height: 1.6;
+  line-height: 1.55;
   line-break: strict;
 }
 [hidden] { display: none !important; }
@@ -67,56 +74,51 @@ ul { list-style: none; }
 button, input, textarea, select { font: inherit; color: inherit; margin: 0; }
 button { -webkit-tap-highlight-color: transparent; appearance: none; -webkit-appearance: none; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 .app {
-  max-width: 880px;
+  max-width: 720px;
   margin: 0 auto;
-  padding-block: 16px 80px;
+  padding-block: 18px 96px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
-#root { display: flex; flex-direction: column; gap: 12px; }
+#root { display: flex; flex-direction: column; gap: 14px; }
 
 /* 圖示 */
-.ic {
-  width: 20px;
-  height: 20px;
-  flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
+.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .ic .fill { fill: currentColor; }
 .ic .on-fill { stroke: var(--panel); stroke-width: 2; }
 
 /* 最上面 */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: var(--tap); }
 .brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.brand-mark { width: 26px; height: 26px; color: var(--accent-ink); }
-h1 { font-size: var(--fs-h1); font-weight: 650; line-height: 1.3; letter-spacing: 0.02em; white-space: nowrap; }
-.top-right { display: flex; align-items: center; gap: 4px; flex: none; }
-.who-btn { padding: 0 10px; color: var(--ink-2); }
-.h2 { display: flex; align-items: center; gap: 8px; font-size: var(--fs); font-weight: 600; line-height: 1.4; }
+.brand-mark { width: 24px; height: 24px; color: var(--ink-2); }
+h1 { font-size: 22px; font-weight: 700; line-height: 1.25; letter-spacing: 0.02em; white-space: nowrap; }
+.top-right { display: flex; align-items: center; gap: 6px; flex: none; }
+.who-btn, .add-btn {
+  display: grid; place-items: center; width: var(--tap); height: var(--tap);
+  padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer;
+}
+.add-btn { background: var(--accent); color: var(--on-accent); }
+.add-btn .ic { width: 22px; height: 22px; stroke-width: 2; }
+@media (hover: hover) { .add-btn:hover { background: var(--accent-strong); } }
+.avatar {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; flex: none;
+  border-radius: 50%; background: var(--soft); border: 1px solid var(--line);
+  color: var(--ink-2); font-size: var(--fs-sm); font-weight: 600; line-height: 1;
+}
+.avatar.sm { width: 26px; height: 26px; font-size: var(--fs-cap); font-weight: 500; }
+.avatar.is-ai { background: #fff6ec; border-color: #f6dfc2; color: #a35a00; }
+.h2 { display: flex; align-items: center; gap: 8px; font-size: var(--fs-title); font-weight: 600; line-height: 1.4; }
 .h2 .ic { color: var(--ink-3); }
 
 /* 按鈕 */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: var(--tap);
-  padding: 0 14px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--ink-2);
-  font-size: var(--fs-sm);
-  line-height: 1.3;
-  white-space: nowrap;
-  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: var(--tap); padding: 0 14px;
+  border: 1px solid transparent; border-radius: 10px; background: transparent;
+  color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.3; white-space: nowrap; cursor: pointer;
 }
 @media (hover: hover) { .btn:hover { background: var(--line-soft); } }
 .btn .ic { width: 18px; height: 18px; }
@@ -124,49 +126,27 @@ h1 { font-size: var(--fs-h1); font-weight: 650; line-height: 1.3; letter-spacing
 @media (hover: hover) { .btn.line:hover { border-color: var(--line-strong); } }
 .btn.primary { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 @media (hover: hover) { .btn.primary:hover { background: var(--accent-strong); } }
-.btn.more { align-self: flex-start; padding-left: 6px; color: var(--ink-3); }
-.btn.small { align-self: flex-start; padding: 0 12px; }
-.linkbtn {
-  min-height: var(--tap);
-  margin-left: 6px;
-  padding: 0 6px;
-  border: 0;
-  background: transparent;
-  color: var(--accent-ink);
-  font-size: var(--fs-cap);
-  cursor: pointer;
-}
+.btn.sq { width: var(--tap); padding: 0; flex: none; }
+.btn.more { align-self: flex-start; padding-left: 4px; color: var(--ink-3); }
+.btn.small { align-self: flex-start; padding: 0 14px; }
 .icon-btn {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: var(--tap);
-  height: var(--tap);
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--ink-3);
-  cursor: pointer;
+  flex: none; display: grid; place-items: center; width: var(--tap); height: var(--tap);
+  border: 0; border-radius: 10px; background: transparent; color: var(--line-strong); cursor: pointer;
 }
-@media (hover: hover) { .icon-btn:hover { background: var(--line-soft); } }
-.icon-btn .ic { width: 18px; height: 18px; }
+@media (hover: hover) { .icon-btn:hover { background: var(--line-soft); color: var(--ink-3); } }
+.icon-btn .ic { width: 17px; height: 17px; }
 
-/* 提醒 */
-.note { display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; border-radius: 8px; font-size: var(--fs-cap); line-height: 1.5; }
-.note .ic { width: 18px; height: 18px; margin-top: 1px; }
-.note-demo { background: var(--accent-soft); color: var(--accent-ink); }
-.note-stale { background: var(--warn-soft); color: var(--warn); }
-.note-edit { background: var(--warn-soft); color: var(--warn); margin-bottom: 12px; }
+/* 提示條 */
+.note { display: flex; align-items: center; gap: 8px; padding: 0 4px 0 12px; min-height: var(--tap); border-radius: 12px; font-size: var(--fs-cap); line-height: 1.45; }
+.note > span { flex: 1 1 auto; min-width: 0; padding: 6px 0; }
+.note > .ic { width: 16px; height: 16px; }
+.note-demo { background: var(--soft); color: var(--ink-3); }
+.note-stale, .note-edit { background: var(--warn-soft); color: var(--warn); }
+.note-edit { padding-right: 12px; }
+.note-x { flex: none; display: grid; place-items: center; width: var(--tap); height: var(--tap); padding: 0; border: 0; background: transparent; color: var(--ink-3); cursor: pointer; }
+.note-x .ic { width: 16px; height: 16px; }
 .loading { color: var(--ink-3); font-size: var(--fs-sm); padding: 24px 2px; }
-.down {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 24px 20px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-}
+.down { display: flex; align-items: flex-start; gap: 14px; padding: 24px 20px; border: 1px solid var(--line); border-radius: var(--r); }
 .down-art { width: 36px; height: 36px; color: var(--warn); }
 .down-text { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
 .down-title { font-size: var(--fs-title); font-weight: 600; line-height: 1.4; }
@@ -175,376 +155,256 @@ h1 { font-size: var(--fs-h1); font-weight: 650; line-height: 1.3; letter-spacing
 /* 輸入密碼、選我是誰 */
 .gate { max-width: 460px; }
 .who-row { display: flex; flex-wrap: wrap; gap: 10px; }
-.who-pick { flex: 1 1 120px; min-height: 52px; font-size: var(--fs); }
+.who-pick { flex: 1 1 120px; min-height: 56px; gap: 10px; font-size: var(--fs); }
 .who-pick.is-on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
 
-/* 一排數字(也是「等誰的」篩選) */
-.counts { display: flex; flex-direction: column; gap: 2px; }
-.count-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.count {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0;
-  min-height: var(--tap);
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--panel);
-  text-align: left;
-  cursor: pointer;
-}
-@media (hover: hover) { .count:hover { border-color: var(--line-strong); } }
-.count.is-on { border-color: var(--accent); background: var(--accent-soft); }
-.count .num {
-  font-family: var(--font-num);
-  font-size: var(--fs-num);
-  font-weight: 600;
-  line-height: 1.15;
-  font-variant-numeric: tabular-nums;
-}
-.count.is-mine .num { color: var(--accent-ink); }
-.count .lbl { display: flex; align-items: center; gap: 3px; font-size: var(--fs-cap); line-height: 1.4; color: var(--ink-2); white-space: nowrap; }
-.count .lbl .ic { width: 14px; height: 14px; color: var(--ink-3); }
-.count.is-mine .lbl .ic { color: var(--accent-ink); }
-.count-note { font-size: var(--fs-cap); color: var(--ink-3); padding-left: 2px; font-variant-numeric: tabular-nums; min-height: 24px; }
+/* 數字和篩選:電腦上同一排,手機上兩排 */
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
+.summary { display: flex; align-items: center; gap: 4px; flex: none; }
+.ring { width: 30px; height: 30px; margin-right: 6px; flex: none; }
+.ring-bg { fill: none; stroke: var(--line); stroke-width: 4; }
+.ring-fg { fill: none; stroke: var(--ok); stroke-width: 4; stroke-linecap: round; }
+.sum { display: inline-flex; align-items: baseline; gap: 5px; min-height: var(--tap); padding: 0 8px; align-items: center; border: 0; border-radius: 10px; background: transparent; }
+.sum-btn { cursor: pointer; }
+@media (hover: hover) { .sum-btn:hover { background: var(--line-soft); } }
+.sum-btn.is-on { background: var(--line-soft); }
+.sum .num { font-family: var(--font-num); font-size: 24px; font-weight: 650; line-height: 1; font-variant-numeric: tabular-nums; }
+.sum-btn .num { color: var(--ok); }
+.sum .lbl { font-size: var(--fs-sm); color: var(--ink-3); white-space: nowrap; }
 
-/* 哪一家的篩選:排成一排,放不下就左右滑 */
-.filters {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 2px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
+.filters { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; min-width: 0; }
 .filters::-webkit-scrollbar { display: none; }
-.filters > .ic { width: 16px; height: 16px; color: var(--ink-3); margin-right: 2px; }
 .chip {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: var(--tap);
-  padding: 0 10px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--ink-2);
-  font-size: var(--fs-sm);
-  line-height: 1.3;
-  white-space: nowrap;
-  cursor: pointer;
+  flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: var(--tap); padding: 0 10px;
+  border: 1px solid transparent; border-radius: 999px; background: transparent;
+  color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.3; white-space: nowrap; cursor: pointer;
 }
 @media (hover: hover) { .chip:hover { background: var(--line-soft); } }
-.chip.is-on { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
-.chip.pick { border-color: var(--line); background: var(--panel); padding: 0 12px; }
-.chip.pick.is-on { border-color: var(--accent); background: var(--accent-soft); }
-.chip .ic { width: 16px; height: 16px; }
+.chip.is-on { background: var(--soft); border-color: var(--line); color: var(--ink); font-weight: 600; }
+.chip .chip-x { width: 14px; height: 14px; color: var(--ink-3); margin-left: -2px; }
+.chip.pick { border-color: var(--line); padding: 0 14px; }
+.chip.pick.is-on { border-color: var(--ink-2); background: var(--panel); }
+.chip .pick-ok { width: 15px; height: 15px; color: var(--ink); stroke-width: 2; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--c-ot); }
+.dot.c-jc { background: var(--c-jc); }
+.dot.c-zs { background: var(--c-zs); }
+.dot.c-dz { background: var(--c-dz); }
+.dot.c-ot { background: var(--c-ot); }
+.dots { display: inline-flex; align-items: center; gap: 4px; flex: none; }
 
-/* 一件一行 */
-.cards { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); overflow: hidden; }
-.card + .card { border-top: 1px solid var(--line-soft); }
-.card.is-open { background: #fbfcfe; }
-.row { display: flex; align-items: stretch; }
+/* 完成圈圈 */
 .done-btn {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 46px;
-  min-height: var(--tap);
-  padding: 0 0 0 4px;
-  border: 0;
-  background: transparent;
-  color: var(--line-strong);
-  cursor: pointer;
+  flex: none; display: grid; place-items: center; width: 48px; min-height: var(--tap);
+  padding: 0; border: 0; background: transparent; color: var(--line-strong); cursor: pointer;
 }
-.done-btn .ic { width: 26px; height: 26px; }
+.done-btn .ic { width: 26px; height: 26px; stroke-width: 1.5; }
 @media (hover: hover) { .done-btn:hover { color: var(--ok); } }
 .done-btn.is-done { color: var(--ok); }
+.done-btn.is-review { color: var(--review); }
+.done-btn.is-review .ic { stroke-width: 1.8; }
 .done-btn.is-shelved { color: var(--ink-3); cursor: default; }
 .done-btn.is-shelved .ic { width: 20px; height: 20px; }
-.card-head {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-height: var(--tap);
-  padding: 9px 12px 9px 4px;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-}
-.r1 { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
-.c-icon { flex: none; display: grid; place-items: center; width: 22px; height: 22px; color: var(--ink-3); }
-.c-icon .ic { width: 18px; height: 18px; }
-.card.is-mine .c-icon { color: var(--accent-ink); }
-.c-title {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: var(--fs-title);
-  font-weight: 600;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.c-ball {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  margin-top: 1px;
-  padding: 0 7px;
-  border-radius: 999px;
-  background: var(--line-soft);
-  font-size: var(--fs-cap);
-  line-height: 1.6;
-  color: var(--ink-2);
-  white-space: nowrap;
-}
-.c-ball .ic { width: 14px; height: 14px; }
-.c-ball.is-me { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
-.r2 { display: flex; align-items: center; gap: 8px; min-width: 0; padding-left: 28px; font-size: var(--fs-cap); line-height: 1.5; color: var(--ink-3); }
-.c-clinics { flex: none; white-space: nowrap; }
-.c-next { flex: 1 1 auto; min-width: 0; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.c-next.is-none { color: var(--ink-3); }
-.flag { flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 0 6px 0 3px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); white-space: nowrap; }
-.flag .ic { width: 14px; height: 14px; }
-.card.is-closed .c-title { color: var(--ink-2); font-weight: 500; }
 
-/* 展開的內容 */
-.card-detail { display: flex; flex-direction: column; padding: 0 14px 14px 50px; }
-.sec { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; }
-.sec + .sec { border-top: 1px solid var(--line-soft); }
-.sec-title { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: 600; line-height: 1.4; }
-.sec-title .ic { width: 18px; height: 18px; color: var(--ink-3); }
-.sec-note { margin-left: auto; font-size: var(--fs-cap); font-weight: 400; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.card-head { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; min-height: 52px; border: 0; background: transparent; text-align: left; cursor: pointer; }
+.row { display: flex; align-items: stretch; }
+.c-title { flex: 1 1 auto; min-width: 0; font-size: var(--fs-title); font-weight: 500; line-height: 1.4; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 榮軒 2026-11-25:「標題一行就好」。收合時一行、太長用「…」;展開那一件才顯示完整標題。 */
+.card.is-open .c-title { white-space: normal; overflow-wrap: anywhere; overflow: visible; }
+.card.is-closed .c-title { color: var(--ink-3); }
+.card.is-closed.is-done .c-title, .card.is-closed .c-title { text-decoration: none; }
+.flag { flex: none; padding: 0 6px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); font-size: var(--fs-cap); white-space: nowrap; }
+
+/* 展開的細節:圖示當小標題,說明句越少越好 */
+.card-detail { display: flex; flex-direction: column; gap: 4px; }
+.d-next { display: flex; align-items: flex-start; gap: 10px; padding: 4px 0 6px; font-size: var(--fs); color: var(--ink); overflow-wrap: anywhere; }
+.d-next .ic { width: 18px; height: 18px; margin-top: 3px; color: var(--accent); }
+.sec { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; }
+.sec-head { display: flex; align-items: center; gap: 10px; min-height: 28px; color: var(--ink-3); font-size: var(--fs-cap); font-variant-numeric: tabular-nums; }
+.sec-head .ic { width: 18px; height: 18px; }
+.sec-n { color: var(--ink-3); }
+.pbar { flex: 1 1 auto; max-width: 160px; height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.pbar i { display: block; height: 100%; background: var(--ok); border-radius: 4px; }
 .sec-sub { font-size: var(--fs-cap); color: var(--ink-3); }
 .none { font-size: var(--fs-sm); color: var(--ink-3); }
-.none.pad { padding: 20px 14px; }
-.plain { display: flex; flex-direction: column; gap: 10px; font-size: var(--fs); }
-.q { display: flex; flex-direction: column; gap: 6px; }
-.q-text { overflow-wrap: anywhere; }
+.none.pad { padding: 24px 16px; text-align: center; }
 
 .steps { display: flex; flex-direction: column; }
 .step-row { display: flex; align-items: center; gap: 2px; }
 .step {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: var(--tap);
-  padding: 4px 8px 4px 2px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  text-align: left;
-  font-size: var(--fs);
-  line-height: 1.5;
-  cursor: pointer;
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 10px;
+  min-height: var(--tap); padding: 4px 8px 4px 0; border: 0; border-radius: 10px;
+  background: transparent; text-align: left; font-size: var(--fs); line-height: 1.5; cursor: pointer;
 }
 @media (hover: hover) { .step:hover { background: var(--line-soft); } }
 .step[disabled] { cursor: default; }
 @media (hover: hover) { .step[disabled]:hover { background: transparent; } }
-.step .ic { width: 22px; height: 22px; color: var(--line-strong); }
+.step .ic { width: 20px; height: 20px; color: var(--line-strong); }
 .step.is-done .ic { color: var(--ok); }
 .step-text { min-width: 0; overflow-wrap: anywhere; }
 .step.is-done .step-text { color: var(--ink-3); text-decoration: line-through; }
 .step-edit { display: flex; flex-direction: column; gap: 8px; padding: 6px 0; }
 
 .input {
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: var(--tap);
-  padding: 9px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  color: var(--ink);
-  font-size: 16px;
-  line-height: 1.5;
+  flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 9px 12px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+  color: var(--ink); font-size: 16px; line-height: 1.5;
 }
-.input::placeholder { color: var(--ink-3); }
-.input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.input::placeholder { color: #8a8f99; }
+.input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
 textarea.input { display: block; width: 100%; resize: vertical; }
-.inline-form { display: flex; align-items: flex-start; gap: 8px; }
+.inline-form { display: flex; align-items: flex-start; gap: 8px; padding-top: 2px; }
 .log-form { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.inline-form.log-form { flex-direction: row; }
+.inline-form.log-form textarea.input { width: auto; min-height: var(--tap); }
 
-.log { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; }
-.log-item { display: flex; flex-direction: column; gap: 2px; }
-.log-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: var(--fs-cap); color: var(--ink-3); }
-.log-meta .ic { width: 16px; height: 16px; }
-.log-text { font-size: var(--fs); overflow-wrap: anywhere; white-space: pre-wrap; }
-.log-src { font-size: var(--fs-cap); color: var(--ink-3); overflow-wrap: anywhere; }
+.sec-q { gap: 10px; }
+.q { display: flex; flex-direction: column; gap: 8px; }
+.q-text { display: flex; align-items: flex-start; gap: 10px; overflow-wrap: anywhere; }
+.q-text .ic { width: 18px; height: 18px; margin-top: 3px; color: var(--review); }
+.q .btn.small, .q .log-form { margin-left: 28px; }
 
-.links { display: flex; flex-direction: column; gap: 10px; }
-.links li { display: flex; flex-direction: column; gap: 2px; }
-.link-name { font-size: var(--fs); overflow-wrap: anywhere; }
+.log { display: flex; flex-direction: column; gap: 12px; padding-top: 6px; }
+.log-item { display: flex; flex-direction: column; gap: 2px; padding-left: 12px; border-left: 2px solid var(--line); }
+.log-text { font-size: var(--fs-sm); overflow-wrap: anywhere; white-space: pre-wrap; color: var(--ink); }
+.log-meta { display: flex; flex-wrap: wrap; gap: 0 8px; font-size: var(--fs-cap); color: var(--ink-3); }
+
+.links { display: flex; flex-direction: column; gap: 8px; }
+.links li { display: flex; align-items: flex-start; gap: 10px; }
+.links li > .ic { width: 18px; height: 18px; margin-top: 3px; color: var(--ink-3); }
+.link-txt { display: flex; flex-direction: column; min-width: 0; }
+.link-name { font-size: var(--fs-sm); overflow-wrap: anywhere; }
 .link-where { font-size: var(--fs-cap); color: var(--ink-3); overflow-wrap: anywhere; }
-.link-web { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--accent-ink); font-size: var(--fs); overflow-wrap: anywhere; }
-.due-text { display: flex; align-items: center; gap: 6px; font-size: var(--fs-sm); color: var(--ink-2); }
-.due-text .ic { width: 16px; height: 16px; color: var(--ink-3); }
-.quote-text { font-size: var(--fs-sm); color: var(--ink-2); overflow-wrap: anywhere; }
-.meta { font-size: var(--fs-cap); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.link-web { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--accent-ink); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.facts { gap: 6px; }
+.fact { display: flex; align-items: flex-start; gap: 10px; font-size: var(--fs-sm); color: var(--ink-2); overflow-wrap: anywhere; }
+.fact .ic { width: 18px; height: 18px; margin-top: 2px; color: var(--ink-3); }
+.quote-text { color: var(--ink-3); }
+.meta { font-size: var(--fs-cap); color: #8a8f99; font-variant-numeric: tabular-nums; }
 
-.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
-.act-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.act-label { font-size: var(--fs-cap); color: var(--ink-3); }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
 .act-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); overflow: hidden; }
+.seg { display: inline-flex; padding: 3px; border-radius: 12px; background: var(--soft); }
 .seg-btn {
-  min-height: var(--tap);
-  padding: 0 10px;
-  border: 0;
-  background: transparent;
-  color: var(--ink-2);
-  font-size: var(--fs-sm);
-  line-height: 1.3;
-  white-space: nowrap;
-  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  min-height: var(--tap); padding: 0 10px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--ink-3); font-size: var(--fs-sm); line-height: 1.3; white-space: nowrap; cursor: pointer;
 }
-.seg-btn + .seg-btn { border-left: 1px solid var(--line); }
-@media (hover: hover) { .seg-btn:hover { background: var(--line-soft); } }
-.seg-btn.is-on { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.seg-btn .ic { width: 16px; height: 16px; }
+.seg-btn.is-on { background: var(--panel); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(22, 24, 29, 0.12); }
 .seg-btn:focus-visible { outline-offset: -2px; }
 
 /* 表單 */
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
 .form { display: flex; flex-direction: column; gap: 14px; }
-.card-detail > .form { padding: 12px 0 0; }
-.field { display: flex; flex-direction: column; gap: 6px; }
-.field-label { font-size: var(--fs-cap); font-weight: 600; color: var(--ink-2); }
-.field-hint { font-weight: 400; color: var(--ink-3); }
+.card-detail > .form { padding: 6px 0 4px; }
+.f-row { display: flex; align-items: flex-start; gap: 10px; }
+.f-ic { width: 20px; height: 20px; margin-top: 12px; color: var(--ink-3); }
 .field-error { font-size: var(--fs-cap); color: var(--bad); }
 .form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.iconpick { display: flex; flex-wrap: wrap; gap: 8px; }
+.iconpick { display: flex; flex-wrap: wrap; gap: 6px; }
 .iconbtn {
-  display: grid;
-  place-items: center;
-  width: var(--tap);
-  height: var(--tap);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--panel);
-  color: var(--ink-2);
-  cursor: pointer;
+  display: grid; place-items: center; width: var(--tap); height: var(--tap);
+  border: 1px solid transparent; border-radius: 12px; background: var(--soft); color: var(--ink-3); cursor: pointer;
 }
-@media (hover: hover) { .iconbtn:hover { border-color: var(--line-strong); } }
-.iconbtn.is-on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+@media (hover: hover) { .iconbtn:hover { color: var(--ink); } }
+.iconbtn.is-on { border-color: var(--ink-2); background: var(--panel); color: var(--ink); }
 .iconbtn .ic { width: 22px; height: 22px; }
-.due-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.due-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; }
 .select-wrap { position: relative; display: inline-flex; }
 .select { flex: none; appearance: none; -webkit-appearance: none; padding-right: 34px; cursor: pointer; }
 .select-chev { position: absolute; right: 10px; top: 50%; width: 16px; height: 16px; margin-top: -8px; color: var(--ink-3); pointer-events: none; }
 
-/* 一件都沒有的時候 */
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 28px 20px;
-  background: var(--panel);
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--r);
-}
+/* 一件都沒有 */
+.empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 20px; text-align: center; }
 .art { width: 160px; height: 110px; max-width: 100%; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .art-line { stroke: var(--ink-2); }
 .art-soft { stroke: var(--line-strong); }
 .art-accent { stroke: var(--accent); }
-.empty-title { font-size: var(--fs-title); font-weight: 600; line-height: 1.4; }
-.empty-sub { font-size: var(--fs-sm); color: var(--ink-2); padding-bottom: 6px; }
+.empty-title { font-size: var(--fs-title); font-weight: 600; color: var(--ink-2); }
 
-/* 最下面:完成的、擱置的、最近改了什麼 */
-.shelf { display: flex; flex-direction: column; gap: 6px; }
-.shelf-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: var(--tap);
-  padding: 0 6px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--ink-2);
-  font-size: var(--fs-sm);
-  text-align: left;
-  cursor: pointer;
+/* 最下面:完成、擱置、最近改了什麼(平常都收著) */
+.shelf, .changes { display: flex; flex-direction: column; gap: 6px; }
+.shelf-head, .changes-btn {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--tap); padding: 0 8px;
+  border: 0; border-radius: 10px; background: transparent; color: var(--ink-3); font-size: var(--fs-sm); text-align: left; cursor: pointer;
 }
-@media (hover: hover) { .shelf-head:hover { background: var(--line-soft); } }
-.shelf-head > .ic:first-child { width: 18px; height: 18px; color: var(--ink-3); }
-.shelf-head .c-chev { margin-left: auto; color: var(--ink-3); transition: transform 0.15s ease; }
-.shelf.is-open > .shelf-head .c-chev { transform: rotate(180deg); }
-.shelf-n { font-variant-numeric: tabular-nums; font-weight: 600; }
-.changes { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--line); }
-.change-list { display: flex; flex-direction: column; }
-.change { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: 10px; row-gap: 2px; padding: 8px 0; }
+@media (hover: hover) { .shelf-head:hover, .changes-btn:hover { background: var(--line-soft); } }
+.shelf-head > .ic:first-child, .changes-btn > .ic:first-child { width: 18px; height: 18px; }
+.shelf-head .c-chev, .changes-btn .c-chev { margin-left: auto; width: 18px; height: 18px; transition: transform 0.15s ease; }
+.shelf.is-open > .shelf-head .c-chev, .changes.is-open > .changes-btn .c-chev { transform: rotate(180deg); }
+.shelf-n { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink-2); }
+.changes { margin-top: 6px; }
+.changes-btn { width: auto; align-self: flex-start; }
+.change-list { display: flex; flex-direction: column; padding: 0 8px; }
+.change { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; }
 .change + .change { border-top: 1px solid var(--line-soft); }
-.ch-ic { grid-row: 1 / span 2; width: 18px; height: 18px; margin-top: 1px; color: var(--ink-3); }
-.ch-meta { display: flex; flex-wrap: wrap; gap: 0 10px; font-size: var(--fs-cap); color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.ch-who { color: var(--ink-2); font-weight: 600; }
-.ch-what { display: flex; flex-direction: column; font-size: var(--fs-sm); overflow-wrap: anywhere; }
-.ch-todo { color: var(--ink-2); }
+.ch-what { display: flex; flex-direction: column; min-width: 0; font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.ch-meta { font-size: var(--fs-cap); color: var(--ink-3); }
 .foot { display: flex; justify-content: flex-start; padding-top: 4px; }
 
 /* 最下面跳出來的一句話(有時多一顆「復原」) */
 .toast {
-  position: fixed;
-  left: 50%;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: max-content;
-  max-width: min(520px, calc(100% - 32px));
-  padding: 10px 16px;
-  border-radius: 10px;
-  background: var(--ink);
-  color: var(--bg);
-  font-size: var(--fs-sm);
-  line-height: 1.5;
-  box-shadow: var(--shadow-lg);
-  z-index: 20;
-  pointer-events: none;
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px; width: max-content; max-width: min(520px, calc(100% - 32px));
+  padding: 10px 16px; border-radius: 12px; background: var(--ink); color: var(--bg);
+  font-size: var(--fs-sm); line-height: 1.5; box-shadow: var(--shadow-lg); z-index: 20; pointer-events: none;
 }
 .toast.has-act { pointer-events: auto; padding: 4px 6px 4px 16px; }
-.toast.is-bad { background: var(--bad-bg); color: var(--on-accent); }
+.toast.is-bad { background: var(--bad); color: var(--on-accent); }
 .toast-btn {
-  flex: none;
-  min-height: var(--tap);
-  padding: 0 14px;
-  border: 0;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
+  flex: none; min-height: var(--tap); padding: 0 14px; border: 0; border-radius: 9px;
+  background: rgba(255, 255, 255, 0.16); color: #ffffff; font-size: var(--fs-sm); font-weight: 600; white-space: nowrap; cursor: pointer;
 }
 
-/* 手機寬度 */
 @media (max-width: 640px) {
-  .app { padding-block: 10px 80px; }
-  .card-detail { padding: 0 12px 12px; }
-  .act-status { flex: 1 1 100%; }
+  .app { padding-block: 12px 96px; }
 }
-
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+/* B 卡片風:圖示放大成有顏色的小方塊(顏色就是哪一家;好幾家就斜切),標題,下面一行淡灰的下一步。
+   完成圈圈放在右邊。每件是一張白卡片,卡片之間留空。 */
+.cards { display: flex; flex-direction: column; gap: 10px; }
+.card { border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
+.card.is-open { border-color: var(--line-strong); box-shadow: 0 4px 18px rgba(22, 24, 29, 0.06); }
+.card-head { gap: 12px; padding: 10px 0 10px 12px; min-height: 64px; }
+.tile {
+  flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px;
+  background: var(--t-ot); color: var(--ink-2);
+}
+.tile .ic { width: 22px; height: 22px; stroke-width: 1.7; }
+.tile.c-jc { background: var(--t-jc); color: #0b7a5f; }
+.tile.c-zs { background: var(--t-zs); color: #a65f00; }
+.tile.c-dz { background: var(--t-dz); color: #6d3fd8; }
+.tile.c-ot { background: var(--t-ot); color: var(--ink-2); }
+.c-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.c-title { font-weight: 600; }
+.c-next { max-width: 12em; font-size: var(--fs-cap); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.done-btn { width: 52px; }
+.card.is-open .c-next { display: none; }
+.card.is-closed .tile { filter: grayscale(1); opacity: 0.6; }
+.card-detail { padding: 0 16px 14px 68px; }
+@media (max-width: 640px) {
+  .card-detail { padding: 0 14px 14px 14px; }
+}
+
+/* 先後(2026-11-25 榮軒追加):先做 = 左邊一條紅色細條;慢慢來 = 整張淡一點;一般照常。 */
+.card { position: relative; }
+.card.p-first::before {
+  content: ""; position: absolute; left: -1px; top: 10px; bottom: 10px; width: 4px;
+  border-radius: 0 4px 4px 0; background: #e5484d;
+}
+.card.p-later:not(.is-open) { background: var(--soft); border-color: var(--line-soft); }
+.card.p-later:not(.is-open) .tile { filter: saturate(0.4); opacity: 0.7; }
+.card.p-later:not(.is-open) .c-title { color: var(--ink-2); font-weight: 500; }
+.pri-mark { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--ink-3); }
+.pri-0 .pri-mark { background: #e5484d; }
+.pri-1 .pri-mark { background: var(--ink-3); }
+.pri-2 .pri-mark { background: transparent; border: 1.5px solid var(--line-strong); width: 7px; height: 7px; }
+.form .pri-seg { align-self: flex-start; }
+.done-line .ic { color: var(--ok); }
 </style>
 <div class="app">
   <div id="root">
@@ -611,6 +471,9 @@ var UI_ICONS = {
   circle: '<circle cx="12" cy="12" r="8.5"/>',
   circleOn: '<circle cx="12" cy="12" r="8.5" class="fill"/><path d="M8.3 12.3l2.5 2.5 4.9-5.2" class="on-fill"/>',
   lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+  arrow: '<path d="M5 12h13M13 6.500l5.500 5.500-5.500 5.500"/>',
+  close: '<path d="M7 7l10 10M17 7L7 17"/>',
+  circleReview: '<circle cx="12" cy="12" r="8.5" stroke-dasharray="3.2 2.4"/><path d="M8.600 12.300l2.300 2.300 4.500-4.800"/>',
   stShelved: '<path d="M5 7h14v3.5H5z"/><path d="M6.5 10.5V18h11v-7.5"/>'
 };
 
@@ -737,6 +600,19 @@ function morphInto(root, html) {
   }
 }
 
+/* ===== chars.js ===== */
+/* 看得見的字(頁面和資料庫用同一份):由 tools/make_chars.py 產生(Unicode 15.1.0),不要直接改。
+   isBlank:至少要有一個看得見的字(字母、數字、標點、符號),不然算空白。
+   trimAll:去掉前後各種空白(半形、全形、tab、換行、零寬字元、控制字元…)。 */
+var VISIBLE_RE = new RegExp("[\\u{21}-\\u{7E}\\u{A1}-\\u{AC}\\u{AE}-\\u{2FF}\\u{370}-\\u{377}\\u{37A}-\\u{37F}\\u{384}-\\u{38A}\\u{38C}\\u{38E}-\\u{3A1}\\u{3A3}-\\u{482}\\u{48A}-\\u{52F}\\u{531}-\\u{556}\\u{559}-\\u{58A}\\u{58D}-\\u{58F}\\u{5BE}\\u{5C0}\\u{5C3}\\u{5C6}\\u{5D0}-\\u{5EA}\\u{5EF}-\\u{5F4}\\u{606}-\\u{60F}\\u{61B}\\u{61D}-\\u{64A}\\u{660}-\\u{66F}\\u{671}-\\u{6D5}\\u{6DE}\\u{6E5}-\\u{6E6}\\u{6E9}\\u{6EE}-\\u{70D}\\u{710}\\u{712}-\\u{72F}\\u{74D}-\\u{7A5}\\u{7B1}\\u{7C0}-\\u{7EA}\\u{7F4}-\\u{7FA}\\u{7FE}-\\u{815}\\u{81A}\\u{824}\\u{828}\\u{830}-\\u{83E}\\u{840}-\\u{858}\\u{85E}\\u{860}-\\u{86A}\\u{870}-\\u{88E}\\u{8A0}-\\u{8C9}\\u{904}-\\u{939}\\u{93D}\\u{950}\\u{958}-\\u{961}\\u{964}-\\u{980}\\u{985}-\\u{98C}\\u{98F}-\\u{990}\\u{993}-\\u{9A8}\\u{9AA}-\\u{9B0}\\u{9B2}\\u{9B6}-\\u{9B9}\\u{9BD}\\u{9CE}\\u{9DC}-\\u{9DD}\\u{9DF}-\\u{9E1}\\u{9E6}-\\u{9FD}\\u{A05}-\\u{A0A}\\u{A0F}-\\u{A10}\\u{A13}-\\u{A28}\\u{A2A}-\\u{A30}\\u{A32}-\\u{A33}\\u{A35}-\\u{A36}\\u{A38}-\\u{A39}\\u{A59}-\\u{A5C}\\u{A5E}\\u{A66}-\\u{A6F}\\u{A72}-\\u{A74}\\u{A76}\\u{A85}-\\u{A8D}\\u{A8F}-\\u{A91}\\u{A93}-\\u{AA8}\\u{AAA}-\\u{AB0}\\u{AB2}-\\u{AB3}\\u{AB5}-\\u{AB9}\\u{ABD}\\u{AD0}\\u{AE0}-\\u{AE1}\\u{AE6}-\\u{AF1}\\u{AF9}\\u{B05}-\\u{B0C}\\u{B0F}-\\u{B10}\\u{B13}-\\u{B28}\\u{B2A}-\\u{B30}\\u{B32}-\\u{B33}\\u{B35}-\\u{B39}\\u{B3D}\\u{B5C}-\\u{B5D}\\u{B5F}-\\u{B61}\\u{B66}-\\u{B77}\\u{B83}\\u{B85}-\\u{B8A}\\u{B8E}-\\u{B90}\\u{B92}-\\u{B95}\\u{B99}-\\u{B9A}\\u{B9C}\\u{B9E}-\\u{B9F}\\u{BA3}-\\u{BA4}\\u{BA8}-\\u{BAA}\\u{BAE}-\\u{BB9}\\u{BD0}\\u{BE6}-\\u{BFA}\\u{C05}-\\u{C0C}\\u{C0E}-\\u{C10}\\u{C12}-\\u{C28}\\u{C2A}-\\u{C39}\\u{C3D}\\u{C58}-\\u{C5A}\\u{C5D}\\u{C60}-\\u{C61}\\u{C66}-\\u{C6F}\\u{C77}-\\u{C80}\\u{C84}-\\u{C8C}\\u{C8E}-\\u{C90}\\u{C92}-\\u{CA8}\\u{CAA}-\\u{CB3}\\u{CB5}-\\u{CB9}\\u{CBD}\\u{CDD}-\\u{CDE}\\u{CE0}-\\u{CE1}\\u{CE6}-\\u{CEF}\\u{CF1}-\\u{CF2}\\u{D04}-\\u{D0C}\\u{D0E}-\\u{D10}\\u{D12}-\\u{D3A}\\u{D3D}\\u{D4E}-\\u{D4F}\\u{D54}-\\u{D56}\\u{D58}-\\u{D61}\\u{D66}-\\u{D7F}\\u{D85}-\\u{D96}\\u{D9A}-\\u{DB1}\\u{DB3}-\\u{DBB}\\u{DBD}\\u{DC0}-\\u{DC6}\\u{DE6}-\\u{DEF}\\u{DF4}\\u{E01}-\\u{E30}\\u{E32}-\\u{E33}\\u{E3F}-\\u{E46}\\u{E4F}-\\u{E5B}\\u{E81}-\\u{E82}\\u{E84}\\u{E86}-\\u{E8A}\\u{E8C}-\\u{EA3}\\u{EA5}\\u{EA7}-\\u{EB0}\\u{EB2}-\\u{EB3}\\u{EBD}\\u{EC0}-\\u{EC4}\\u{EC6}\\u{ED0}-\\u{ED9}\\u{EDC}-\\u{EDF}\\u{F00}-\\u{F17}\\u{F1A}-\\u{F34}\\u{F36}\\u{F38}\\u{F3A}-\\u{F3D}\\u{F40}-\\u{F47}\\u{F49}-\\u{F6C}\\u{F85}\\u{F88}-\\u{F8C}\\u{FBE}-\\u{FC5}\\u{FC7}-\\u{FCC}\\u{FCE}-\\u{FDA}\\u{1000}-\\u{102A}\\u{103F}-\\u{1055}\\u{105A}-\\u{105D}\\u{1061}\\u{1065}-\\u{1066}\\u{106E}-\\u{1070}\\u{1075}-\\u{1081}\\u{108E}\\u{1090}-\\u{1099}\\u{109E}-\\u{10C5}\\u{10C7}\\u{10CD}\\u{10D0}-\\u{115E}\\u{1161}-\\u{1248}\\u{124A}-\\u{124D}\\u{1250}-\\u{1256}\\u{1258}\\u{125A}-\\u{125D}\\u{1260}-\\u{1288}\\u{128A}-\\u{128D}\\u{1290}-\\u{12B0}\\u{12B2}-\\u{12B5}\\u{12B8}-\\u{12BE}\\u{12C0}\\u{12C2}-\\u{12C5}\\u{12C8}-\\u{12D6}\\u{12D8}-\\u{1310}\\u{1312}-\\u{1315}\\u{1318}-\\u{135A}\\u{1360}-\\u{137C}\\u{1380}-\\u{1399}\\u{13A0}-\\u{13F5}\\u{13F8}-\\u{13FD}\\u{1400}-\\u{167F}\\u{1681}-\\u{169C}\\u{16A0}-\\u{16F8}\\u{1700}-\\u{1711}\\u{171F}-\\u{1731}\\u{1735}-\\u{1736}\\u{1740}-\\u{1751}\\u{1760}-\\u{176C}\\u{176E}-\\u{1770}\\u{1780}-\\u{17B3}\\u{17D4}-\\u{17DC}\\u{17E0}-\\u{17E9}\\u{17F0}-\\u{17F9}\\u{1800}-\\u{180A}\\u{1810}-\\u{1819}\\u{1820}-\\u{1878}\\u{1880}-\\u{1884}\\u{1887}-\\u{18A8}\\u{18AA}\\u{18B0}-\\u{18F5}\\u{1900}-\\u{191E}\\u{1940}\\u{1944}-\\u{196D}\\u{1970}-\\u{1974}\\u{1980}-\\u{19AB}\\u{19B0}-\\u{19C9}\\u{19D0}-\\u{19DA}\\u{19DE}-\\u{1A16}\\u{1A1E}-\\u{1A54}\\u{1A80}-\\u{1A89}\\u{1A90}-\\u{1A99}\\u{1AA0}-\\u{1AAD}\\u{1B05}-\\u{1B33}\\u{1B45}-\\u{1B4C}\\u{1B50}-\\u{1B6A}\\u{1B74}-\\u{1B7E}\\u{1B83}-\\u{1BA0}\\u{1BAE}-\\u{1BE5}\\u{1BFC}-\\u{1C23}\\u{1C3B}-\\u{1C49}\\u{1C4D}-\\u{1C88}\\u{1C90}-\\u{1CBA}\\u{1CBD}-\\u{1CC7}\\u{1CD3}\\u{1CE9}-\\u{1CEC}\\u{1CEE}-\\u{1CF3}\\u{1CF5}-\\u{1CF6}\\u{1CFA}\\u{1D00}-\\u{1DBF}\\u{1E00}-\\u{1F15}\\u{1F18}-\\u{1F1D}\\u{1F20}-\\u{1F45}\\u{1F48}-\\u{1F4D}\\u{1F50}-\\u{1F57}\\u{1F59}\\u{1F5B}\\u{1F5D}\\u{1F5F}-\\u{1F7D}\\u{1F80}-\\u{1FB4}\\u{1FB6}-\\u{1FC4}\\u{1FC6}-\\u{1FD3}\\u{1FD6}-\\u{1FDB}\\u{1FDD}-\\u{1FEF}\\u{1FF2}-\\u{1FF4}\\u{1FF6}-\\u{1FFE}\\u{2010}-\\u{2027}\\u{2030}-\\u{205E}\\u{2070}-\\u{2071}\\u{2074}-\\u{208E}\\u{2090}-\\u{209C}\\u{20A0}-\\u{20C0}\\u{2100}-\\u{218B}\\u{2190}-\\u{2426}\\u{2440}-\\u{244A}\\u{2460}-\\u{27FF}\\u{2801}-\\u{2B73}\\u{2B76}-\\u{2B95}\\u{2B97}-\\u{2CEE}\\u{2CF2}-\\u{2CF3}\\u{2CF9}-\\u{2D25}\\u{2D27}\\u{2D2D}\\u{2D30}-\\u{2D67}\\u{2D6F}-\\u{2D70}\\u{2D80}-\\u{2D96}\\u{2DA0}-\\u{2DA6}\\u{2DA8}-\\u{2DAE}\\u{2DB0}-\\u{2DB6}\\u{2DB8}-\\u{2DBE}\\u{2DC0}-\\u{2DC6}\\u{2DC8}-\\u{2DCE}\\u{2DD0}-\\u{2DD6}\\u{2DD8}-\\u{2DDE}\\u{2E00}-\\u{2E5D}\\u{2E80}-\\u{2E99}\\u{2E9B}-\\u{2EF3}\\u{2F00}-\\u{2FD5}\\u{2FF0}-\\u{2FFF}\\u{3001}-\\u{3029}\\u{3030}-\\u{303F}\\u{3041}-\\u{3096}\\u{309B}-\\u{30FF}\\u{3105}-\\u{312F}\\u{3131}-\\u{3163}\\u{3165}-\\u{318E}\\u{3190}-\\u{31E3}\\u{31EF}-\\u{321E}\\u{3220}-\\u{A48C}\\u{A490}-\\u{A4C6}\\u{A4D0}-\\u{A62B}\\u{A640}-\\u{A66E}\\u{A673}\\u{A67E}-\\u{A69D}\\u{A6A0}-\\u{A6EF}\\u{A6F2}-\\u{A6F7}\\u{A700}-\\u{A7CA}\\u{A7D0}-\\u{A7D1}\\u{A7D3}\\u{A7D5}-\\u{A7D9}\\u{A7F2}-\\u{A801}\\u{A803}-\\u{A805}\\u{A807}-\\u{A80A}\\u{A80C}-\\u{A822}\\u{A828}-\\u{A82B}\\u{A830}-\\u{A839}\\u{A840}-\\u{A877}\\u{A882}-\\u{A8B3}\\u{A8CE}-\\u{A8D9}\\u{A8F2}-\\u{A8FE}\\u{A900}-\\u{A925}\\u{A92E}-\\u{A946}\\u{A95F}-\\u{A97C}\\u{A984}-\\u{A9B2}\\u{A9C1}-\\u{A9CD}\\u{A9CF}-\\u{A9D9}\\u{A9DE}-\\u{A9E4}\\u{A9E6}-\\u{A9FE}\\u{AA00}-\\u{AA28}\\u{AA40}-\\u{AA42}\\u{AA44}-\\u{AA4B}\\u{AA50}-\\u{AA59}\\u{AA5C}-\\u{AA7A}\\u{AA7E}-\\u{AAAF}\\u{AAB1}\\u{AAB5}-\\u{AAB6}\\u{AAB9}-\\u{AABD}\\u{AAC0}\\u{AAC2}\\u{AADB}-\\u{AAEA}\\u{AAF0}-\\u{AAF4}\\u{AB01}-\\u{AB06}\\u{AB09}-\\u{AB0E}\\u{AB11}-\\u{AB16}\\u{AB20}-\\u{AB26}\\u{AB28}-\\u{AB2E}\\u{AB30}-\\u{AB6B}\\u{AB70}-\\u{ABE2}\\u{ABEB}\\u{ABF0}-\\u{ABF9}\\u{AC00}-\\u{D7A3}\\u{D7B0}-\\u{D7C6}\\u{D7CB}-\\u{D7FB}\\u{F900}-\\u{FA6D}\\u{FA70}-\\u{FAD9}\\u{FB00}-\\u{FB06}\\u{FB13}-\\u{FB17}\\u{FB1D}\\u{FB1F}-\\u{FB36}\\u{FB38}-\\u{FB3C}\\u{FB3E}\\u{FB40}-\\u{FB41}\\u{FB43}-\\u{FB44}\\u{FB46}-\\u{FBC2}\\u{FBD3}-\\u{FD8F}\\u{FD92}-\\u{FDC7}\\u{FDCF}\\u{FDF0}-\\u{FDFF}\\u{FE10}-\\u{FE19}\\u{FE30}-\\u{FE52}\\u{FE54}-\\u{FE66}\\u{FE68}-\\u{FE6B}\\u{FE70}-\\u{FE74}\\u{FE76}-\\u{FEFC}\\u{FF01}-\\u{FF9F}\\u{FFA1}-\\u{FFBE}\\u{FFC2}-\\u{FFC7}\\u{FFCA}-\\u{FFCF}\\u{FFD2}-\\u{FFD7}\\u{FFDA}-\\u{FFDC}\\u{FFE0}-\\u{FFE6}\\u{FFE8}-\\u{FFEE}\\u{FFFC}-\\u{FFFD}\\u{10000}-\\u{1000B}\\u{1000D}-\\u{10026}\\u{10028}-\\u{1003A}\\u{1003C}-\\u{1003D}\\u{1003F}-\\u{1004D}\\u{10050}-\\u{1005D}\\u{10080}-\\u{100FA}\\u{10100}-\\u{10102}\\u{10107}-\\u{10133}\\u{10137}-\\u{1018E}\\u{10190}-\\u{1019C}\\u{101A0}\\u{101D0}-\\u{101FC}\\u{10280}-\\u{1029C}\\u{102A0}-\\u{102D0}\\u{102E1}-\\u{102FB}\\u{10300}-\\u{10323}\\u{1032D}-\\u{1034A}\\u{10350}-\\u{10375}\\u{10380}-\\u{1039D}\\u{1039F}-\\u{103C3}\\u{103C8}-\\u{103D5}\\u{10400}-\\u{1049D}\\u{104A0}-\\u{104A9}\\u{104B0}-\\u{104D3}\\u{104D8}-\\u{104FB}\\u{10500}-\\u{10527}\\u{10530}-\\u{10563}\\u{1056F}-\\u{1057A}\\u{1057C}-\\u{1058A}\\u{1058C}-\\u{10592}\\u{10594}-\\u{10595}\\u{10597}-\\u{105A1}\\u{105A3}-\\u{105B1}\\u{105B3}-\\u{105B9}\\u{105BB}-\\u{105BC}\\u{10600}-\\u{10736}\\u{10740}-\\u{10755}\\u{10760}-\\u{10767}\\u{10780}-\\u{10785}\\u{10787}-\\u{107B0}\\u{107B2}-\\u{107BA}\\u{10800}-\\u{10805}\\u{10808}\\u{1080A}-\\u{10835}\\u{10837}-\\u{10838}\\u{1083C}\\u{1083F}-\\u{10855}\\u{10857}-\\u{1089E}\\u{108A7}-\\u{108AF}\\u{108E0}-\\u{108F2}\\u{108F4}-\\u{108F5}\\u{108FB}-\\u{1091B}\\u{1091F}-\\u{10939}\\u{1093F}\\u{10980}-\\u{109B7}\\u{109BC}-\\u{109CF}\\u{109D2}-\\u{10A00}\\u{10A10}-\\u{10A13}\\u{10A15}-\\u{10A17}\\u{10A19}-\\u{10A35}\\u{10A40}-\\u{10A48}\\u{10A50}-\\u{10A58}\\u{10A60}-\\u{10A9F}\\u{10AC0}-\\u{10AE4}\\u{10AEB}-\\u{10AF6}\\u{10B00}-\\u{10B35}\\u{10B39}-\\u{10B55}\\u{10B58}-\\u{10B72}\\u{10B78}-\\u{10B91}\\u{10B99}-\\u{10B9C}\\u{10BA9}-\\u{10BAF}\\u{10C00}-\\u{10C48}\\u{10C80}-\\u{10CB2}\\u{10CC0}-\\u{10CF2}\\u{10CFA}-\\u{10D23}\\u{10D30}-\\u{10D39}\\u{10E60}-\\u{10E7E}\\u{10E80}-\\u{10EA9}\\u{10EAD}\\u{10EB0}-\\u{10EB1}\\u{10F00}-\\u{10F27}\\u{10F30}-\\u{10F45}\\u{10F51}-\\u{10F59}\\u{10F70}-\\u{10F81}\\u{10F86}-\\u{10F89}\\u{10FB0}-\\u{10FCB}\\u{10FE0}-\\u{10FF6}\\u{11003}-\\u{11037}\\u{11047}-\\u{1104D}\\u{11052}-\\u{1106F}\\u{11071}-\\u{11072}\\u{11075}\\u{11083}-\\u{110AF}\\u{110BB}-\\u{110BC}\\u{110BE}-\\u{110C1}\\u{110D0}-\\u{110E8}\\u{110F0}-\\u{110F9}\\u{11103}-\\u{11126}\\u{11136}-\\u{11144}\\u{11147}\\u{11150}-\\u{11172}\\u{11174}-\\u{11176}\\u{11183}-\\u{111B2}\\u{111C1}-\\u{111C8}\\u{111CD}\\u{111D0}-\\u{111DF}\\u{111E1}-\\u{111F4}\\u{11200}-\\u{11211}\\u{11213}-\\u{1122B}\\u{11238}-\\u{1123D}\\u{1123F}-\\u{11240}\\u{11280}-\\u{11286}\\u{11288}\\u{1128A}-\\u{1128D}\\u{1128F}-\\u{1129D}\\u{1129F}-\\u{112A9}\\u{112B0}-\\u{112DE}\\u{112F0}-\\u{112F9}\\u{11305}-\\u{1130C}\\u{1130F}-\\u{11310}\\u{11313}-\\u{11328}\\u{1132A}-\\u{11330}\\u{11332}-\\u{11333}\\u{11335}-\\u{11339}\\u{1133D}\\u{11350}\\u{1135D}-\\u{11361}\\u{11400}-\\u{11434}\\u{11447}-\\u{1145B}\\u{1145D}\\u{1145F}-\\u{11461}\\u{11480}-\\u{114AF}\\u{114C4}-\\u{114C7}\\u{114D0}-\\u{114D9}\\u{11580}-\\u{115AE}\\u{115C1}-\\u{115DB}\\u{11600}-\\u{1162F}\\u{11641}-\\u{11644}\\u{11650}-\\u{11659}\\u{11660}-\\u{1166C}\\u{11680}-\\u{116AA}\\u{116B8}-\\u{116B9}\\u{116C0}-\\u{116C9}\\u{11700}-\\u{1171A}\\u{11730}-\\u{11746}\\u{11800}-\\u{1182B}\\u{1183B}\\u{118A0}-\\u{118F2}\\u{118FF}-\\u{11906}\\u{11909}\\u{1190C}-\\u{11913}\\u{11915}-\\u{11916}\\u{11918}-\\u{1192F}\\u{1193F}\\u{11941}\\u{11944}-\\u{11946}\\u{11950}-\\u{11959}\\u{119A0}-\\u{119A7}\\u{119AA}-\\u{119D0}\\u{119E1}-\\u{119E3}\\u{11A00}\\u{11A0B}-\\u{11A32}\\u{11A3A}\\u{11A3F}-\\u{11A46}\\u{11A50}\\u{11A5C}-\\u{11A89}\\u{11A9A}-\\u{11AA2}\\u{11AB0}-\\u{11AF8}\\u{11B00}-\\u{11B09}\\u{11C00}-\\u{11C08}\\u{11C0A}-\\u{11C2E}\\u{11C40}-\\u{11C45}\\u{11C50}-\\u{11C6C}\\u{11C70}-\\u{11C8F}\\u{11D00}-\\u{11D06}\\u{11D08}-\\u{11D09}\\u{11D0B}-\\u{11D30}\\u{11D46}\\u{11D50}-\\u{11D59}\\u{11D60}-\\u{11D65}\\u{11D67}-\\u{11D68}\\u{11D6A}-\\u{11D89}\\u{11D98}\\u{11DA0}-\\u{11DA9}\\u{11EE0}-\\u{11EF2}\\u{11EF7}-\\u{11EF8}\\u{11F02}\\u{11F04}-\\u{11F10}\\u{11F12}-\\u{11F33}\\u{11F43}-\\u{11F59}\\u{11FB0}\\u{11FC0}-\\u{11FF1}\\u{11FFF}-\\u{12399}\\u{12400}-\\u{1246E}\\u{12470}-\\u{12474}\\u{12480}-\\u{12543}\\u{12F90}-\\u{12FF2}\\u{13000}-\\u{1342F}\\u{13441}-\\u{13446}\\u{14400}-\\u{14646}\\u{16800}-\\u{16A38}\\u{16A40}-\\u{16A5E}\\u{16A60}-\\u{16A69}\\u{16A6E}-\\u{16ABE}\\u{16AC0}-\\u{16AC9}\\u{16AD0}-\\u{16AED}\\u{16AF5}\\u{16B00}-\\u{16B2F}\\u{16B37}-\\u{16B45}\\u{16B50}-\\u{16B59}\\u{16B5B}-\\u{16B61}\\u{16B63}-\\u{16B77}\\u{16B7D}-\\u{16B8F}\\u{16E40}-\\u{16E9A}\\u{16F00}-\\u{16F4A}\\u{16F50}\\u{16F93}-\\u{16F9F}\\u{16FE0}-\\u{16FE3}\\u{17000}-\\u{187F7}\\u{18800}-\\u{18CD5}\\u{18D00}-\\u{18D08}\\u{1AFF0}-\\u{1AFF3}\\u{1AFF5}-\\u{1AFFB}\\u{1AFFD}-\\u{1AFFE}\\u{1B000}-\\u{1B122}\\u{1B132}\\u{1B150}-\\u{1B152}\\u{1B155}\\u{1B164}-\\u{1B167}\\u{1B170}-\\u{1B2FB}\\u{1BC00}-\\u{1BC6A}\\u{1BC70}-\\u{1BC7C}\\u{1BC80}-\\u{1BC88}\\u{1BC90}-\\u{1BC99}\\u{1BC9C}\\u{1BC9F}\\u{1CF50}-\\u{1CFC3}\\u{1D000}-\\u{1D0F5}\\u{1D100}-\\u{1D126}\\u{1D129}-\\u{1D164}\\u{1D16A}-\\u{1D16C}\\u{1D183}-\\u{1D184}\\u{1D18C}-\\u{1D1A9}\\u{1D1AE}-\\u{1D1EA}\\u{1D200}-\\u{1D241}\\u{1D245}\\u{1D2C0}-\\u{1D2D3}\\u{1D2E0}-\\u{1D2F3}\\u{1D300}-\\u{1D356}\\u{1D360}-\\u{1D378}\\u{1D400}-\\u{1D454}\\u{1D456}-\\u{1D49C}\\u{1D49E}-\\u{1D49F}\\u{1D4A2}\\u{1D4A5}-\\u{1D4A6}\\u{1D4A9}-\\u{1D4AC}\\u{1D4AE}-\\u{1D4B9}\\u{1D4BB}\\u{1D4BD}-\\u{1D4C3}\\u{1D4C5}-\\u{1D505}\\u{1D507}-\\u{1D50A}\\u{1D50D}-\\u{1D514}\\u{1D516}-\\u{1D51C}\\u{1D51E}-\\u{1D539}\\u{1D53B}-\\u{1D53E}\\u{1D540}-\\u{1D544}\\u{1D546}\\u{1D54A}-\\u{1D550}\\u{1D552}-\\u{1D6A5}\\u{1D6A8}-\\u{1D7CB}\\u{1D7CE}-\\u{1D9FF}\\u{1DA37}-\\u{1DA3A}\\u{1DA6D}-\\u{1DA74}\\u{1DA76}-\\u{1DA83}\\u{1DA85}-\\u{1DA8B}\\u{1DF00}-\\u{1DF1E}\\u{1DF25}-\\u{1DF2A}\\u{1E030}-\\u{1E06D}\\u{1E100}-\\u{1E12C}\\u{1E137}-\\u{1E13D}\\u{1E140}-\\u{1E149}\\u{1E14E}-\\u{1E14F}\\u{1E290}-\\u{1E2AD}\\u{1E2C0}-\\u{1E2EB}\\u{1E2F0}-\\u{1E2F9}\\u{1E2FF}\\u{1E4D0}-\\u{1E4EB}\\u{1E4F0}-\\u{1E4F9}\\u{1E7E0}-\\u{1E7E6}\\u{1E7E8}-\\u{1E7EB}\\u{1E7ED}-\\u{1E7EE}\\u{1E7F0}-\\u{1E7FE}\\u{1E800}-\\u{1E8C4}\\u{1E8C7}-\\u{1E8CF}\\u{1E900}-\\u{1E943}\\u{1E94B}\\u{1E950}-\\u{1E959}\\u{1E95E}-\\u{1E95F}\\u{1EC71}-\\u{1ECB4}\\u{1ED01}-\\u{1ED3D}\\u{1EE00}-\\u{1EE03}\\u{1EE05}-\\u{1EE1F}\\u{1EE21}-\\u{1EE22}\\u{1EE24}\\u{1EE27}\\u{1EE29}-\\u{1EE32}\\u{1EE34}-\\u{1EE37}\\u{1EE39}\\u{1EE3B}\\u{1EE42}\\u{1EE47}\\u{1EE49}\\u{1EE4B}\\u{1EE4D}-\\u{1EE4F}\\u{1EE51}-\\u{1EE52}\\u{1EE54}\\u{1EE57}\\u{1EE59}\\u{1EE5B}\\u{1EE5D}\\u{1EE5F}\\u{1EE61}-\\u{1EE62}\\u{1EE64}\\u{1EE67}-\\u{1EE6A}\\u{1EE6C}-\\u{1EE72}\\u{1EE74}-\\u{1EE77}\\u{1EE79}-\\u{1EE7C}\\u{1EE7E}\\u{1EE80}-\\u{1EE89}\\u{1EE8B}-\\u{1EE9B}\\u{1EEA1}-\\u{1EEA3}\\u{1EEA5}-\\u{1EEA9}\\u{1EEAB}-\\u{1EEBB}\\u{1EEF0}-\\u{1EEF1}\\u{1F000}-\\u{1F02B}\\u{1F030}-\\u{1F093}\\u{1F0A0}-\\u{1F0AE}\\u{1F0B1}-\\u{1F0BF}\\u{1F0C1}-\\u{1F0CF}\\u{1F0D1}-\\u{1F0F5}\\u{1F100}-\\u{1F1AD}\\u{1F1E6}-\\u{1F202}\\u{1F210}-\\u{1F23B}\\u{1F240}-\\u{1F248}\\u{1F250}-\\u{1F251}\\u{1F260}-\\u{1F265}\\u{1F300}-\\u{1F6D7}\\u{1F6DC}-\\u{1F6EC}\\u{1F6F0}-\\u{1F6FC}\\u{1F700}-\\u{1F776}\\u{1F77B}-\\u{1F7D9}\\u{1F7E0}-\\u{1F7EB}\\u{1F7F0}\\u{1F800}-\\u{1F80B}\\u{1F810}-\\u{1F847}\\u{1F850}-\\u{1F859}\\u{1F860}-\\u{1F887}\\u{1F890}-\\u{1F8AD}\\u{1F8B0}-\\u{1F8B1}\\u{1F900}-\\u{1FA53}\\u{1FA60}-\\u{1FA6D}\\u{1FA70}-\\u{1FA7C}\\u{1FA80}-\\u{1FA88}\\u{1FA90}-\\u{1FABD}\\u{1FABF}-\\u{1FAC5}\\u{1FACE}-\\u{1FADB}\\u{1FAE0}-\\u{1FAE8}\\u{1FAF0}-\\u{1FAF8}\\u{1FB00}-\\u{1FB92}\\u{1FB94}-\\u{1FBCA}\\u{1FBF0}-\\u{1FBF9}\\u{20000}-\\u{2A6DF}\\u{2A700}-\\u{2B739}\\u{2B740}-\\u{2B81D}\\u{2B820}-\\u{2CEA1}\\u{2CEB0}-\\u{2EBE0}\\u{2EBF0}-\\u{2EE5D}\\u{2F800}-\\u{2FA1D}\\u{30000}-\\u{3134A}\\u{31350}-\\u{323AF}]", "u");
+var EDGE_RE = new RegExp("^[\\u{0}-\\u{20}\\u{7F}-\\u{A0}\\u{AD}\\u{600}-\\u{605}\\u{61C}\\u{6DD}\\u{70F}\\u{890}-\\u{891}\\u{8E2}\\u{115F}-\\u{1160}\\u{1680}\\u{180E}\\u{2000}-\\u{200F}\\u{2028}-\\u{202F}\\u{205F}-\\u{2064}\\u{2066}-\\u{206F}\\u{2800}\\u{3000}\\u{3164}\\u{FEFF}\\u{FFA0}\\u{FFF9}-\\u{FFFB}\\u{110BD}\\u{110CD}\\u{13430}-\\u{1343F}\\u{1BCA0}-\\u{1BCA3}\\u{1D173}-\\u{1D17A}\\u{E0001}\\u{E0020}-\\u{E007F}]+|[\\u{0}-\\u{20}\\u{7F}-\\u{A0}\\u{AD}\\u{600}-\\u{605}\\u{61C}\\u{6DD}\\u{70F}\\u{890}-\\u{891}\\u{8E2}\\u{115F}-\\u{1160}\\u{1680}\\u{180E}\\u{2000}-\\u{200F}\\u{2028}-\\u{202F}\\u{205F}-\\u{2064}\\u{2066}-\\u{206F}\\u{2800}\\u{3000}\\u{3164}\\u{FEFF}\\u{FFA0}\\u{FFF9}-\\u{FFFB}\\u{110BD}\\u{110CD}\\u{13430}-\\u{1343F}\\u{1BCA0}-\\u{1BCA3}\\u{1D173}-\\u{1D17A}\\u{E0001}\\u{E0020}-\\u{E007F}]+$", "gu");
+function isBlank(v) {
+  return !VISIBLE_RE.test(v == null ? "" : String(v));
+}
+function trimAll(v) {
+  return (v == null ? "" : String(v)).replace(EDGE_RE, "");
+}
+
 /* ===== platform-supabase.js ===== */
 /* 正式頁(todo.html)和測試頁(todo-test.html)的「讀寫資料那一層」:
    透過九辰資料庫裡的「待辦窗口」讀寫。每次呼叫都附上這台裝置記住的待辦密碼。
@@ -788,6 +664,7 @@ function sbCall(name, body) {
       if (res.ok) return data;
       var msg = data && (data.message || data.hint || "") || "";
       if (res.status === 401 || res.status === 403 || /bad_key/.test(msg)) throw { code: "bad_key" };
+      if (/bad_title/.test(msg)) throw { code: "bad_title" };   /* 資料庫說標題空白:頁面會提示「標題不能空白」 */
       throw { code: "failed" };
     });
   }, function () {
@@ -869,7 +746,7 @@ var state = {
   shelfOpen: { done: false, shelved: false },
   logAll: {},
   adding: false,
-  add: { icon: DEFAULT_ICON, clinics: [] },
+  add: { icon: DEFAULT_ICON, clinics: [], priority: PRI_NORMAL },
   edit: null,            /* { id, clinics, ballKind, orig } */
   stepEdit: null,        /* { id, key } */
   answering: null,       /* { id, key } */
@@ -1009,10 +886,14 @@ function groupOf(ball) {
 }
 
 /* 把資料裡的一件事,整理成畫面好用的樣子。 */
-/* 看起來是空白:去掉半形、全形空白、tab、換行、零寬字元之後是空的。跟資料庫的 todo_blank 一樣。 */
-var BLANK_RE = /[\s\u3000\u00a0\u1680\u2000-\u200f\u2028\u2029\u202f\u205f\u2060\ufeff]/g;
-function isBlank(v) {
-  return text(v).replace(BLANK_RE, "") === "";
+/* 看起來是空白(isBlank)、去掉前後各種空白(trimAll)在 chars.js:至少要有一個看得見的字,跟資料庫的 todo_blank、todo_trim 同一份表。 */
+/* 先後(2026-11-25 榮軒追加):先做排最上面、慢慢來排下面;資料裡沒有就當一般。 */
+var PRI_FIRST = "先做";
+var PRI_NORMAL = "一般";
+var PRI_LATER = "慢慢來";
+var PRIORITIES = [PRI_FIRST, PRI_NORMAL, PRI_LATER];
+function priRank(p) {
+  return p === PRI_FIRST ? 0 : p === PRI_LATER ? 2 : 1;
 }
 var NO_TITLE = "（沒有標題）";
 function model(t) {
@@ -1043,7 +924,10 @@ function model(t) {
     quote: text(t.quote),
     created: text(t.created),
     updated: text(t.updated),
-    backTo: text(t.backTo)
+    backTo: text(t.backTo),
+    priority: PRIORITIES.indexOf(t.priority) >= 0 ? t.priority : PRI_NORMAL,
+    doneAt: text(t.doneAt),
+    doneBy: text(t.doneBy)
   };
 }
 function isClosed(m) {
@@ -1098,7 +982,7 @@ function editDirty() {
   var e = state.edit;
   if (!e) return false;
   var d = state.drafts;
-  return text(d["edit:title"]).trim() !== e.orig.title || text(d["edit:next"]).trim() !== e.orig.next ||
+  return trimAll(d["edit:title"]) !== e.orig.title || text(d["edit:next"]).trim() !== e.orig.next ||
     !sameList(CLINICS.filter(function (c) { return e.clinics.indexOf(c) >= 0; }), CLINICS.filter(function (c) { return e.orig.clinics.indexOf(c) >= 0; })) ||
     e.ballKind !== e.orig.ballKind || (e.ballKind === "other" && text(d["edit:ballName"]).trim() !== e.orig.ballName) ||
     dueFromDrafts() !== e.orig.due;
@@ -1115,7 +999,7 @@ function syncEdit() {
   var moved = 0;
   var kept = 0;
   if (m.title !== o.title) {
-    if (text(d["edit:title"]).trim() === o.title) {
+    if (trimAll(d["edit:title"]) === o.title) {
       d["edit:title"] = m.title;
       setField("edit-title", m.title);
       o.title = m.title;
@@ -1175,21 +1059,49 @@ function dueFromDrafts() {
 }
 
 /* ---------- 畫面 ---------- */
+/* 第 3 版(2026-11-25 版面重設計):字少、圖示和顏色為主。
+   不顯示球在誰手上(資料裡照樣有);最上面只有「進行中、完成」兩個數字;
+   哪一家用固定顏色(色點或色塊),篩選鈕就是圖例。
+   榮軒 2026-11-25 選「卡片風」:左邊有顏色的圖示方塊、標題(收合時一行)、下面一行淡灰的下一步。 */
+
+var CLINIC_KEY = { "九辰": "jc", "佐升": "zs", "德佐中醫": "dz", "其他": "ot" };
+var STATUS_SHORT = {};
+STATUS_SHORT[ST_TODO] = ["stTodo", "未開始"];
+STATUS_SHORT[ST_DOING] = ["stDoing", "進行中"];
+STATUS_SHORT[ST_REVIEW] = ["stReview", "等確認"];
+
+function ckey(c) {
+  return CLINIC_KEY[c] || "ot";
+}
+function clinicDot(c) {
+  return '<i class="dot c-' + ckey(c) + '" aria-hidden="true"></i>';
+}
+/* 卡片風的色塊:一家就一個顏色,好幾家就斜切成幾塊。 */
+function tileStyle(list) {
+  var l = list.length ? list : ["其他"];
+  if (l.length === 1) return "";
+  var step = 100 / l.length;
+  var parts = l.map(function (c, i) {
+    return "var(--t-" + ckey(c) + ") " + (i * step).toFixed(1) + "% " + ((i + 1) * step).toFixed(1) + "%";
+  });
+  return ' style="background:linear-gradient(135deg,' + parts.join(",") + ')"';
+}
 
 function viewTop() {
   var ready = state.phase === "ready" && !state.choosingWho;
   var h = '<header class="top" data-key="top"><div class="brand">' + uiIcon("book", "brand-mark") + "<h1>診所待辦</h1></div>";
   h += '<div class="top-right">';
   if (ready && state.me) {
-    h += '<button class="btn who-btn" type="button" data-act="who-open" aria-label="現在是' + esc(state.me) + '，按這裡換人">' + uiIcon("me") + "<span>" + esc(state.me) + "</span></button>";
+    h += '<button class="who-btn" type="button" data-act="who-open" aria-label="現在是' + esc(state.me) + '，按這裡換人"><span class="avatar">' + esc(state.me) + "</span></button>";
   }
   if (ready && !state.adding && allModels().length) {
-    h += '<button class="btn primary" type="button" id="add-open" data-act="add-open">' + uiIcon("plus") + "<span>新增</span></button>";
+    h += '<button class="add-btn" type="button" id="add-open" data-act="add-open" aria-label="新增一件">' + uiIcon("plus") + "</button>";
   }
   return h + "</div></header>";
 }
-function viewNote(kind, msg, iconName) {
-  return '<p class="note note-' + kind + '" data-key="note-' + kind + '">' + uiIcon(iconName) + "<span>" + esc(msg) + "</span></p>";
+function viewNote(kind, msg, iconName, closable) {
+  return '<div class="note note-' + kind + '" data-key="note-' + kind + '">' + uiIcon(iconName) + "<span>" + esc(msg) + "</span>" +
+    (closable ? '<button class="note-x" type="button" data-act="note-close" aria-label="關掉這個提示">' + uiIcon("close") + "</button>" : "") + "</div>";
 }
 function viewDown() {
   var notReady = state.downKind === "not_ready";
@@ -1208,100 +1120,105 @@ function viewKey() {
 }
 function viewWho() {
   var h = '<section class="panel form gate" data-key="who"><h2 class="h2">' + uiIcon("me") + "<span>你是誰？</span></h2>" +
-    '<p class="sec-sub">選了之後，你在這台裝置上改的東西都會記上你的名字。之後按右上角的名字可以換人。</p><div class="who-row">';
+    '<p class="sec-sub">你在這台裝置上改的東西，會記上你的名字。</p><div class="who-row">';
   PEOPLE.forEach(function (p) {
-    h += '<button class="btn line who-pick' + (state.me === p ? " is-on" : "") + '" type="button" data-act="who-pick" data-value="' + esc(p) + '">' + uiIcon("me") + "<span>我是" + esc(p) + "</span></button>";
+    h += '<button class="btn line who-pick' + (state.me === p ? " is-on" : "") + '" type="button" data-act="who-pick" data-value="' + esc(p) + '"><span class="avatar">' + esc(p) + "</span><span>我是" + esc(p) + "</span></button>";
   });
   h += "</div>";
   if (state.me) h += '<div class="form-actions"><button class="btn" type="button" data-act="who-cancel">不換了</button></div>';
   return h + "</section>";
 }
-function viewCounts(c) {
-  function cell(kind, n, iconName, label) {
-    var on = state.whoFilter === kind;
-    var mine = kind === state.me;
-    return '<button class="count' + (mine ? " is-mine" : "") + (on ? " is-on" : "") + '" type="button" data-act="who-filter" data-value="' + esc(kind) + '" aria-pressed="' + on + '">' +
-      '<span class="num" data-count="' + esc(kind) + '">' + n + "</span>" +
-      '<span class="lbl">' + label + "</span></button>";
-  }
-  var h = '<section class="counts" data-key="counts" aria-label="現在的狀況"><div class="count-row">' +
-    cell("軒", c["軒"], "me", "等軒的") +
-    cell("維", c["維"], "me", "等維的") +
-    cell("Claude", c.Claude, "claude", "等 Claude 的") +
-    (c.others > 0 || state.whoFilter === "others" ? cell("others", c.others, "others", "等其他人的") : "") +
-    cell("done", c.done, "check", "完成的") + "</div>";
-  h += '<p class="count-note">' + (state.filter ? "「" + esc(state.filter) + "」" : "") + "一共 <span data-count=\"total\">" + c.total + "</span> 件，擱置 " +
-    '<span data-count="shelved">' + c.shelved + "</span> 件。" +
-    (state.whoFilter ? '<button class="linkbtn" type="button" data-act="who-filter" data-value="' + esc(state.whoFilter) + '">看全部</button>' : "") + "</p></section>";
-  return h;
+/* 最上面:一個小圓環(完成的比例)加兩個數字。點「完成」打開最下面完成的那一疊。 */
+function viewSummary(c) {
+  var open = c.total - c.done - c.shelved;
+  var base = open + c.done;
+  var r = 15;
+  var len = 2 * Math.PI * r;
+  var fill = base ? (len * c.done) / base : 0;
+  var ring = '<svg class="ring" viewBox="0 0 36 36" aria-hidden="true" focusable="false">' +
+    '<circle class="ring-bg" cx="18" cy="18" r="' + r + '"/>' +
+    (fill > 0 ? '<circle class="ring-fg" cx="18" cy="18" r="' + r + '" stroke-dasharray="' + fill.toFixed(2) + " " + len.toFixed(2) + '" transform="rotate(-90 18 18)"/>' : "") + "</svg>";
+  var on = !!state.shelfOpen.done;
+  return '<div class="summary" data-key="counts" data-total="' + c.total + '" data-shelved="' + c.shelved + '">' + ring +
+    '<span class="sum"><span class="num" data-count="open">' + open + '</span><span class="lbl">進行中</span></span>' +
+    '<button class="sum sum-btn' + (on ? " is-on" : "") + '" type="button" data-act="who-filter" data-value="done" aria-pressed="' + on + '">' +
+    '<span class="num" data-count="done">' + c.done + '</span><span class="lbl">完成</span></button></div>';
 }
+/* 篩選鈕也是圖例:色點就是畫面上代表那一家的顏色。再按一次取消。 */
 function viewFilters() {
-  var h = '<nav class="filters" data-key="filters" aria-label="只看哪一家">' + uiIcon("filter");
-  h += '<button class="chip' + (state.filter === "" ? " is-on" : "") + '" type="button" data-act="filter" data-clinic="" aria-pressed="' + (state.filter === "") + '">全部</button>';
+  var h = '<nav class="filters" data-key="filters" aria-label="只看哪一家">';
   CLINICS.forEach(function (c) {
     var on = state.filter === c;
-    h += '<button class="chip' + (on ? " is-on" : "") + '" type="button" data-act="filter" data-clinic="' + esc(c) + '" aria-pressed="' + on + '">' + esc(c) + "</button>";
+    h += '<button class="chip' + (on ? " is-on" : "") + '" type="button" data-act="filter" data-clinic="' + esc(c) + '" aria-pressed="' + on + '"' +
+      (on ? ' aria-label="只看' + esc(c) + '，再按一次看全部"' : "") + ">" + clinicDot(c) + "<span>" + esc(c) + "</span>" + (on ? uiIcon("close", "chip-x") : "") + "</button>";
   });
   return h + "</nav>";
 }
-function pickChip(act, value, label, on) {
-  return '<button class="chip pick' + (on ? " is-on" : "") + '" type="button" data-act="' + act + '" data-value="' + esc(value) + '" aria-pressed="' + on + '">' + (on ? uiIcon("check") : "") + "<span>" + esc(label) + "</span></button>";
+function pickChip(act, value, label, on, dotOf) {
+  return '<button class="chip pick' + (on ? " is-on" : "") + '" type="button" data-act="' + act + '" data-value="' + esc(value) + '" aria-pressed="' + on + '">' +
+    (dotOf ? clinicDot(dotOf) : "") + "<span>" + esc(label) + "</span>" + (on ? uiIcon("check", "pick-ok") : "") + "</button>";
+}
+/* 先後的三顆切換鈕:展開卡片後和新增表單裡都有。 */
+function priSeg(act, cur, id) {
+  var h = '<div class="seg pri-seg" role="group" aria-label="先後">';
+  PRIORITIES.forEach(function (p) {
+    var on = cur === p;
+    h += '<button class="seg-btn pri-' + priRank(p) + (on ? " is-on" : "") + '" type="button" data-act="' + act + '"' + (id ? ' data-id="' + id + '"' : "") +
+      ' data-value="' + esc(p) + '" aria-pressed="' + on + '"><i class="pri-mark" aria-hidden="true"></i><span>' + esc(p) + "</span></button>";
+  });
+  return h + "</div>";
 }
 function viewAddForm() {
   var h = '<form class="panel form" data-form="add" data-key="addform" novalidate>' +
-    '<h2 class="h2">' + uiIcon("plus") + "<span>新增一件</span></h2>" +
-    '<div class="field"><span class="field-label" id="lbl-new-title">這件事叫什麼</span>' +
-    '<input class="input" id="new-title" type="text" data-draft="add:title" aria-labelledby="lbl-new-title" placeholder="例如：訂下個月的耗材" autocomplete="off" value="' + esc(state.drafts["add:title"] || "") + '">' +
-    (state.errors.add ? '<p class="field-error" role="alert">' + esc(state.errors.add) + "</p>" : "") + "</div>";
-  h += '<div class="field"><span class="field-label">挑一個圖示</span><div class="iconpick" role="group" aria-label="挑一個圖示">';
+    '<div class="f-row">' + uiIcon("plus", "f-ic") +
+    '<input class="input" id="new-title" type="text" data-draft="add:title" aria-label="這件事叫什麼" placeholder="要做什麼？" autocomplete="off" value="' + esc(state.drafts["add:title"] || "") + '"></div>' +
+    (state.errors.add ? '<p class="field-error" role="alert">' + esc(state.errors.add) + "</p>" : "");
+  h += '<div class="iconpick" role="group" aria-label="挑一個圖示">';
   Object.keys(TODO_ICONS).forEach(function (name) {
     var on = state.add.icon === name;
     h += '<button class="iconbtn' + (on ? " is-on" : "") + '" type="button" data-act="add-icon" data-value="' + esc(name) + '" aria-pressed="' + on + '" aria-label="' + esc(name) + '">' + todoIcon(name) + "</button>";
   });
-  h += "</div></div>";
-  h += '<div class="field"><span class="field-label">哪一家<span class="field-hint">　可以選好幾家，沒選就放「其他」</span></span><div class="chips">';
-  CLINICS.forEach(function (c) { h += pickChip("add-clinic", c, c, state.add.clinics.indexOf(c) >= 0); });
-  h += "</div></div>";
+  h += "</div>";
+  h += '<div class="chips" role="group" aria-label="哪一家，可以選好幾家">';
+  CLINICS.forEach(function (c) { h += pickChip("add-clinic", c, c, state.add.clinics.indexOf(c) >= 0, c); });
+  h += "</div>";
+  h += priSeg("add-priority", state.add.priority || PRI_NORMAL, "");
   h += '<div class="form-actions"><button class="btn primary" type="submit">加進去</button>' +
     '<button class="btn" type="button" data-act="add-cancel">先不要</button></div></form>';
   return h;
 }
 function viewEmpty() {
   return '<section class="empty" data-key="empty">' + EMPTY_ART +
-    '<p class="empty-title">這裡還沒有任何待辦。</p>' +
-    '<p class="empty-sub">想到要做的事，先記下來，之後再慢慢補細節。</p>' +
+    '<p class="empty-title">還沒有任何待辦。</p>' +
     '<button class="btn primary" type="button" data-act="add-open">' + uiIcon("plus") + "<span>新增第一件</span></button></section>";
+}
+function doneButton(m, closed) {
+  var id = esc(m.id);
+  if (m.status === ST_SHELVED) return '<span class="done-btn is-shelved" aria-hidden="true">' + uiIcon("shelve") + "</span>";
+  var done = m.status === ST_DONE;
+  var review = m.status === ST_REVIEW;
+  return '<button class="done-btn' + (done ? " is-done" : "") + (review ? " is-review" : "") + '" type="button" data-act="' + (done ? "undo-done" : "quick-done") + '" data-id="' + id + '" aria-label="' +
+    (done ? "拿回來，改成還沒完成：" : review ? "做好了等確認，按這裡標完成：" : "標完成：") + esc(m.title) + '">' + uiIcon(done ? "circleOn" : review ? "circleReview" : "circle") + "</button>";
 }
 function viewCard(m) {
   var open = state.openId === m.id;
   var closed = isClosed(m);
-  var done = m.status === ST_DONE;
-  var mine = !closed && m.ball === state.me;
-  var cls = "card" + (open ? " is-open" : "") + (mine ? " is-mine" : "") + (closed ? " is-closed" : "");
+  var cls = "card" + (open ? " is-open" : "") + (closed ? " is-closed" : "") + (m.status === ST_REVIEW ? " is-review" : "") +
+    (!closed && m.priority === PRI_FIRST ? " p-first" : !closed && m.priority === PRI_LATER ? " p-later" : "");
   var id = esc(m.id);
-  var h = '<article class="' + cls + '" data-key="card-' + id + '" data-id="' + id + '"><div class="row">';
-  if (m.status === ST_SHELVED) {
-    h += '<span class="done-btn is-shelved" aria-hidden="true">' + uiIcon("shelve") + "</span>";
-  } else {
-    h += '<button class="done-btn' + (done ? " is-done" : "") + '" type="button" data-act="' + (done ? "undo-done" : "quick-done") + '" data-id="' + id + '" aria-label="' +
-      (done ? "拿回來，改成還沒完成：" : "標完成：") + esc(m.title) + '">' + uiIcon(done ? "circleOn" : "circle") + "</button>";
-  }
-  h += '<button class="card-head" type="button" data-act="toggle" data-id="' + id + '" aria-expanded="' + open + '">';
-  h += '<span class="r1"><span class="c-icon">' + todoIcon(m.icon) + '</span><span class="c-title">' + esc(m.title) + "</span>";
-  if (!closed) h += '<span class="c-ball' + (mine ? " is-me" : "") + '">' + uiIcon(m.group === "Claude" ? "claude" : m.group === "others" ? "others" : "me") + "<span>等" + esc(spaced(shorten(m.ball, 6)).replace(/ $/, "")) + "</span></span>";
-  h += "</span>";
-  h += '<span class="r2">';
-  if (m.status === ST_REVIEW) h += '<span class="flag">' + uiIcon("stReview") + "<span>等確認</span></span>";
-  if (!m.known) h += '<span class="flag">狀態看不懂</span>';
-  h += '<span class="c-clinics">' + esc(m.clinics.length ? m.clinics.join("・") : "還沒選哪一家") + "</span>";
-  if (!closed) h += '<span class="c-next' + (m.next ? "" : " is-none") + '">' + esc(m.next ? m.next.replace(/\s+/g, " ") : "還沒寫下一步") + "</span>";
-  else h += '<span class="c-next">' + (done ? "完成" : "擱置") + "</span>";
-  h += "</span></button></div>";
+  var head = '<button class="card-head" type="button" data-act="toggle" data-id="' + id + '" aria-expanded="' + open + '">';
+  var unknown = m.known ? "" : '<span class="flag">狀態看不懂</span>';
+  var h = '<article class="' + cls + '" data-key="card-' + id + '" data-id="' + id + '" data-priority="' + esc(m.priority) + '"><div class="row">';
+  var single = m.clinics.length <= 1 ? " c-" + ckey(m.clinics[0] || "其他") : "";
+  h += head + '<span class="tile' + single + '"' + tileStyle(m.clinics) + ' role="img" aria-label="' + esc((m.clinics.length ? m.clinics : ["其他"]).join("、")) + '">' + todoIcon(m.icon) + "</span>" +
+    '<span class="c-text"><span class="c-title">' + esc(m.title) + "</span>" + unknown +
+    (!closed && m.next ? '<span class="c-next">' + esc(m.next.replace(/\s+/g, " ")) + "</span>" : "") + "</span></button>" + doneButton(m, closed);
+  h += "</div>";
   if (open) h += viewDetail(m, closed);
   return h + "</article>";
 }
-function secTitle(iconName, label, note) {
-  return '<h3 class="sec-title">' + uiIcon(iconName) + "<span>" + label + "</span>" + (note ? '<span class="sec-note">' + note + "</span>" : "") + "</h3>";
+function secHead(iconName, label, extra) {
+  return '<div class="sec-head">' + uiIcon(iconName) + '<span class="sr">' + label + "</span>" + (extra || "") + "</div>";
 }
 function viewStep(m, s, closed) {
   var id = esc(m.id);
@@ -1326,48 +1243,49 @@ function viewDetail(m, closed) {
   var h = '<div class="card-detail">';
   if (state.edit && state.edit.id === m.id && !closed) return h + viewEditForm(m) + "</div>";
 
-  /* 小步驟 */
+  /* 下一步 */
+  if (m.next && !closed) h += '<p class="d-next" data-key="d-next">' + uiIcon("arrow") + "<span>" + esc(m.next) + "</span></p>";
+
+  /* 小步驟:圖示當小標題,旁邊是做完幾步和一條細進度條 */
   var doneCount = m.steps.filter(function (s) { return s.done; }).length;
-  h += '<section class="sec" data-key="sec-steps">' + secTitle("steps", "小步驟", m.steps.length ? "做完 " + doneCount + " / " + m.steps.length + " 步" : "");
+  var bar = m.steps.length ? '<span class="sec-n">' + doneCount + " / " + m.steps.length + '</span><span class="pbar"><i style="width:' + Math.round((100 * doneCount) / m.steps.length) + '%"></i></span>' : "";
+  h += '<section class="sec" data-key="sec-steps">' + secHead("steps", "小步驟", bar);
   if (m.steps.length) {
     h += '<div class="steps">';
     m.steps.forEach(function (s) { h += viewStep(m, s, closed); });
     h += "</div>";
-  } else {
-    h += '<p class="none">還沒有小步驟。</p>';
   }
   if (!closed) {
     h += '<form class="inline-form" data-form="step" data-id="' + id + '" novalidate>' +
-      '<input class="input" id="step-input-' + id + '" type="text" data-draft="step:' + id + '" aria-label="要加的小步驟" placeholder="加一個小步驟" autocomplete="off" value="' + esc(state.drafts["step:" + m.id] || "") + '">' +
-      '<button class="btn line" type="submit">加一步</button></form>';
+      '<input class="input" id="step-input-' + id + '" type="text" data-draft="step:' + id + '" aria-label="要加的小步驟" placeholder="加一步" autocomplete="off" value="' + esc(state.drafts["step:" + m.id] || "") + '">' +
+      '<button class="btn line sq" type="submit" aria-label="加一步">' + uiIcon("plus") + "</button></form>";
   }
   h += "</section>";
 
   /* 待回答的問題 */
   if (m.questions.length) {
-    h += '<section class="sec" data-key="sec-questions">' + secTitle("question", "待回答的問題");
-    h += '<ul class="plain">';
+    h += '<section class="sec sec-q" data-key="sec-questions">';
     m.questions.forEach(function (q) {
       var an = state.answering;
-      h += '<li class="q" data-key="q-' + esc(q.key) + '"><p class="q-text">' + esc(text(q.text)) + "</p>";
+      h += '<div class="q" data-key="q-' + esc(q.key) + '"><p class="q-text">' + uiIcon("question") + "<span>" + esc(text(q.text)) + "</span></p>";
       if (an && an.id === m.id && an.key === q.key && !closed) {
         h += '<form class="log-form" data-form="answer" data-id="' + id + '" novalidate>' +
-          '<textarea class="input" id="answer-input" rows="2" data-draft="answer" aria-label="你的回答" placeholder="寫下你的回答">' + esc(state.drafts.answer || "") + "</textarea>" +
-          '<div class="form-actions"><button class="btn primary" type="submit">送出回答</button><button class="btn" type="button" data-act="answer-cancel">先不要</button></div></form>';
+          '<textarea class="input" id="answer-input" rows="2" data-draft="answer" aria-label="你的回答" placeholder="你的回答">' + esc(state.drafts.answer || "") + "</textarea>" +
+          '<div class="form-actions"><button class="btn primary" type="submit">送出</button><button class="btn" type="button" data-act="answer-cancel">先不要</button></div></form>';
       } else if (!closed && !q.fixed) {
-        h += '<button class="btn line small" type="button" data-act="answer-open" data-id="' + id + '" data-value="' + esc(q.key) + '">' + uiIcon("log") + "<span>回答</span></button>";
+        h += '<button class="btn line small" type="button" data-act="answer-open" data-id="' + id + '" data-value="' + esc(q.key) + '">回答</button>';
       }
-      h += "</li>";
+      h += "</div>";
     });
-    h += "</ul></section>";
+    h += "</section>";
   }
 
   /* 進度紀錄 */
-  h += '<section class="sec" data-key="sec-log">' + secTitle("log", "進度紀錄", m.log.length ? "共 " + m.log.length + " 筆" : "");
+  h += '<section class="sec" data-key="sec-log">' + secHead("log", "進度紀錄", m.log.length ? '<span class="sec-n">' + m.log.length + "</span>" : "");
   if (!closed) {
-    h += '<form class="log-form" data-form="log" data-id="' + id + '" novalidate>' +
-      '<textarea class="input" id="log-input-' + id + '" rows="2" data-draft="log:' + id + '" aria-label="要記的進度" placeholder="今天做了什麼，寫一句就好">' + esc(state.drafts["log:" + m.id] || "") + "</textarea>" +
-      '<button class="btn line" type="submit">記一筆</button></form>';
+    h += '<form class="inline-form log-form" data-form="log" data-id="' + id + '" novalidate>' +
+      '<textarea class="input" id="log-input-' + id + '" rows="1" data-draft="log:' + id + '" aria-label="要記的進度" placeholder="記一筆進度">' + esc(state.drafts["log:" + m.id] || "") + "</textarea>" +
+      '<button class="btn line" type="submit">記下來</button></form>';
   }
   if (m.log.length) {
     var showAll = !!state.logAll[m.id];
@@ -1376,53 +1294,54 @@ function viewDetail(m, closed) {
     shown.forEach(function (g) {
       var by = text(g.by) || AI;
       var who = spaced(by).replace(/^ /, "") + "記的";
-      h += '<li class="log-item" data-key="log-' + esc(g.key) + '"><p class="log-meta">' + uiIcon(by === AI ? "claude" : PEOPLE.indexOf(by) >= 0 ? "me" : "others") +
-        "<span>" + esc(showDate(g.date)) + '</span><span class="log-by">' + esc(who) + "</span></p>" +
-        '<p class="log-text">' + esc(text(g.text)) + "</p>" +
-        (text(g.source) ? '<p class="log-src">根據：' + esc(g.source) + "</p>" : "") + "</li>";
+      h += '<li class="log-item" data-key="log-' + esc(g.key) + '"><p class="log-text">' + esc(text(g.text)) + "</p>" +
+        '<p class="log-meta"><span>' + esc(showDate(g.date)) + '</span><span class="log-by">' + esc(who) + "</span></p></li>";
     });
     h += "</ul>";
     if (!showAll && m.log.length > LOG_PREVIEW) {
-      h += '<button class="btn more" type="button" data-act="log-more" data-id="' + id + '">' + uiIcon("chevron") + "<span>再看更早的 " + (m.log.length - LOG_PREVIEW) + " 筆</span></button>";
+      h += '<button class="btn more" type="button" data-act="log-more" data-id="' + id + '">' + uiIcon("chevron") + "<span>更早的 " + (m.log.length - LOG_PREVIEW) + " 筆</span></button>";
     }
-  } else {
-    h += '<p class="none">還沒有進度紀錄。</p>';
   }
   h += "</section>";
 
   /* 相關檔案 */
   if (m.links.length) {
-    h += '<section class="sec" data-key="sec-links">' + secTitle("file", "相關檔案") + '<ul class="links">';
+    h += '<section class="sec" data-key="sec-links"><ul class="links">';
     m.links.forEach(function (f) {
       var where = text(f.where);
       var isWeb = /^https?:\/\//i.test(where);
-      h += '<li data-key="f-' + esc(f.key) + '">';
+      h += '<li data-key="f-' + esc(f.key) + '">' + uiIcon("file");
       if (isWeb) h += '<a class="link-web" href="' + esc(where) + '" target="_blank" rel="noopener noreferrer">' + esc(text(f.name) || where) + "</a>";
-      else h += '<span class="link-name">' + esc(text(f.name)) + '</span><span class="link-where">' + esc(where) + "</span>";
+      else h += '<span class="link-txt"><span class="link-name">' + esc(text(f.name)) + '</span><span class="link-where">' + esc(where) + "</span></span>";
       h += "</li>";
     });
     h += "</ul></section>";
   }
 
-  /* 期限、原話、編號 */
-  var facts = "期限：" + (m.due ? showDate(m.due) : "還沒定");
-  h += '<section class="sec" data-key="sec-due"><p class="due-text">' + uiIcon("due") + "<span>" + esc(facts) + "</span></p>";
-  if (m.quote) h += '<p class="quote-text">軒當時說：「' + esc(m.quote) + "」</p>";
-  h += '<p class="meta">編號 ' + id + (m.created ? "・" + esc(showDate(m.created)) + "建立" : "") + (m.updated ? "・" + esc(showDate(m.updated)) + "更新" : "") + "</p></section>";
+  /* 期限、原話、編號:有才顯示 */
+  h += '<section class="sec facts" data-key="sec-due">';
+  if (m.due) h += '<p class="fact">' + uiIcon("due") + "<span>" + esc(showDate(m.due)) + "</span></p>";
+  if (m.quote) h += '<p class="fact quote-text">' + uiIcon("quote") + "<span>「" + esc(m.quote) + "」</span></p>";
+  if (m.status === ST_DONE && m.doneAt) {
+    var dm = /^\d{4}-(\d{2})-(\d{2})/.exec(m.doneAt);
+    h += '<p class="fact done-line">' + uiIcon("check") + "<span>" + (dm ? (+dm[1]) + "/" + (+dm[2]) + " " : "") + esc(m.doneBy ? spaced(m.doneBy).replace(/^ /, "") : "") + "完成</span></p>";
+  }
+  h += '<p class="meta">' + id + (m.updated ? "・" + esc(showDate(m.updated)) + "更新" : "") + "</p></section>";
 
-  /* 可以做的動作 */
+  /* 動作 */
   h += '<div class="actions" data-key="actions">';
   if (closed) {
     h += '<button class="btn line" type="button" data-act="restore" data-id="' + id + '">' + uiIcon("back") + "<span>拿回來</span></button>";
   } else {
-    h += '<div class="act-status"><span class="act-label">狀態</span><div class="seg" role="group" aria-label="狀態">';
+    h += '<div class="seg" role="group" aria-label="狀態">';
     OPEN_STATUSES.forEach(function (s) {
       var on = m.status === s;
-      h += '<button class="seg-btn' + (on ? " is-on" : "") + '" type="button" data-act="set-status" data-id="' + id + '" data-value="' + esc(s) + '" aria-pressed="' + on + '">' + esc(s) + "</button>";
+      h += '<button class="seg-btn' + (on ? " is-on" : "") + '" type="button" data-act="set-status" data-id="' + id + '" data-value="' + esc(s) + '" aria-pressed="' + on + '" aria-label="' + esc(s) + '">' +
+        uiIcon(STATUS_SHORT[s][0]) + "<span>" + STATUS_SHORT[s][1] + "</span></button>";
     });
-    h += '</div></div><div class="act-buttons">' +
-      '<button class="btn line" type="button" data-act="edit-open" data-id="' + id + '">' + uiIcon("edit") + "<span>修改內容</span></button>" +
-      '<button class="btn line" type="button" data-act="mark-done" data-id="' + id + '">' + uiIcon("check") + "<span>標完成</span></button>" +
+    h += "</div>" + priSeg("set-priority", m.priority, id) + '<div class="act-buttons">' +
+      '<button class="btn line" type="button" data-act="edit-open" data-id="' + id + '">' + uiIcon("edit") + "<span>修改</span></button>" +
+      '<button class="btn line" type="button" data-act="mark-done" data-id="' + id + '">' + uiIcon("check") + "<span>完成</span></button>" +
       '<button class="btn line" type="button" data-act="shelve" data-id="' + id + '">' + uiIcon("shelve") + "<span>收起來</span></button></div>";
   }
   return h + "</div></div>";
@@ -1435,28 +1354,20 @@ function dueSelect(part, unit, numbers, value) {
   });
   return h + "</select>" + uiIcon("chevron", "select-chev") + "</span>";
 }
+/* 修改表單:欄位前面用圖示當小標題,不寫欄位名稱。不顯示「球在誰手上」(資料照留,這裡不改它)。 */
 function viewEditForm(m) {
   var id = esc(m.id);
   var e = state.edit;
   var d = state.drafts;
   var h = '<form class="form" data-form="edit" data-id="' + id + '" data-key="editform" novalidate>';
   if (e.notice) h += viewNote("edit", e.notice, "info");
-  h += '<div class="field"><span class="field-label" id="lbl-edit-title">標題</span>' +
-    '<input class="input" id="edit-title" type="text" data-draft="edit:title" aria-labelledby="lbl-edit-title" autocomplete="off" value="' + esc(d["edit:title"] || "") + '"></div>';
-  h += '<div class="field"><span class="field-label">哪一家<span class="field-hint">　可以選好幾家</span></span><div class="chips">';
-  CLINICS.forEach(function (c) { h += pickChip("edit-clinic", c, c, e.clinics.indexOf(c) >= 0); });
-  h += "</div></div>";
-  h += '<div class="field"><span class="field-label" id="lbl-edit-next">下一步</span>' +
-    '<textarea class="input" id="edit-next" rows="3" data-draft="edit:next" aria-labelledby="lbl-edit-next" placeholder="接下來要做的一件事">' + esc(d["edit:next"] || "") + "</textarea></div>";
-  h += '<div class="field"><span class="field-label">球在誰手上</span><div class="chips">' +
-    pickChip("edit-ball", "軒", "軒", e.ballKind === "軒") +
-    pickChip("edit-ball", "維", "維", e.ballKind === "維") +
-    pickChip("edit-ball", "Claude", "Claude", e.ballKind === "Claude") +
-    pickChip("edit-ball", "other", "其他人", e.ballKind === "other") + "</div>";
-  if (e.ballKind === "other") {
-    h += '<input class="input" id="edit-ballname" type="text" data-draft="edit:ballName" aria-label="對方的名字" placeholder="對方的名字，例如招牌廠商" autocomplete="off" value="' + esc(d["edit:ballName"] || "") + '">';
-  }
+  h += '<div class="f-row">' + uiIcon("edit", "f-ic") +
+    '<input class="input" id="edit-title" type="text" data-draft="edit:title" aria-label="標題" placeholder="標題" autocomplete="off" value="' + esc(d["edit:title"] || "") + '"></div>';
+  h += '<div class="chips" role="group" aria-label="哪一家，可以選好幾家">';
+  CLINICS.forEach(function (c) { h += pickChip("edit-clinic", c, c, e.clinics.indexOf(c) >= 0, c); });
   h += "</div>";
+  h += '<div class="f-row">' + uiIcon("arrow", "f-ic") +
+    '<textarea class="input" id="edit-next" rows="3" data-draft="edit:next" aria-label="下一步" placeholder="接下來要做的一件事">' + esc(d["edit:next"] || "") + "</textarea></div>";
   var thisYear = twParts().y;
   var years = [thisYear, thisYear + 1, thisYear + 2, thisYear + 3];
   var pickedYear = +(d["edit:dueY"] || 0);
@@ -1466,7 +1377,7 @@ function viewEditForm(m) {
   var i;
   for (i = 1; i <= 12; i++) months.push(i);
   for (i = 1; i <= 31; i++) days.push(i);
-  h += '<div class="field"><span class="field-label">期限<span class="field-hint">　可以不填</span></span><div class="due-row">' +
+  h += '<div class="f-row" role="group" aria-label="期限，可以不填">' + uiIcon("due", "f-ic") + '<div class="due-row">' +
     dueSelect("Y", "年", years, d["edit:dueY"] || "") + dueSelect("M", "月", months, d["edit:dueM"] || "") + dueSelect("D", "日", days, d["edit:dueD"] || "") +
     '<button class="btn" type="button" data-act="edit-due-clear">不設期限</button></div></div>';
   if (state.errors.edit) h += '<p class="field-error" role="alert">' + esc(state.errors.edit) + "</p>";
@@ -1479,7 +1390,7 @@ function viewShelf(name, label, iconName, list) {
   var open = !!state.shelfOpen[name];
   var h = '<section class="shelf' + (open ? " is-open" : "") + '" data-key="shelf-' + name + '">' +
     '<button class="shelf-head" type="button" data-act="shelf" data-value="' + name + '" aria-expanded="' + open + '">' + uiIcon(iconName) +
-    "<span>" + label + ' <span class="shelf-n">' + list.length + "</span> 件</span>" + uiIcon("chevron", "c-chev") + "</button>";
+    "<span>" + label + ' <span class="shelf-n" data-count="' + name + '-n">' + list.length + "</span></span>" + uiIcon("chevron", "c-chev") + "</button>";
   if (open) h += '<div class="cards">' + list.map(viewCard).join("") + "</div>";
   return h + "</section>";
 }
@@ -1487,21 +1398,23 @@ function shownChanges() {
   var local = state.pend.filter(function (p) { return p.change && p.sent !== false; }).map(function (p) { return p.change; }).reverse();
   return local.concat(state.changes).slice(0, SHOW_CHANGES);
 }
+/* 最近改了什麼:平常收成一顆小按鈕,按了才打開。 */
 function viewChanges(all) {
   var titles = {};
   all.forEach(function (m) { titles[m.id] = m.title; });
-  var h = '<section class="changes" data-key="changes"><h2 class="h2">' + uiIcon("history") + "<span>最近改了什麼</span></h2>";
   var list = shownChanges();
-  if (!list.length) return h + '<p class="none">還沒有任何改動。之後每改一次，這裡都會記一筆。</p></section>';
-  h += '<p class="sec-sub">只顯示最近 ' + SHOW_CHANGES + ' 筆。</p><ul class="change-list">';
+  var open = !!state.changesOpen;
+  var h = '<section class="changes' + (open ? " is-open" : "") + '" data-key="changes">' +
+    '<button class="changes-btn" type="button" data-act="changes-toggle" aria-expanded="' + open + '">' + uiIcon("history") + "<span>最近改了什麼</span>" + uiIcon("chevron", "c-chev") + "</button>";
+  if (!open) return h + "</section>";
+  if (!list.length) return h + '<p class="none">還沒有任何改動。</p></section>';
+  h += '<ul class="change-list">';
   list.forEach(function (c) {
     var by = text(c.by) || "不知道是誰";
-    var who = by;
     var tid = text(c.todo);
-    h += '<li class="change" data-key="ch-' + esc(c.id) + '">' + uiIcon(by === AI ? "claude" : PEOPLE.indexOf(by) >= 0 ? "me" : "others", "ch-ic") +
-      '<p class="ch-meta"><span class="ch-who">' + esc(who) + '</span><span class="ch-when">' + esc(showStamp(c.at)) + "</span></p>" +
-      '<p class="ch-what"><span class="ch-todo">' + esc(tid) + (titles[tid] ? " " + esc(titles[tid]) : "") + "</span>" +
-      '<span class="ch-text">' + esc(text(c.what)) + "</span></p></li>";
+    h += '<li class="change" data-key="ch-' + esc(c.id) + '"><span class="avatar sm' + (by === AI ? " is-ai" : "") + '" aria-hidden="true">' + esc(by === AI ? "C" : by.charAt(0)) + "</span>" +
+      '<p class="ch-what"><span class="ch-text">' + esc(text(c.what)) + "</span>" +
+      '<span class="ch-meta">' + esc(by) + "・" + esc(showStamp(c.at)) + "・" + esc(tid) + (titles[tid] ? " " + esc(shorten(titles[tid], 14)) : "") + "</span></p></li>";
   });
   return h + "</ul></section>";
 }
@@ -1511,7 +1424,7 @@ function viewFoot() {
 }
 function viewApp() {
   var h = viewTop();
-  if (Platform.note) h += viewNote("demo", Platform.note, "info");
+  if (Platform.note && !state.noteClosed) h += viewNote("demo", Platform.noteShort || Platform.note, "info", true);
   if (state.phase === "key") return h + viewKey();
   if (state.phase === "loading") return h + '<p class="loading" data-key="loading">正在打開診所待辦…</p>';
   if (state.phase === "down") return h + viewDown();
@@ -1522,23 +1435,19 @@ function viewApp() {
     return h + (state.adding ? viewAddForm() : viewEmpty()) + viewChanges(all) + viewFoot();
   }
   var seen = all.filter(function (m) { return !state.filter || m.clinics.indexOf(state.filter) >= 0; });
-  h += viewCounts(tally(seen));
-  h += viewFilters();
+  h += '<div class="bar" data-key="bar">' + viewSummary(tally(seen)) + viewFilters() + "</div>";
   if (state.adding) h += viewAddForm();
-  var active = seen.filter(function (m) { return !isClosed(m) && (!state.whoFilter || m.group === state.whoFilter); });
+  var active = seen.filter(function (m) { return !isClosed(m); });
+  /* 排序:先做 → 一般 → 慢慢來;同一級照編號(建立的先後),舊的在上面(D6)。完成和擱置收在最下面(下面的 viewShelf)。 */
   active.sort(function (a, b) {
-    var x = a.ball === state.me ? 0 : 1;
-    var y = b.ball === state.me ? 0 : 1;
-    return x - y || idNumber(a.id) - idNumber(b.id);
+    return priRank(a.priority) - priRank(b.priority) || idNumber(a.id) - idNumber(b.id) || (a.id < b.id ? -1 : 1);
   });
   h += '<main class="cards" data-key="cards" id="cards">';
   if (active.length) h += active.map(viewCard).join("");
-  else h += '<p class="none pad" data-key="none-active">' + (state.whoFilter || state.filter ? "這樣篩選之後，沒有還在進行的待辦。" : "手上沒有還在進行的待辦。") + "</p>";
+  else h += '<p class="none pad" data-key="none-active">' + (state.filter ? "這一家沒有還在進行的待辦。" : "沒有還在進行的待辦。") + "</p>";
   h += "</main>";
-  if (!state.whoFilter) {
-    h += viewShelf("done", "完成的", "check", seen.filter(function (m) { return m.status === ST_DONE; }));
-    h += viewShelf("shelved", "擱置的", "shelve", seen.filter(function (m) { return m.status === ST_SHELVED; }));
-  }
+  h += viewShelf("done", "完成", "check", seen.filter(function (m) { return m.status === ST_DONE; }));
+  h += viewShelf("shelved", "擱置", "shelve", seen.filter(function (m) { return m.status === ST_SHELVED; }));
   h += viewChanges(all);
   return h + viewFoot();
 }
@@ -1665,6 +1574,7 @@ function send(entry, okMsg, onFail) {
       state.keyError = MSG_BAD_KEY;
     }
     if (err && err.code === "bad_key") toast(MSG_BAD_KEY, true);
+    else if (err && err.code === "bad_title") toast("標題不能空白，" + (entry.kind === "create" ? "這一件沒有加進去。" : "這次修改沒有存到。"), true);
     else toast(notSavedMsg(entry), true);
     render();
   });
@@ -1805,7 +1715,9 @@ function markDone(id, fromCircle) {
     state.edit = null;
   }
   if (state.openId === id) state.openId = "";
-  saveTodo(m, { status: ST_DONE, backTo: m.status }, "標成完成", { status: m.status, backTo: m.backTo }, "", function () {
+  /* 記下什麼時候、誰標完成的(不顯示在卡片上,展開才看得到一小行) */
+  saveTodo(m, { status: ST_DONE, backTo: m.status, doneAt: nowStamp(), doneBy: state.me }, "標成完成",
+    { status: m.status, backTo: m.backTo, doneAt: m.doneAt, doneBy: m.doneBy }, "", function () {
     if (!fromCircle) state.openId = id;
   });
   toast("已標完成。", false, false, { label: "復原", run: function () { restore(id, true); } });
@@ -1815,11 +1727,28 @@ function restore(id, isUndo) {
   if (!m || !isClosed(m)) return;
   var back = OPEN_STATUSES.indexOf(m.backTo) >= 0 ? m.backTo : ST_DOING;
   state.reveal = id;
-  saveTodo(m, { status: back, backTo: "" }, (isUndo ? "復原：" : "") + "從" + (m.status === ST_DONE ? "完成" : "擱置") + "拿回來，狀態回到「" + back + "」",
-    { status: m.status, backTo: m.backTo }, isUndo ? "復原了。" : "拿回來了。");
+  var patch = { status: back, backTo: "" };
+  var before = { status: m.status, backTo: m.backTo };
+  if (m.doneAt || m.doneBy) {
+    /* 拿回來時清掉完成的時間和人 */
+    patch.doneAt = "";
+    patch.doneBy = "";
+    before.doneAt = m.doneAt;
+    before.doneBy = m.doneBy;
+  }
+  saveTodo(m, patch, (isUndo ? "復原：" : "") + "從" + (m.status === ST_DONE ? "完成" : "擱置") + "拿回來，狀態回到「" + back + "」",
+    before, isUndo ? "復原了。" : "拿回來了。");
 }
 
 var actions = {
+  "note-close": function () {
+    state.noteClosed = true;
+    render();
+  },
+  "changes-toggle": function () {
+    state.changesOpen = !state.changesOpen;
+    render();
+  },
   "who-open": function () {
     state.choosingWho = true;
     render();
@@ -1861,12 +1790,23 @@ var actions = {
     state.adding = false;
     state.errors.add = "";
     state.drafts["add:title"] = "";
-    state.add = { icon: DEFAULT_ICON, clinics: [] };
+    state.add = { icon: DEFAULT_ICON, clinics: [], priority: PRI_NORMAL };
     render();
   },
   "add-icon": function (el) {
     state.add.icon = el.getAttribute("data-value");
     render();
+  },
+  "add-priority": function (el) {
+    var p = el.getAttribute("data-value");
+    if (PRIORITIES.indexOf(p) >= 0) state.add.priority = p;
+    render();
+  },
+  "set-priority": function (el, id) {
+    var m = findModel(id);
+    var to = el.getAttribute("data-value");
+    if (!m || to === m.priority || PRIORITIES.indexOf(to) < 0) return;
+    saveTodo(m, { priority: to }, "先後改成「" + to + "」", { priority: m.priority });
   },
   "add-clinic": function (el) {
     state.add.clinics = toggleIn(state.add.clinics, el.getAttribute("data-value"));
@@ -2069,7 +2009,7 @@ var submits = {
     begin();
   },
   "add": function () {
-    var title = text(state.drafts["add:title"]).trim();
+    var title = trimAll(state.drafts["add:title"]);
     if (isBlank(title)) {
       state.errors.add = "先幫這件事取個名字。";
       state.focus = "new-title";
@@ -2082,7 +2022,8 @@ var submits = {
       render();
       return;
     }
-    var keep = { title: state.drafts["add:title"], icon: state.add.icon, clinics: state.add.clinics.slice() };
+    var keep = { title: state.drafts["add:title"], icon: state.add.icon, clinics: state.add.clinics.slice(), priority: state.add.priority };
+    var priority = PRIORITIES.indexOf(state.add.priority) >= 0 ? state.add.priority : PRI_NORMAL;
     var icon = TODO_ICONS[state.add.icon] ? state.add.icon : DEFAULT_ICON;
     var clinics = pickClinics(state.add.clinics);
     var id = nextId();
@@ -2090,12 +2031,12 @@ var submits = {
     var doc = {
       id: id, title: title, icon: icon, clinics: clinics, status: ST_TODO, backTo: "",
       steps: {}, next: "", ball: state.me, due: "", questions: {}, links: {}, log: {},
-      quote: "", created: day, updated: day
+      quote: "", priority: priority, created: day, updated: day
     };
     state.adding = false;
     state.errors.add = "";
     state.drafts["add:title"] = "";
-    state.add = { icon: DEFAULT_ICON, clinics: [] };
+    state.add = { icon: DEFAULT_ICON, clinics: [], priority: PRI_NORMAL };
     if (state.filter && clinics.indexOf(state.filter) < 0) state.filter = "";
     state.whoFilter = "";
     state.reveal = id;
@@ -2104,15 +2045,15 @@ var submits = {
       function () {
         state.adding = true;
         state.drafts["add:title"] = keep.title;
-        state.add = { icon: keep.icon, clinics: keep.clinics };
+        state.add = { icon: keep.icon, clinics: keep.clinics, priority: keep.priority };
       });
   },
   "step": function (form, id) {
     var m = findModel(id);
     var draftKey = "step:" + id;
-    var value = text(state.drafts[draftKey]).trim();
+    var value = trimAll(state.drafts[draftKey]);
     if (!m) return;
-    if (!value) {
+    if (isBlank(value)) {
       state.focus = "step-input-" + id;
       render();
       return;
@@ -2136,11 +2077,11 @@ var submits = {
     var se = state.stepEdit;
     var m = findModel(id);
     if (!se || !m) return;
-    var value = text(state.drafts.stepEdit).trim();
+    var value = trimAll(state.drafts.stepEdit);
     var step = null;
     m.steps.forEach(function (s) { if (s.key === se.key) step = s; });
     if (!step) { state.stepEdit = null; render(); return; }
-    if (!value) {
+    if (isBlank(value)) {
       toast("小步驟不能空白；不要這一步的話，按「拿掉這一步」。", true);
       return;
     }
@@ -2160,8 +2101,8 @@ var submits = {
     var an = state.answering;
     var m = findModel(id);
     if (!an || !m) return;
-    var value = text(state.drafts.answer).trim();
-    if (!value) {
+    var value = trimAll(state.drafts.answer);
+    if (isBlank(value)) {
       state.focus = "answer-input";
       render();
       return;
@@ -2186,9 +2127,9 @@ var submits = {
   "log": function (form, id) {
     var m = findModel(id);
     var draftKey = "log:" + id;
-    var value = text(state.drafts[draftKey]).trim();
+    var value = trimAll(state.drafts[draftKey]);
     if (!m) return;
-    if (!value) {
+    if (isBlank(value)) {
       state.focus = "log-input-" + id;
       render();
       return;
@@ -2215,7 +2156,7 @@ var submits = {
     var e = state.edit;
     if (!m || !raw || !e) return;
     var o = e.orig;
-    var title = text(state.drafts["edit:title"]).trim();
+    var title = trimAll(state.drafts["edit:title"]);
     var next = text(state.drafts["edit:next"]).trim();
     var dueY = text(state.drafts["edit:dueY"]);
     var dueM = text(state.drafts["edit:dueM"]);

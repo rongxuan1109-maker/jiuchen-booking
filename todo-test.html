@@ -456,6 +456,13 @@ textarea.input { display: block; width: 100%; resize: vertical; }
 .card-detail .done-line { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--ink-2); }
 .card-detail .done-line .ic { width: 18px; height: 18px; }
 .card.is-open .c-prog { display: none; }
+/* 卡片右邊沒有完成圈圈了(避免誤點):標題那一欄右邊留一點空 */
+.card-head:last-child { padding-right: 14px; }
+.done-btn.is-done { cursor: default; }
+/* 展開後最下面那排:左邊小字「改標題」「收起來」,右邊一顆「完成」 */
+.small-acts { align-items: center; }
+.finish-btn { margin-left: auto; color: var(--ok); border-color: #bfe5d2; }
+.finish-btn .ic { width: 18px; height: 18px; }
 </style>
 <div class="app">
   <div id="root">
@@ -1250,13 +1257,12 @@ function viewEmpty() {
     '<p class="empty-title">還沒有任何待辦。</p>' +
     '<button class="btn primary" type="button" data-act="add-open">' + uiIcon("plus") + "<span>新增第一件</span></button></section>";
 }
+/* 卡片右邊(榮軒 2026-11-25:「不要點一下就完成 這樣很容易誤點」):
+   還沒完成的不放按鈕,點卡片只會展開;完成和擱置的只放一個看的記號,按不下去。完成要展開後按「完成」或點 100%。 */
 function doneButton(m, closed) {
-  var id = esc(m.id);
   if (m.status === ST_SHELVED) return '<span class="done-btn is-shelved" aria-hidden="true">' + uiIcon("shelve") + "</span>";
-  var done = m.status === ST_DONE;
-  var review = m.status === ST_REVIEW;
-  return '<button class="done-btn' + (done ? " is-done" : "") + (review ? " is-review" : "") + '" type="button" data-act="' + (done ? "undo-done" : "quick-done") + '" data-id="' + id + '" aria-label="' +
-    (done ? "拿回來，改成還沒完成：" : review ? "做好了等確認，按這裡標完成：" : "標完成：") + esc(m.title) + '">' + uiIcon(done ? "circleOn" : review ? "circleReview" : "circle") + "</button>";
+  if (m.status === ST_DONE) return '<span class="done-btn is-done" aria-hidden="true">' + uiIcon("circleOn") + "</span>";
+  return "";
 }
 function viewCard(m) {
   var open = state.openId === m.id;
@@ -1329,7 +1335,8 @@ function viewDetail(m, closed) {
   h += priSeg("set-priority", m.priority, id);
   h += '<div class="small-acts" data-key="small-acts">' +
     '<button class="link-btn" type="button" data-act="edit-open" data-id="' + id + '">改標題</button>' +
-    '<button class="link-btn" type="button" data-act="shelve" data-id="' + id + '">收起來</button></div>';
+    '<button class="link-btn" type="button" data-act="shelve" data-id="' + id + '">收起來</button>' +
+    '<button class="btn line finish-btn" type="button" data-act="mark-done" data-id="' + id + '">' + uiIcon("check") + "<span>完成</span></button></div>";
   return h + "</div>";
 }
 function dueSelect(part, unit, numbers, value) {

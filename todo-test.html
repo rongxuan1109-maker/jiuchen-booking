@@ -79,7 +79,7 @@ button { -webkit-tap-highlight-color: transparent; appearance: none; -webkit-app
 .app {
   max-width: 720px;
   margin: 0 auto;
-  padding-block: 18px 96px;
+  padding-block: 18px 150px;   /* 底部留空間:最下面跳出來的提示不會蓋住最後一排按鈕和「登出」 */
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
@@ -161,9 +161,6 @@ h1 { font-size: 22px; font-weight: 700; line-height: 1.25; letter-spacing: 0.02e
 /* 數字和篩選:電腦上同一排,手機上兩排 */
 .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
 .summary { display: flex; align-items: center; gap: 4px; flex: none; }
-.ring { width: 30px; height: 30px; margin-right: 6px; flex: none; }
-.ring-bg { fill: none; stroke: var(--line); stroke-width: 4; }
-.ring-fg { fill: none; stroke: var(--ok); stroke-width: 4; stroke-linecap: round; }
 .sum { display: inline-flex; align-items: baseline; gap: 5px; min-height: var(--tap); padding: 0 8px; align-items: center; border: 0; border-radius: 10px; background: transparent; }
 .sum-btn { cursor: pointer; }
 @media (hover: hover) { .sum-btn:hover { background: var(--line-soft); } }
@@ -172,7 +169,7 @@ h1 { font-size: 22px; font-weight: 700; line-height: 1.25; letter-spacing: 0.02e
 .sum-btn .num { color: var(--ok); }
 .sum .lbl { font-size: var(--fs-sm); color: var(--ink-3); white-space: nowrap; }
 
-.filters { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; min-width: 0; }
+.filters { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; min-width: 0; }
 .filters::-webkit-scrollbar { display: none; }
 .chip {
   flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -182,6 +179,13 @@ h1 { font-size: 22px; font-weight: 700; line-height: 1.25; letter-spacing: 0.02e
 }
 @media (hover: hover) { .chip:hover { background: var(--line-soft); } }
 .chip.is-on { background: var(--soft); border-color: var(--line); color: var(--ink); font-weight: 600; }
+/* 篩選鈕:細外框的膠囊,看得出是按鈕;選中時填那一家的淡底色 */
+.f-chip { border-color: var(--line-strong); padding: 0 12px; }
+.f-chip.is-on { font-weight: 600; color: var(--ink); }
+.f-chip.is-on.f-jc { background: var(--t-jc); border-color: var(--c-jc); }
+.f-chip.is-on.f-zs { background: var(--t-zs); border-color: var(--c-zs); }
+.f-chip.is-on.f-dz { background: var(--t-dz); border-color: var(--c-dz); }
+.f-chip.is-on.f-ot { background: var(--t-ot); border-color: var(--c-ot); }
 .chip .chip-x { width: 14px; height: 14px; color: var(--ink-3); margin-left: -2px; }
 .chip.pick { border-color: var(--line); padding: 0 14px; }
 .chip.pick.is-on { border-color: var(--ink-2); background: var(--panel); }
@@ -359,10 +363,15 @@ textarea.input { display: block; width: 100%; resize: vertical; }
 }
 
 @media (max-width: 640px) {
-  .app { padding-block: 12px 96px; }
+  .app { padding-block: 12px 150px; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
+}
+/* 很窄的手機(360 左右):篩選鈕縮一點,四顆排得下,不用左右滑 */
+@media (max-width: 380px) {
+  .filters { gap: 4px; }
+  .f-chip { padding: 0 9px; gap: 5px; }
 }
 /* B 卡片風:圖示放大成有顏色的小方塊(顏色就是哪一家;好幾家就斜切),標題,下面一行淡灰的下一步。
    完成圈圈放在右邊。每件是一張白卡片,卡片之間留空。 */
@@ -381,7 +390,7 @@ textarea.input { display: block; width: 100%; resize: vertical; }
 .tile.c-ot { background: var(--t-ot); color: var(--ink-2); }
 .c-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .c-title { font-weight: 600; }
-.c-next { max-width: 12em; font-size: var(--fs-cap); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.c-next { max-width: 100%; font-size: var(--fs-cap); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .done-btn { width: 52px; }
 .card.is-open .c-next { display: none; }
 .card.is-closed .tile { filter: grayscale(1); opacity: 0.6; }
@@ -391,19 +400,35 @@ textarea.input { display: block; width: 100%; resize: vertical; }
 }
 
 /* 先後(2026-11-25 榮軒追加):先做 = 左邊一條紅色細條;慢慢來 = 整張淡一點;一般照常。 */
-.card { position: relative; }
-.card.p-first::before {
-  content: ""; position: absolute; left: -1px; top: 10px; bottom: 10px; width: 4px;
-  border-radius: 0 4px 4px 0; background: #e5484d;
+/* 紅條用內陰影畫在卡片裡面,會跟著圓角彎,不會凸出去 */
+.card.p-first { box-shadow: inset 4px 0 0 #e5484d; }
+.card.p-first.is-open { box-shadow: inset 4px 0 0 #e5484d, 0 4px 18px rgba(22, 24, 29, 0.06); }
+.card.p-later:not(.is-open) { background: var(--soft); border-color: var(--line-soft); border-style: dashed; }
+.card.p-later:not(.is-open) .tile { filter: grayscale(1); opacity: 0.45; }
+.card.p-later:not(.is-open) .c-title { color: var(--ink-3); font-weight: 500; }
+.card.p-later:not(.is-open) .c-next { color: #9aa0ab; }
+.c-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pri-tag {
+  flex: none; display: inline-grid; place-items: center; height: 20px; padding: 0 6px; border-radius: 6px;
+  background: #e7e9ee; color: var(--ink-2); font-size: 13px; font-weight: 600; line-height: 1;
 }
-.card.p-later:not(.is-open) { background: var(--soft); border-color: var(--line-soft); }
-.card.p-later:not(.is-open) .tile { filter: saturate(0.4); opacity: 0.7; }
-.card.p-later:not(.is-open) .c-title { color: var(--ink-2); font-weight: 500; }
-.pri-mark { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--ink-3); }
-.pri-0 .pri-mark { background: #e5484d; }
-.pri-1 .pri-mark { background: var(--ink-3); }
-.pri-2 .pri-mark { background: transparent; border: 1.5px solid var(--line-strong); width: 7px; height: 7px; }
-.form .pri-seg { align-self: flex-start; }
+/* 先後的三顆小膠囊(按得到的範圍還是 44 高,看起來的膠囊比較小) */
+.pri-row { display: flex; flex-wrap: wrap; gap: 4px 8px; width: 100%; margin-top: 4px; }
+.pri-pill { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0; border: 0; background: transparent; cursor: pointer; }
+.pri-pill .pill {
+  display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: 999px;
+  border: 1.5px solid currentColor; font-size: var(--fs-sm); font-weight: 600; line-height: 1; white-space: nowrap;
+}
+.pri-0 { color: #d93036; }
+.pri-1 { color: #6b707b; }
+.pri-2 { color: #3d6bb8; }
+.pri-2 .pill { border-color: #a9c3ee; }
+.pri-pill.is-on .pill { color: #ffffff; }
+.pri-0.is-on .pill { background: #d93036; border-color: #d93036; }
+.pri-1.is-on .pill { background: #6b707b; border-color: #6b707b; }
+.pri-2.is-on .pill { background: #3d6bb8; border-color: #3d6bb8; }
+.pri-pill:focus-visible { outline-offset: 0; }
+.form .pri-row { margin-top: 0; }
 .done-line .ic { color: var(--ok); }
 </style>
 <div class="app">
@@ -1131,16 +1156,10 @@ function viewWho() {
 /* 最上面:一個小圓環(完成的比例)加兩個數字。點「完成」打開最下面完成的那一疊。 */
 function viewSummary(c) {
   var open = c.total - c.done - c.shelved;
-  var base = open + c.done;
-  var r = 15;
-  var len = 2 * Math.PI * r;
-  var fill = base ? (len * c.done) / base : 0;
-  var ring = '<svg class="ring" viewBox="0 0 36 36" aria-hidden="true" focusable="false">' +
-    '<circle class="ring-bg" cx="18" cy="18" r="' + r + '"/>' +
-    (fill > 0 ? '<circle class="ring-fg" cx="18" cy="18" r="' + r + '" stroke-dasharray="' + fill.toFixed(2) + " " + len.toFixed(2) + '" transform="rotate(-90 18 18)"/>' : "") + "</svg>";
   var on = !!state.shelfOpen.done;
-  return '<div class="summary" data-key="counts" data-total="' + c.total + '" data-shelved="' + c.shelved + '">' + ring +
-    '<span class="sum"><span class="num" data-count="open">' + open + '</span><span class="lbl">進行中</span></span>' +
+  /* 「待辦」= 還沒完成、也沒收進擱置的件數(含還沒開始、進行中、等確認) */
+  return '<div class="summary" data-key="counts" data-total="' + c.total + '" data-shelved="' + c.shelved + '">' +
+    '<span class="sum"><span class="num" data-count="open">' + open + '</span><span class="lbl">待辦</span></span>' +
     '<button class="sum sum-btn' + (on ? " is-on" : "") + '" type="button" data-act="who-filter" data-value="done" aria-pressed="' + on + '">' +
     '<span class="num" data-count="done">' + c.done + '</span><span class="lbl">完成</span></button></div>';
 }
@@ -1149,7 +1168,7 @@ function viewFilters() {
   var h = '<nav class="filters" data-key="filters" aria-label="只看哪一家">';
   CLINICS.forEach(function (c) {
     var on = state.filter === c;
-    h += '<button class="chip' + (on ? " is-on" : "") + '" type="button" data-act="filter" data-clinic="' + esc(c) + '" aria-pressed="' + on + '"' +
+    h += '<button class="chip f-chip f-' + ckey(c) + (on ? " is-on" : "") + '" type="button" data-act="filter" data-clinic="' + esc(c) + '" aria-pressed="' + on + '"' +
       (on ? ' aria-label="只看' + esc(c) + '，再按一次看全部"' : "") + ">" + clinicDot(c) + "<span>" + esc(c) + "</span>" + (on ? uiIcon("close", "chip-x") : "") + "</button>";
   });
   return h + "</nav>";
@@ -1160,11 +1179,12 @@ function pickChip(act, value, label, on, dotOf) {
 }
 /* 先後的三顆切換鈕:展開卡片後和新增表單裡都有。 */
 function priSeg(act, cur, id) {
-  var h = '<div class="seg pri-seg" role="group" aria-label="先後">';
+  /* 跟上面的狀態鈕長得不一樣:三顆小膠囊,先做紅、一般灰、慢慢來淡藍,選中的實心 */
+  var h = '<div class="pri-row" role="group" aria-label="先後">';
   PRIORITIES.forEach(function (p) {
     var on = cur === p;
-    h += '<button class="seg-btn pri-' + priRank(p) + (on ? " is-on" : "") + '" type="button" data-act="' + act + '"' + (id ? ' data-id="' + id + '"' : "") +
-      ' data-value="' + esc(p) + '" aria-pressed="' + on + '"><i class="pri-mark" aria-hidden="true"></i><span>' + esc(p) + "</span></button>";
+    h += '<button class="pri-pill pri-' + priRank(p) + (on ? " is-on" : "") + '" type="button" data-act="' + act + '"' + (id ? ' data-id="' + id + '"' : "") +
+      ' data-value="' + esc(p) + '" aria-pressed="' + on + '"><span class="pill">' + esc(p) + "</span></button>";
   });
   return h + "</div>";
 }
@@ -1211,7 +1231,8 @@ function viewCard(m) {
   var h = '<article class="' + cls + '" data-key="card-' + id + '" data-id="' + id + '" data-priority="' + esc(m.priority) + '"><div class="row">';
   var single = m.clinics.length <= 1 ? " c-" + ckey(m.clinics[0] || "其他") : "";
   h += head + '<span class="tile' + single + '"' + tileStyle(m.clinics) + ' role="img" aria-label="' + esc((m.clinics.length ? m.clinics : ["其他"]).join("、")) + '">' + todoIcon(m.icon) + "</span>" +
-    '<span class="c-text"><span class="c-title">' + esc(m.title) + "</span>" + unknown +
+    '<span class="c-text"><span class="c-line">' + (!closed && m.priority === PRI_LATER ? '<span class="pri-tag" aria-hidden="true">慢</span>' : "") +
+    '<span class="c-title">' + esc(m.title) + "</span></span>" + unknown +
     (!closed && m.next ? '<span class="c-next">' + esc(m.next.replace(/\s+/g, " ")) + "</span>" : "") + "</span></button>" + doneButton(m, closed);
   h += "</div>";
   if (open) h += viewDetail(m, closed);
@@ -1249,7 +1270,8 @@ function viewDetail(m, closed) {
   /* 小步驟:圖示當小標題,旁邊是做完幾步和一條細進度條 */
   var doneCount = m.steps.filter(function (s) { return s.done; }).length;
   var bar = m.steps.length ? '<span class="sec-n">' + doneCount + " / " + m.steps.length + '</span><span class="pbar"><i style="width:' + Math.round((100 * doneCount) / m.steps.length) + '%"></i></span>' : "";
-  h += '<section class="sec" data-key="sec-steps">' + secHead("steps", "小步驟", bar);
+  /* 沒有內容的區塊整塊不顯示(完成或擱置的那件,沒有小步驟、沒有進度時) */
+  if (m.steps.length || !closed) h += '<section class="sec" data-key="sec-steps">' + secHead("steps", "小步驟", bar);
   if (m.steps.length) {
     h += '<div class="steps">';
     m.steps.forEach(function (s) { h += viewStep(m, s, closed); });
@@ -1260,7 +1282,7 @@ function viewDetail(m, closed) {
       '<input class="input" id="step-input-' + id + '" type="text" data-draft="step:' + id + '" aria-label="要加的小步驟" placeholder="加一步" autocomplete="off" value="' + esc(state.drafts["step:" + m.id] || "") + '">' +
       '<button class="btn line sq" type="submit" aria-label="加一步">' + uiIcon("plus") + "</button></form>";
   }
-  h += "</section>";
+  if (m.steps.length || !closed) h += "</section>";
 
   /* 待回答的問題 */
   if (m.questions.length) {
@@ -1281,7 +1303,7 @@ function viewDetail(m, closed) {
   }
 
   /* 進度紀錄 */
-  h += '<section class="sec" data-key="sec-log">' + secHead("log", "進度紀錄", m.log.length ? '<span class="sec-n">' + m.log.length + "</span>" : "");
+  if (m.log.length || !closed) h += '<section class="sec" data-key="sec-log">' + secHead("log", "進度紀錄", m.log.length ? '<span class="sec-n">' + m.log.length + "</span>" : "");
   if (!closed) {
     h += '<form class="inline-form log-form" data-form="log" data-id="' + id + '" novalidate>' +
       '<textarea class="input" id="log-input-' + id + '" rows="1" data-draft="log:' + id + '" aria-label="要記的進度" placeholder="記一筆進度">' + esc(state.drafts["log:" + m.id] || "") + "</textarea>" +
@@ -1302,7 +1324,7 @@ function viewDetail(m, closed) {
       h += '<button class="btn more" type="button" data-act="log-more" data-id="' + id + '">' + uiIcon("chevron") + "<span>更早的 " + (m.log.length - LOG_PREVIEW) + " 筆</span></button>";
     }
   }
-  h += "</section>";
+  if (m.log.length || !closed) h += "</section>";
 
   /* 相關檔案 */
   if (m.links.length) {

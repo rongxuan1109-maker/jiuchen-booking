@@ -1009,6 +1009,12 @@ function groupOf(ball) {
 }
 
 /* 把資料裡的一件事,整理成畫面好用的樣子。 */
+/* 看起來是空白:去掉半形、全形空白、tab、換行、零寬字元之後是空的。跟資料庫的 todo_blank 一樣。 */
+var BLANK_RE = /[\s\u3000\u00a0\u1680\u2000-\u200f\u2028\u2029\u202f\u205f\u2060\ufeff]/g;
+function isBlank(v) {
+  return text(v).replace(BLANK_RE, "") === "";
+}
+var NO_TITLE = "（沒有標題）";
 function model(t) {
   var ball = text(t.ball).trim() || OWNER;
   var log = listOf(t.log);
@@ -1020,7 +1026,8 @@ function model(t) {
   });
   return {
     id: t.id,
-    title: text(t.title),
+    /* 標題看起來是空白的,照樣顯示、照樣算件數,只是寫成「（沒有標題）」 */
+    title: isBlank(t.title) ? NO_TITLE : text(t.title),
     icon: text(t.icon),
     clinics: Array.isArray(t.clinics) ? t.clinics.filter(function (c) { return typeof c === "string"; }) : [],
     status: text(t.status),
@@ -1062,7 +1069,7 @@ function viewRaw() {
 function allModels() {
   var map = viewRaw();
   return Object.keys(map).map(function (id) { return map[id]; })
-    .filter(function (t) { return t && text(t.title).trim(); })
+    .filter(function (t) { return t && typeof t === "object"; })
     .map(model)
     .sort(function (a, b) { return idNumber(a.id) - idNumber(b.id) || (a.id < b.id ? -1 : 1); });
 }
@@ -2063,7 +2070,7 @@ var submits = {
   },
   "add": function () {
     var title = text(state.drafts["add:title"]).trim();
-    if (!title) {
+    if (isBlank(title)) {
       state.errors.add = "先幫這件事取個名字。";
       state.focus = "new-title";
       render();
@@ -2216,7 +2223,7 @@ var submits = {
     var due = "";
     var ball = e.ballKind === "other" ? text(state.drafts["edit:ballName"]).trim() : e.ballKind;
     if (/^claude$/i.test(ball)) ball = AI;
-    if (!title) {
+    if (isBlank(title)) {
       state.errors.edit = "標題不能空白。";
       state.focus = "edit-title";
       render();

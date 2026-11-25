@@ -430,6 +430,32 @@ textarea.input { display: block; width: 100%; resize: vertical; }
 .pri-pill:focus-visible { outline-offset: 0; }
 .form .pri-row { margin-top: 0; }
 .done-line .ic { color: var(--ok); }
+
+/* 極簡版(2026-11-25 榮軒):收合時標題下面淡灰一行筆記、一條細進度條;展開後五格進度、筆記、先後、小字按鈕 */
+.c-prog { display: block; height: 4px; margin-top: 6px; border-radius: 4px; background: var(--line-soft); overflow: hidden; max-width: 100%; }
+.c-prog i { display: block; height: 100%; border-radius: 4px; background: var(--ok); }
+.card.p-later:not(.is-open) .c-prog i { background: #9aa0ab; }
+.pct-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding-top: 4px; }
+.pct {
+  min-height: var(--tap); border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+  color: var(--ink-2); font-family: var(--font-num); font-size: var(--fs-sm); font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.pct.is-fill { background: #e6f5ee; border-color: #bfe5d2; color: #0b7a5f; }
+.pct.is-on { background: var(--ok); border-color: var(--ok); color: #ffffff; }
+.note-form { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; }
+.note-input { min-height: 84px; resize: vertical; }
+.note-bar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.note-dirty { font-size: var(--fs-cap); color: var(--warn); }
+.note-read { font-size: var(--fs-sm); color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; padding: 4px 0; }
+.small-acts { display: flex; flex-wrap: wrap; gap: 4px 16px; padding-top: 8px; margin-top: 6px; border-top: 1px solid var(--line-soft); }
+.link-btn {
+  min-height: var(--tap); padding: 0 4px; border: 0; background: transparent;
+  color: var(--ink-3); font-size: var(--fs-cap); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+@media (hover: hover) { .link-btn:hover { color: var(--ink); } }
+.card-detail .done-line { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--ink-2); }
+.card-detail .done-line .ic { width: 18px; height: 18px; }
+.card.is-open .c-prog { display: none; }
 </style>
 <div class="app">
   <div id="root">
@@ -917,6 +943,16 @@ var PRI_FIRST = "先做";
 var PRI_NORMAL = "一般";
 var PRI_LATER = "慢慢來";
 var PRIORITIES = [PRI_FIRST, PRI_NORMAL, PRI_LATER];
+/* 進度(2026-11-25 榮軒改極簡版):五格。100 就是完成;狀態由進度推出來。 */
+var STEPS_PCT = [0, 25, 50, 75, 100];
+function statusOfProgress(p) {
+  return p === 0 ? ST_TODO : p === 100 ? ST_DONE : ST_DOING;
+}
+function progressOf(t) {
+  if (STEPS_PCT.indexOf(t.progress) >= 0) return t.progress;
+  return t.status === ST_DONE ? 100 : t.status === ST_TODO ? 0 : 25;
+}
+var MAX_NOTE = 2000;
 function priRank(p) {
   return p === PRI_FIRST ? 0 : p === PRI_LATER ? 2 : 1;
 }
@@ -952,7 +988,9 @@ function model(t) {
     backTo: text(t.backTo),
     priority: PRIORITIES.indexOf(t.priority) >= 0 ? t.priority : PRI_NORMAL,
     doneAt: text(t.doneAt),
-    doneBy: text(t.doneBy)
+    doneBy: text(t.doneBy),
+    progress: progressOf(t),
+    note: text(t.note)
   };
 }
 function isClosed(m) {
@@ -1233,7 +1271,9 @@ function viewCard(m) {
   h += head + '<span class="tile' + single + '"' + tileStyle(m.clinics) + ' role="img" aria-label="' + esc((m.clinics.length ? m.clinics : ["其他"]).join("、")) + '">' + todoIcon(m.icon) + "</span>" +
     '<span class="c-text"><span class="c-line">' + (!closed && m.priority === PRI_LATER ? '<span class="pri-tag" aria-hidden="true">慢</span>' : "") +
     '<span class="c-title">' + esc(m.title) + "</span></span>" + unknown +
-    (!closed && m.next ? '<span class="c-next">' + esc(m.next.replace(/\s+/g, " ")) + "</span>" : "") + "</span></button>" + doneButton(m, closed);
+    (m.note ? '<span class="c-next">' + esc(m.note.replace(/\s+/g, " ")) + "</span>" : "") +
+    (!closed ? '<span class="c-prog" role="img" aria-label="進度 ' + m.progress + '%"><i style="width:' + m.progress + '%"></i></span>' : "") +
+    "</span></button>" + doneButton(m, closed);
   h += "</div>";
   if (open) h += viewDetail(m, closed);
   return h + "</article>";
@@ -1259,114 +1299,38 @@ function viewStep(m, s, closed) {
   }
   return h + "</div>";
 }
+/* 展開後(極簡版):五格進度、一則筆記、先後三顆膠囊、最下面一排小字按鈕。其他都不放。 */
 function viewDetail(m, closed) {
   var id = esc(m.id);
   var h = '<div class="card-detail">';
   if (state.edit && state.edit.id === m.id && !closed) return h + viewEditForm(m) + "</div>";
-
-  /* 下一步 */
-  if (m.next && !closed) h += '<p class="d-next" data-key="d-next">' + uiIcon("arrow") + "<span>" + esc(m.next) + "</span></p>";
-
-  /* 小步驟:圖示當小標題,旁邊是做完幾步和一條細進度條 */
-  var doneCount = m.steps.filter(function (s) { return s.done; }).length;
-  var bar = m.steps.length ? '<span class="sec-n">' + doneCount + " / " + m.steps.length + '</span><span class="pbar"><i style="width:' + Math.round((100 * doneCount) / m.steps.length) + '%"></i></span>' : "";
-  /* 沒有內容的區塊整塊不顯示(完成或擱置的那件,沒有小步驟、沒有進度時) */
-  if (m.steps.length || !closed) h += '<section class="sec" data-key="sec-steps">' + secHead("steps", "小步驟", bar);
-  if (m.steps.length) {
-    h += '<div class="steps">';
-    m.steps.forEach(function (s) { h += viewStep(m, s, closed); });
-    h += "</div>";
-  }
-  if (!closed) {
-    h += '<form class="inline-form" data-form="step" data-id="' + id + '" novalidate>' +
-      '<input class="input" id="step-input-' + id + '" type="text" data-draft="step:' + id + '" aria-label="要加的小步驟" placeholder="加一步" autocomplete="off" value="' + esc(state.drafts["step:" + m.id] || "") + '">' +
-      '<button class="btn line sq" type="submit" aria-label="加一步">' + uiIcon("plus") + "</button></form>";
-  }
-  if (m.steps.length || !closed) h += "</section>";
-
-  /* 待回答的問題 */
-  if (m.questions.length) {
-    h += '<section class="sec sec-q" data-key="sec-questions">';
-    m.questions.forEach(function (q) {
-      var an = state.answering;
-      h += '<div class="q" data-key="q-' + esc(q.key) + '"><p class="q-text">' + uiIcon("question") + "<span>" + esc(text(q.text)) + "</span></p>";
-      if (an && an.id === m.id && an.key === q.key && !closed) {
-        h += '<form class="log-form" data-form="answer" data-id="' + id + '" novalidate>' +
-          '<textarea class="input" id="answer-input" rows="2" data-draft="answer" aria-label="你的回答" placeholder="你的回答">' + esc(state.drafts.answer || "") + "</textarea>" +
-          '<div class="form-actions"><button class="btn primary" type="submit">送出</button><button class="btn" type="button" data-act="answer-cancel">先不要</button></div></form>';
-      } else if (!closed && !q.fixed) {
-        h += '<button class="btn line small" type="button" data-act="answer-open" data-id="' + id + '" data-value="' + esc(q.key) + '">回答</button>';
-      }
-      h += "</div>";
-    });
-    h += "</section>";
-  }
-
-  /* 進度紀錄 */
-  if (m.log.length || !closed) h += '<section class="sec" data-key="sec-log">' + secHead("log", "進度紀錄", m.log.length ? '<span class="sec-n">' + m.log.length + "</span>" : "");
-  if (!closed) {
-    h += '<form class="inline-form log-form" data-form="log" data-id="' + id + '" novalidate>' +
-      '<textarea class="input" id="log-input-' + id + '" rows="1" data-draft="log:' + id + '" aria-label="要記的進度" placeholder="記一筆進度">' + esc(state.drafts["log:" + m.id] || "") + "</textarea>" +
-      '<button class="btn line" type="submit">記下來</button></form>';
-  }
-  if (m.log.length) {
-    var showAll = !!state.logAll[m.id];
-    var shown = showAll ? m.log : m.log.slice(0, LOG_PREVIEW);
-    h += '<ul class="log">';
-    shown.forEach(function (g) {
-      var by = text(g.by) || AI;
-      var who = spaced(by).replace(/^ /, "") + "記的";
-      h += '<li class="log-item" data-key="log-' + esc(g.key) + '"><p class="log-text">' + esc(text(g.text)) + "</p>" +
-        '<p class="log-meta"><span>' + esc(showDate(g.date)) + '</span><span class="log-by">' + esc(who) + "</span></p></li>";
-    });
-    h += "</ul>";
-    if (!showAll && m.log.length > LOG_PREVIEW) {
-      h += '<button class="btn more" type="button" data-act="log-more" data-id="' + id + '">' + uiIcon("chevron") + "<span>更早的 " + (m.log.length - LOG_PREVIEW) + " 筆</span></button>";
-    }
-  }
-  if (m.log.length || !closed) h += "</section>";
-
-  /* 相關檔案 */
-  if (m.links.length) {
-    h += '<section class="sec" data-key="sec-links"><ul class="links">';
-    m.links.forEach(function (f) {
-      var where = text(f.where);
-      var isWeb = /^https?:\/\//i.test(where);
-      h += '<li data-key="f-' + esc(f.key) + '">' + uiIcon("file");
-      if (isWeb) h += '<a class="link-web" href="' + esc(where) + '" target="_blank" rel="noopener noreferrer">' + esc(text(f.name) || where) + "</a>";
-      else h += '<span class="link-txt"><span class="link-name">' + esc(text(f.name)) + '</span><span class="link-where">' + esc(where) + "</span></span>";
-      h += "</li>";
-    });
-    h += "</ul></section>";
-  }
-
-  /* 期限、原話、編號:有才顯示 */
-  h += '<section class="sec facts" data-key="sec-due">';
-  if (m.due) h += '<p class="fact">' + uiIcon("due") + "<span>" + esc(showDate(m.due)) + "</span></p>";
-  if (m.quote) h += '<p class="fact quote-text">' + uiIcon("quote") + "<span>「" + esc(m.quote) + "」</span></p>";
-  if (m.status === ST_DONE && m.doneAt) {
-    var dm = /^\d{4}-(\d{2})-(\d{2})/.exec(m.doneAt);
-    h += '<p class="fact done-line">' + uiIcon("check") + "<span>" + (dm ? (+dm[1]) + "/" + (+dm[2]) + " " : "") + esc(m.doneBy ? spaced(m.doneBy).replace(/^ /, "") : "") + "完成</span></p>";
-  }
-  h += '<p class="meta">' + id + (m.updated ? "・" + esc(showDate(m.updated)) + "更新" : "") + "</p></section>";
-
-  /* 動作 */
-  h += '<div class="actions" data-key="actions">';
   if (closed) {
-    h += '<button class="btn line" type="button" data-act="restore" data-id="' + id + '">' + uiIcon("back") + "<span>拿回來</span></button>";
-  } else {
-    h += '<div class="seg" role="group" aria-label="狀態">';
-    OPEN_STATUSES.forEach(function (s) {
-      var on = m.status === s;
-      h += '<button class="seg-btn' + (on ? " is-on" : "") + '" type="button" data-act="set-status" data-id="' + id + '" data-value="' + esc(s) + '" aria-pressed="' + on + '" aria-label="' + esc(s) + '">' +
-        uiIcon(STATUS_SHORT[s][0]) + "<span>" + STATUS_SHORT[s][1] + "</span></button>";
-    });
-    h += "</div>" + priSeg("set-priority", m.priority, id) + '<div class="act-buttons">' +
-      '<button class="btn line" type="button" data-act="edit-open" data-id="' + id + '">' + uiIcon("edit") + "<span>修改</span></button>" +
-      '<button class="btn line" type="button" data-act="mark-done" data-id="' + id + '">' + uiIcon("check") + "<span>完成</span></button>" +
-      '<button class="btn line" type="button" data-act="shelve" data-id="' + id + '">' + uiIcon("shelve") + "<span>收起來</span></button></div>";
+    if (m.note) h += '<p class="note-read" data-key="note-read">' + esc(m.note) + "</p>";
+    if (m.status === ST_DONE && m.doneAt) {
+      var dm = /^\d{4}-(\d{2})-(\d{2})/.exec(m.doneAt);
+      h += '<p class="done-line">' + uiIcon("check") + "<span>" + (dm ? (+dm[1]) + "/" + (+dm[2]) + " " : "") + esc(m.doneBy ? spaced(m.doneBy).replace(/^ /, "") : "") + "完成</span></p>";
+    }
+    h += '<div class="small-acts" data-key="small-acts"><button class="btn line" type="button" data-act="restore" data-id="' + id + '">' + uiIcon("back") + "<span>拿回來</span></button></div>";
+    return h + "</div>";
   }
-  return h + "</div></div>";
+  h += '<div class="pct-row" role="group" aria-label="進度到哪裡" data-key="pct">';
+  STEPS_PCT.forEach(function (p) {
+    var on = m.progress === p;
+    h += '<button class="pct' + (on ? " is-on" : "") + (p <= m.progress ? " is-fill" : "") + '" type="button" data-act="set-progress" data-id="' + id + '" data-value="' + p + '" aria-pressed="' + on + '">' + p + "%</button>";
+  });
+  h += "</div>";
+  var draftKey = "note:" + m.id;
+  var draft = state.drafts[draftKey] !== undefined ? state.drafts[draftKey] : m.note;
+  var dirty = trimAll(draft) !== trimAll(m.note);
+  h += '<form class="note-form" data-form="note" data-id="' + id + '" data-key="note" novalidate>' +
+    '<textarea class="input note-input" id="note-input-' + id + '" rows="3" data-draft="' + esc(draftKey) + '" aria-label="筆記" placeholder="做到哪、接下來要做什麼，自己記一下">' + esc(draft) + "</textarea>" +
+    '<div class="note-bar">' + (dirty ? '<span class="note-dirty">還沒記起來</span>' : "") +
+    '<button class="btn ' + (dirty ? "primary" : "line") + '" type="submit">記起來</button></div></form>';
+  h += priSeg("set-priority", m.priority, id);
+  h += '<div class="small-acts" data-key="small-acts">' +
+    '<button class="link-btn" type="button" data-act="edit-open" data-id="' + id + '">改標題</button>' +
+    '<button class="link-btn" type="button" data-act="shelve" data-id="' + id + '">收起來</button></div>';
+  return h + "</div>";
 }
 function dueSelect(part, unit, numbers, value) {
   var h = '<span class="select-wrap"><select class="input select" id="edit-due-' + part + '" data-draft="edit:due' + part + '" data-value="' + esc(value) + '" aria-label="期限的' + unit + '">' +
@@ -1388,20 +1352,7 @@ function viewEditForm(m) {
   h += '<div class="chips" role="group" aria-label="哪一家，可以選好幾家">';
   CLINICS.forEach(function (c) { h += pickChip("edit-clinic", c, c, e.clinics.indexOf(c) >= 0, c); });
   h += "</div>";
-  h += '<div class="f-row">' + uiIcon("arrow", "f-ic") +
-    '<textarea class="input" id="edit-next" rows="3" data-draft="edit:next" aria-label="下一步" placeholder="接下來要做的一件事">' + esc(d["edit:next"] || "") + "</textarea></div>";
-  var thisYear = twParts().y;
-  var years = [thisYear, thisYear + 1, thisYear + 2, thisYear + 3];
-  var pickedYear = +(d["edit:dueY"] || 0);
-  if (pickedYear && years.indexOf(pickedYear) < 0) years.unshift(pickedYear);
-  var months = [];
-  var days = [];
-  var i;
-  for (i = 1; i <= 12; i++) months.push(i);
-  for (i = 1; i <= 31; i++) days.push(i);
-  h += '<div class="f-row" role="group" aria-label="期限，可以不填">' + uiIcon("due", "f-ic") + '<div class="due-row">' +
-    dueSelect("Y", "年", years, d["edit:dueY"] || "") + dueSelect("M", "月", months, d["edit:dueM"] || "") + dueSelect("D", "日", days, d["edit:dueD"] || "") +
-    '<button class="btn" type="button" data-act="edit-due-clear">不設期限</button></div></div>';
+  /* 極簡版:只改標題和哪一家(下一步、期限的欄位不顯示,資料照留) */
   if (state.errors.edit) h += '<p class="field-error" role="alert">' + esc(state.errors.edit) + "</p>";
   h += '<div class="form-actions"><button class="btn primary" type="submit">存起來</button>' +
     '<button class="btn" type="button" data-act="edit-cancel">先不改</button></div></form>';
@@ -1738,19 +1689,22 @@ function markDone(id, fromCircle) {
   }
   if (state.openId === id) state.openId = "";
   /* 記下什麼時候、誰標完成的(不顯示在卡片上,展開才看得到一小行) */
-  saveTodo(m, { status: ST_DONE, backTo: m.status, doneAt: nowStamp(), doneBy: state.me }, "標成完成",
-    { status: m.status, backTo: m.backTo, doneAt: m.doneAt, doneBy: m.doneBy }, "", function () {
+  var prev = m.progress === 100 ? 75 : m.progress;
+  saveTodo(m, { status: ST_DONE, backTo: m.status, progress: 100, doneAt: nowStamp(), doneBy: state.me }, "標成完成（100%）",
+    { status: m.status, backTo: m.backTo, progress: m.progress, doneAt: m.doneAt, doneBy: m.doneBy }, "", function () {
     if (!fromCircle) state.openId = id;
   });
-  toast("已標完成。", false, false, { label: "復原", run: function () { restore(id, true); } });
+  toast("已標完成。", false, false, { label: "復原", run: function () { restore(id, true, prev); } });
 }
-function restore(id, isUndo) {
+/* 拿回來:完成的回到 75%(按「復原」的回到按之前的那一格);擱置的照原本的進度。 */
+function restore(id, isUndo, prevPct) {
   var m = findModel(id);
   if (!m || !isClosed(m)) return;
-  var back = OPEN_STATUSES.indexOf(m.backTo) >= 0 ? m.backTo : ST_DOING;
+  var pct = m.status === ST_DONE ? (isUndo && STEPS_PCT.indexOf(prevPct) >= 0 && prevPct < 100 ? prevPct : 75) : (m.progress === 100 ? 75 : m.progress);
+  var back = statusOfProgress(pct);
   state.reveal = id;
-  var patch = { status: back, backTo: "" };
-  var before = { status: m.status, backTo: m.backTo };
+  var patch = { status: back, backTo: "", progress: pct };
+  var before = { status: m.status, backTo: m.backTo, progress: m.progress };
   if (m.doneAt || m.doneBy) {
     /* 拿回來時清掉完成的時間和人 */
     patch.doneAt = "";
@@ -1758,7 +1712,7 @@ function restore(id, isUndo) {
     before.doneAt = m.doneAt;
     before.doneBy = m.doneBy;
   }
-  saveTodo(m, patch, (isUndo ? "復原：" : "") + "從" + (m.status === ST_DONE ? "完成" : "擱置") + "拿回來，狀態回到「" + back + "」",
+  saveTodo(m, patch, (isUndo ? "復原：" : "") + "從" + (m.status === ST_DONE ? "完成" : "擱置") + "拿回來，進度回到 " + pct + "%",
     before, isUndo ? "復原了。" : "拿回來了。");
 }
 
@@ -1829,6 +1783,17 @@ var actions = {
     var to = el.getAttribute("data-value");
     if (!m || to === m.priority || PRIORITIES.indexOf(to) < 0) return;
     saveTodo(m, { priority: to }, "先後改成「" + to + "」", { priority: m.priority });
+  },
+  "set-progress": function (el, id, ev) {
+    var m = findModel(id);
+    var to = +el.getAttribute("data-value");
+    if (!m || isClosed(m) || STEPS_PCT.indexOf(to) < 0 || to === m.progress) return;
+    if (to === 100) {
+      if (doubleTap(ev) || circleQuiet(id)) return;
+      markDone(id, false);
+      return;
+    }
+    saveTodo(m, { progress: to, status: statusOfProgress(to) }, "進度改成 " + to + "%", { progress: m.progress, status: m.status });
   },
   "add-clinic": function (el) {
     state.add.clinics = toggleIn(state.add.clinics, el.getAttribute("data-value"));
@@ -2053,7 +2018,7 @@ var submits = {
     var doc = {
       id: id, title: title, icon: icon, clinics: clinics, status: ST_TODO, backTo: "",
       steps: {}, next: "", ball: state.me, due: "", questions: {}, links: {}, log: {},
-      quote: "", priority: priority, created: day, updated: day
+      quote: "", priority: priority, progress: 0, note: "", created: day, updated: day
     };
     state.adding = false;
     state.errors.add = "";
@@ -2172,6 +2137,19 @@ var submits = {
   },
   /* 修改表單:拿「表單裡的字」跟「打開表單那一刻的樣子」比,只送真的改過的欄位。
      別人在表單開著時改了別的欄位,不會被蓋回去。 */
+  /* 筆記:一則文字,按「記起來」才存;跟現在的一樣就不送 */
+  "note": function (form, id) {
+    var m = findModel(id);
+    if (!m) return;
+    var draftKey = "note:" + id;
+    var value = trimAll(state.drafts[draftKey] !== undefined ? state.drafts[draftKey] : m.note);
+    if (value === trimAll(m.note)) { delete state.drafts[draftKey]; render(); return; }
+    if (tooLong(value, MAX_NOTE, "筆記")) { toast(tooLong(value, MAX_NOTE, "筆記"), true); return; }
+    delete state.drafts[draftKey];
+    saveTodo(m, { note: value }, value ? "筆記改成「" + shorten(value.replace(/\s+/g, " "), 40) + "」" : "清掉筆記", { note: m.note }, "記起來了。", function () {
+      state.drafts[draftKey] = value;
+    });
+  },
   "edit": function (form, id) {
     var m = findModel(id);
     var raw = findRaw(id);

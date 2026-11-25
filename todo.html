@@ -1349,10 +1349,7 @@ function viewEditForm(m) {
   if (e.notice) h += viewNote("edit", e.notice, "info");
   h += '<div class="f-row">' + uiIcon("edit", "f-ic") +
     '<input class="input" id="edit-title" type="text" data-draft="edit:title" aria-label="標題" placeholder="標題" autocomplete="off" value="' + esc(d["edit:title"] || "") + '"></div>';
-  h += '<div class="chips" role="group" aria-label="哪一家，可以選好幾家">';
-  CLINICS.forEach(function (c) { h += pickChip("edit-clinic", c, c, e.clinics.indexOf(c) >= 0, c); });
-  h += "</div>";
-  /* 極簡版:只改標題和哪一家(下一步、期限的欄位不顯示,資料照留) */
+  /* 極簡版:只改標題(榮軒 2026-11-25「拿掉更簡單」;哪一家、下一步、期限都不顯示,資料照留,存的時候也不會動到) */
   if (state.errors.edit) h += '<p class="field-error" role="alert">' + esc(state.errors.edit) + "</p>";
   h += '<div class="form-actions"><button class="btn primary" type="submit">存起來</button>' +
     '<button class="btn" type="button" data-act="edit-cancel">先不改</button></div></form>';

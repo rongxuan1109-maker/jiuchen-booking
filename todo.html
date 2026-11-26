@@ -1931,6 +1931,9 @@ var actions = {
     memSet(ADD_DRAFT + ge.id, "");
     lastAddAt = Date.now();
     write(ge.id, nodePatch(newKey("n"), { name: name, done: false, doneAt: "", doneBy: "", date: "", note: "", order: maxOrder + 1, links: {}, images: {} }), "加節點" + quote(name));
+    /* 加完後讓「加」那一列留在看得到的地方,不用自己再捲 */
+    var keep = function () { var row = document.querySelector(".addrow"); if (row && row.scrollIntoView) row.scrollIntoView({ block: "nearest" }); };
+    keep(); if (typeof requestAnimationFrame === "function") requestAnimationFrame(keep);
   },
   "toggle-done": function () {
     var e = nodeEntry();
@@ -2060,6 +2063,7 @@ function saveNewDraft() {
    沒有全域的鎖:做完一個動作、存檔回來,都不會讓下一下沒反應。 */
 var gesture = { moved: false, multi: false, scrolled: false, x: 0, y: 0, down: false, endAt: 0 };
 var lastTap = { x: -99, y: -99, at: 0 };
+var ADD_GUARD_MS = 1200;
 var born = typeof WeakMap === "function" ? new WeakMap() : null;
 var ownUntil = 0;
 if (born && typeof MutationObserver === "function") {
@@ -2157,6 +2161,9 @@ document.addEventListener("click", function (e) {
   var blocked = fromFinger && gesture.multi;
   if (!blocked && pointed && tapRefused(e.clientX, e.clientY)) blocked = true;
   if (!blocked && pointed && isNewborn(target)) blocked = true;
+  /* 剛按完「加」:新節點插進來,「加」那一列往下移,手指原本的位置變成剛加的節點。
+     1.2 秒內點到節點不算(有水波),免得連按「加」或手抖時跳出節點卡。(檢查 AI 第 2 段量到的誤觸) */
+  if (!blocked && pointed && target.getAttribute("data-act") === "open-node" && now - lastAddAt < ADD_GUARD_MS) blocked = true;
   if (blocked) {
     e.preventDefault(); e.stopPropagation();
     if (pointed) ripple(e.clientX, e.clientY);

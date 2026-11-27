@@ -260,6 +260,14 @@ input[type="date"].inp { min-width: 0; }
   .sw, .sw i, .goal, .node, .fold, .btn, .pick, .tab, .switch, .thumb, .ibtn, .who, .crow { transition: none; }
   .goal:active, .node:active, .fold:active, .crow:active, .btn:active, .pick:active, .tab:active, .ibtn:active, .who:active, .switch:active, .thumb:active { transform: none; }
 }
+
+/* ----- 目標自己的開始日、結束日(2026-11-27) ----- */
+.grange { margin-top: 10px; }
+.grange .glab { flex: none; width: 40px; font-size: 14px; font-weight: 600; color: var(--ink2); }
+.grange .btn { flex: none; }
+.g-range { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; color: var(--ink3); font-variant-numeric: tabular-nums; }
+.g-range svg { flex: none; width: 14px; height: 14px; }
+.cedge { position: absolute; top: 9px; width: 3px; height: 14px; margin-left: -1.5px; border-radius: 2px; background: var(--sea); }
 </style>
 <div class="shell" id="shell">
   <div class="stage" id="stage">
@@ -846,6 +854,7 @@ function refuseText(code) {
   if (code === "image_too_big") return "這張圖片太大了，沒有加進去。";
   if (code === "storage_full") return "圖片的空間放滿了，這一張沒有加進去。請跟 Claude 說一聲。";
   if (code === "not_image") return "這個檔案不是圖片，沒有加進去。";
+  if (code === "bad_range") return "結束日不能比開始日早。這一筆沒有存。";
   if (code === "bad_date") return "日期要在今天前後 " + DATE_YEARS + " 年內。這一筆沒有存。";
   if (code === "too_many_nodes") return "一個目標最多 60 個節點。這一筆沒有存。";
   if (code === "too_many_links") return "一個節點最多 20 個連結。這一筆沒有存。";
@@ -898,6 +907,15 @@ function dateEdge(sign) {
   var t = twNow().day;
   return (+t.slice(0, 4) + sign * DATE_YEARS) + t.slice(4);
 }
+function isDateField(name) { return name === "date" || name === "gstart" || name === "gend"; }
+/* 目標的起訖寫成一句:11/28～12/12、11/28 開始、到 12/12 */
+function rangeText(g) {
+  var a = g && g.start, b = g && g.end;
+  if (a && b) return a === b ? fmtDate(a) : fmtDate(a) + "～" + fmtDate(b);
+  if (a) return fmtDate(a) + " 開始";
+  if (b) return "到 " + fmtDate(b);
+  return "";
+}
 function fieldKey(goalId, nodeKey, name) { return goalId + "|" + (nodeKey || "") + "|" + name; }
 function fieldParts(fk) { var p = fk.split("|"); return { goal: p[0], node: p[1], name: p[2] }; }
 function storedValue(fk) {
@@ -905,6 +923,8 @@ function storedValue(fk) {
   var g = V[p.goal];
   if (!g) return null;
   if (p.name === "gnote") return g.note || "";
+  if (p.name === "gstart") return g.start || "";
+  if (p.name === "gend") return g.end || "";
   var n = g.nodes && g.nodes[p.node];
   if (!n) return null;
   return n[p.name] || "";
@@ -921,7 +941,7 @@ function fieldTyped(fk, value) {
   f.status = "typing";
   memSet(DRAFT + fk, JSON.stringify({ v: value }));
   clearTimeout(f.timer);
-  f.timer = setTimeout(function () { commitField(fk); }, fieldParts(fk).name === "date" ? DATE_SAVE_MS : SAVE_AFTER_MS);
+  f.timer = setTimeout(function () { commitField(fk); }, isDateField(fieldParts(fk).name) ? DATE_SAVE_MS : SAVE_AFTER_MS);
   renderSlotAndStatus();
 }
 function commitField(fk) {
@@ -939,7 +959,13 @@ function commitField(fk) {
     if (value.length > LIMIT.name) { f.status = "long"; render(); return; }
   }
   if ((p.name === "note" || p.name === "gnote") && value.length > LIMIT.note) { f.status = "long"; render(); return; }
-  if (p.name === "date" && value && !dateOk(value)) { f.status = "baddate"; render(); return; }
+  if (isDateField(p.name) && value && !dateOk(value)) { f.status = "baddate"; render(); return; }
+  if (p.name === "gstart" || p.name === "gend") {
+    /* 開始日、結束日兩個都有時,結束日不可以早於開始日:不存,白話提醒 */
+    var a = p.name === "gstart" ? value : fieldValue(fieldKey(p.goal, "", "gstart"));
+    var b = p.name === "gend" ? value : fieldValue(fieldKey(p.goal, "", "gend"));
+    if (a && b && b < a) { f.status = "badrange"; render(); return; }
+  }
   if (f.op && state.pending.indexOf(f.op) >= 0 && f.sent === value) return;     /* 這個內容已經在送了 */
   if (value === stored && !(f.op && state.pending.indexOf(f.op) >= 0)) {
     memSet(DRAFT + fk, "");
@@ -950,7 +976,15 @@ function commitField(fk) {
   }
   var patch, what;
   var g = V[p.goal];
+  var undo = null;
   if (p.name === "gnote") { patch = { note: value }; what = "改了備註"; }
+  else if (p.name === "gstart" || p.name === "gend") {
+    var col = p.name === "gstart" ? "start" : "end", word = p.name === "gstart" ? "開始日" : "結束日";
+    patch = {}; patch[col] = value;
+    what = value ? word + "改成 " + fmtDate(value) : word + "清掉了";
+    var back1 = {}; back1[col] = stored;
+    undo = { text: what + "。", undo: { id: p.goal, patch: back1, what: "復原：" + word + (stored ? "改回 " + fmtDate(stored) : "改回沒有填") } };
+  }
   else {
     var nodeName = (g.nodes[p.node] || {}).name || "";
     patch = { nodes: {} };
@@ -972,6 +1006,7 @@ function commitField(fk) {
     },
     fail: function () { var cur = state.fields[fk]; if (cur && !cur.timer) cur.status = "failed"; }
   });
+  if (undo) toast(undo.text, undo.undo);       /* 開始日、結束日改了可以復原(6 秒內) */
 }
 function flushFields() {
   Object.keys(state.fields).forEach(function (fk) { if (state.fields[fk].timer) commitField(fk); });
@@ -991,11 +1026,12 @@ function fieldStatusHtml(fk) {
   var f = state.fields[fk];
   var t = "", cls = "fstat";
   if (f) {
-    if (f.status === "typing") t = fieldParts(fk).name === "date" ? "選好會自動存" : "打完停一下就會自動存";
+    if (f.status === "typing") t = isDateField(fieldParts(fk).name) ? "選好會自動存" : "打完停一下就會自動存";
     else if (f.status === "saving") t = (f.op && f.op.slow) ? "還在存…" : "正在存…";
     else if (f.status === "blank") { t = "名稱不能空白，還沒存"; cls += " warn"; }
     else if (f.status === "long") { t = "字太多了：現在 " + f.value.length + " 個字，最多 " + (fieldParts(fk).name === "name" ? LIMIT.name : LIMIT.note) + " 個字。刪短一點才會存，現在還沒存。"; cls += " warn"; }
     else if (f.status === "baddate") { t = "日期要在今天前後 " + DATE_YEARS + " 年內，這個日期沒有存。"; cls += " warn"; }
+    else if (f.status === "badrange") { t = "結束日不能比開始日早，這個日期沒有存。"; cls += " warn"; }
     else if (f.status === "failed") {
       return '<div class="fstat warn" data-key="fs-' + esc(fk) + '"><span>沒存到，字還在。</span>' +
         '<button class="btn small" type="button" data-act="retry">再試一次</button></div>';
@@ -1113,7 +1149,7 @@ function onEnter(entry) {
     try { d = JSON.parse(memGet(LINK_DRAFT + entry.id + "|" + entry.key)); } catch (e) { d = null; }
     state.linkForm = d && (d.name || d.url) ? { name: String(d.name || ""), url: String(d.url || ""), error: "" } : null;
   }
-  if (entry.v === "goal") delete state.saved[fieldKey(entry.id, "", "gnote")];
+  if (entry.v === "goal") ["gnote", "gstart", "gend"].forEach(function (f) { delete state.saved[fieldKey(entry.id, "", f)]; });
 }
 function onLeave(entry) {
   if (entry.v === "node") {
@@ -1124,6 +1160,13 @@ function onLeave(entry) {
     if (f && (f.status === "blank" || f.status === "long")) { delete state.fields[fk]; memSet(DRAFT + fk, ""); }
     var fd = fieldKey(entry.id, entry.key, "date");
     if (state.fields[fd] && state.fields[fd].status === "baddate") { delete state.fields[fd]; memSet(DRAFT + fd, ""); }
+  }
+  if (entry.v === "goal") {
+    /* 沒存的怪日期(超出範圍、結束早於開始):放掉,回到原本的日期 */
+    ["gstart", "gend"].forEach(function (name) {
+      var fg = fieldKey(entry.id, "", name);
+      if (state.fields[fg] && (state.fields[fg].status === "baddate" || state.fields[fg].status === "badrange")) { delete state.fields[fg]; memSet(DRAFT + fg, ""); }
+    });
   }
   if (entry.v === "set") state.setForm = null;
 }
@@ -1252,7 +1295,7 @@ function goalRow(g) {
   var pr = g.priority === "先做" ? '<span class="pri">先做</span>' : "";
   return '<button class="goal' + (state.flashId === g.id ? " flash" : "") + '" type="button" data-act="open-goal" data-id="' + esc(g.id) + '" data-key="g-' + esc(g.id) + '">' +
     '<span class="g-title">' + tileHtml(g.clinics, iconName(g)) + pr + '<span class="g-name">' + esc(titleOf(g)) + "</span></span>" +
-    dotsHtml(g) + nowLine(g) + "</button>";
+    dotsHtml(g) + nowLine(g) + (rangeText(g) ? '<span class="g-range" data-key="rg">' + icon("chart") + "<span>" + esc(rangeText(g)) + "</span></span>" : "") + "</button>";
 }
 function tabsHtml(on) {
   return '<nav class="tabs" data-key="tabs" aria-label="主要分頁">' +
@@ -1295,18 +1338,22 @@ function chartHtml(hide, under) {
   var today = dayNum(twNow().day);
   var rows = [], undated = [];
   sortGoals(allGoals().filter(function (g) { return !isShelved(g); })).forEach(function (g) {
-    var list = nodesOf(g).filter(function (n) { return n.date && dateOk(n.date); });
-    if (list.length) rows.push({ g: g, list: list.sort(function (a, b) { return dayNum(a.date) - dayNum(b.date); }) });
+    var list = nodesOf(g).filter(function (n) { return n.date && dateOk(n.date); }).sort(function (a, b) { return dayNum(a.date) - dayNum(b.date); });
+    /* 長條:起點 = 目標的開始日和最早的節點日期取較早;終點 = 目標的結束日和最晚的節點日期取較晚。
+       目標有開始日、結束日或任何節點日期,就有一條(沒有節點也可以)。 */
+    var gs = g.start && dateOk(g.start) ? g.start : "", ge = g.end && dateOk(g.end) ? g.end : "";
+    var all = list.map(function (n) { return n.date; }).concat(gs ? [gs] : [], ge ? [ge] : []).sort();
+    if (all.length) rows.push({ g: g, list: list, s: all[0], e: all[all.length - 1], gs: gs, ge: ge });
     else if (!isComplete(g)) undated.push(g);
   });
   rows.sort(function (a, b) { return (isComplete(a.g) ? 1 : 0) - (isComplete(b.g) ? 1 : 0) || TERMS.indexOf(a.g.term) - TERMS.indexOf(b.g.term); });
   var h = '<section class="view' + viewAttrs(hide, under) + ' data-key="v-chart">' + topBar("時間圖") +
     '<div class="scroll" data-key="s-chart">';
   if (!rows.length) {
-    h += '<div class="wrap"><p class="none">還沒有排了日期的節點。在節點卡裡填「預計日期」，這裡就會出現一條。</p></div>';
+    h += '<div class="wrap"><p class="none">還沒有排了日期的目標。在目標頁或目標設定裡填「開始」「結束」，或在節點卡裡填「預計日期」，這裡就會出現一條。</p></div>';
   } else {
     var min = today, max = today;
-    rows.forEach(function (r) { min = Math.min(min, dayNum(r.list[0].date)); max = Math.max(max, dayNum(r.list[r.list.length - 1].date)); });
+    rows.forEach(function (r) { min = Math.min(min, dayNum(r.s)); max = Math.max(max, dayNum(r.e)); });
     var a = new Date(min * 86400000), b = new Date(max * 86400000);
     var start = Math.round(Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), 1) / 86400000);
     var end = Math.round(Date.UTC(b.getUTCFullYear(), b.getUTCMonth() + 1, 0) / 86400000);
@@ -1329,7 +1376,7 @@ function chartHtml(hide, under) {
     h += "</div>";
     h += '<i class="today" data-date="' + numDay(today) + '" style="left:' + x(today) + 'px"><b>今天</b></i>';
     rows.forEach(function (r) {
-      var g = r.g, s = r.list[0].date, e = r.list[r.list.length - 1].date;
+      var g = r.g, s = r.s, e = r.e;
       var curNode = currentNode(g);
       /* 綠色只畫到「照日期排,從頭連續做完」的最後一個;中間有還沒做的就停,不會蓋過它 */
       var doneTo = null;
@@ -1338,6 +1385,9 @@ function chartHtml(hide, under) {
         '<span class="ctitle"><span class="ct-in"><span class="ct-name">' + esc(titleOf(g)) + '</span><span class="ct-date">' + esc(s === e ? fmtDate(s) : fmtDate(s) + "～" + fmtDate(e)) + "</span></span></span>" +
         '<span class="ctrack"><i class="cbar" style="left:' + x(dayNum(s)) + "px;width:" + Math.max(0, x(dayNum(e)) - x(dayNum(s))) + 'px"></i>';
       if (doneTo) h += '<i class="cbar done" style="left:' + x(dayNum(s)) + "px;width:" + Math.max(0, x(dayNum(doneTo)) - x(dayNum(s))) + 'px"></i>';
+      /* 目標自己填的開始日、結束日:長條兩頭各一個小標記(沒有節點也看得出從哪到哪) */
+      if (r.gs) h += '<i class="cedge" data-edge="start" data-date="' + r.gs + '" style="left:' + x(dayNum(r.gs)) + 'px"></i>';
+      if (r.ge) h += '<i class="cedge" data-edge="end" data-date="' + r.ge + '" style="left:' + x(dayNum(r.ge)) + 'px"></i>';
       r.list.forEach(function (n) {
         h += '<i class="cd' + (n.done ? " done" : curNode && n.key === curNode.key ? " now" : "") + '" data-date="' + n.date + '" style="left:' + x(dayNum(n.date)) + 'px"></i>';
       });
@@ -1392,6 +1442,12 @@ function goalHtml(entry, hide, under) {
   if (isShelved(g)) h += '<p class="banner">這個目標收起來了。要拿回來，按右上角「設定」。</p>';
   else if (isComplete(g)) h += '<p class="banner ok">全部做完了，這個目標在「完成」裡。要拿回來，按右上角「設定」。</p>';
   h += '<p class="gprog">' + (list.length ? "做完 <b>" + doneCount + "</b> 個，一共 " + list.length + " 個節點" : "還沒有節點") + "</p>";
+  ["gstart", "gend"].forEach(function (name) {
+    var fd = fieldKey(g.id, "", name), val = fieldValue(fd), word = name === "gstart" ? "開始" : "結束";
+    var elId = name === "gstart" ? "gStart" : "gEnd";
+    h += '<div class="row2 grange" data-key="row-' + name + '"><label class="glab" for="' + elId + '">' + word + '</label><input class="inp" id="' + elId + '" data-key="' + elId + '" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(val) + '" aria-label="' + word + '日（可以不填）" data-field="' + esc(fd) + '">' +
+      (val ? '<button class="btn" type="button" data-act="gdate-clear" data-name="' + name + '" aria-label="清掉' + word + '日">清掉</button>' : "") + "</div>" + fieldStatusHtml(fd);
+  });
   h += '<label class="lab" for="gnote">備註</label><textarea class="inp area" id="gnote" data-key="gnote" rows="2" placeholder="想記的事（可以不寫）" data-field="' + esc(fk) + '">' + esc(fieldValue(fk)) + "</textarea>" + fieldStatusHtml(fk);
   h += '<h2 class="sec">節點</h2>';
   if (!list.length) h += '<p class="none">還沒有節點。在下面打一個名稱，按「加」。</p>';
@@ -1488,6 +1544,9 @@ function newHtml(off) {
   var b = '<label class="lab" for="newTitle">目標的標題</label><input class="inp" id="newTitle" data-key="newTitle" type="text" value="' + esc(f.title) + '" data-form="new" data-name="title" placeholder="例如：九辰招牌">' +
     '<span class="lab">這是短期還是長期的目標？</span>' + picks("new", "term", TERMS, f.term) +
     '<label class="lab" for="newNodes">節點（一行一個，可以之後再加）</label><textarea class="inp area" id="newNodes" data-key="newNodes" rows="4" data-form="new" data-name="nodes" placeholder="例如：\n拿到尺寸\n出設計稿\n安裝">' + esc(f.nodes) + "</textarea>" +
+    '<span class="lab">開始日、結束日（可以不填）</span>' +
+    '<div class="row2 grange"><label class="glab" for="newStart">開始</label><input class="inp" id="newStart" data-key="newStart" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(f.start) + '" data-form="new" data-name="start"></div>' +
+    '<div class="row2 grange"><label class="glab" for="newEnd">結束</label><input class="inp" id="newEnd" data-key="newEnd" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(f.end) + '" data-form="new" data-name="end"></div>' +
     '<span class="lab">哪一家（可以不選）</span>' + picks("new", "clinics", CLINICS, f.clinics, true) +
     '<span class="lab">圖示（可以不挑）</span>' + iconPickHtml("new", f) +
     (f.error ? '<p class="err" role="alert" data-key="newerr">' + esc(f.error) + "</p>" : "") +
@@ -1499,6 +1558,9 @@ function setHtml(entry, off) {
   if (!f || !g) return "";
   var b = '<label class="lab" for="setTitle">標題</label><input class="inp" id="setTitle" data-key="setTitle" type="text" value="' + esc(f.title) + '" data-form="set" data-name="title">' +
     '<span class="lab">短期還是長期</span>' + picks("set", "term", TERMS, f.term) +
+    '<span class="lab">開始日、結束日（可以不填）</span>' +
+    '<div class="row2 grange"><label class="glab" for="setStart">開始</label><input class="inp" id="setStart" data-key="setStart" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(f.start) + '" data-form="set" data-name="start"></div>' +
+    '<div class="row2 grange"><label class="glab" for="setEnd">結束</label><input class="inp" id="setEnd" data-key="setEnd" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(f.end) + '" data-form="set" data-name="end"></div>' +
     '<span class="lab">哪一家</span>' + picks("set", "clinics", CLINICS, f.clinics, true) +
     '<span class="lab">先後</span>' + picks("set", "priority", PRIOS, f.priority) +
     '<span class="lab">圖示</span>' + iconPickHtml("set", f) +
@@ -1808,7 +1870,7 @@ var actions = {
     if (!state.newForm) {
       var d = null;
       try { d = JSON.parse(memGet(NEW_DRAFT)); } catch (e) { d = null; }
-      state.newForm = { title: (d && d.title) || "", term: (d && d.term) || "", nodes: (d && d.nodes) || "", clinics: (d && d.clinics) || [], icon: (d && d.icon) || DEFAULT_ICON, iconOpen: false, error: "" };
+      state.newForm = { title: (d && d.title) || "", term: (d && d.term) || "", nodes: (d && d.nodes) || "", clinics: (d && d.clinics) || [], icon: (d && d.icon) || DEFAULT_ICON, start: (d && d.start) || "", end: (d && d.end) || "", iconOpen: false, error: "" };
     }
     go({ v: "new" });
   },
@@ -1824,9 +1886,11 @@ var actions = {
     for (var i = 0; i < names.length; i++) {
       if (names[i].length > LIMIT.name) { f.error = "第 " + (i + 1) + " 個節點的名稱太長（最多 " + LIMIT.name + " 個字）。"; render(); return; }
     }
+    var rangeErr = rangeProblem(f.start, f.end);
+    if (rangeErr) { f.error = rangeErr; render(); return; }
     var now = twNow();
     var doc = { id: newGoalId(), title: title, term: f.term, icon: TODO_ICONS[f.icon] ? f.icon : DEFAULT_ICON, clinics: CLINICS.filter(function (c) { return f.clinics.indexOf(c) >= 0; }),
-      priority: "一般", note: "", status: "進行中", nodes: {}, created: now.day, createdAt: now.at, updated: now.day };
+      priority: "一般", note: "", status: "進行中", start: f.start || "", end: f.end || "", nodes: {}, created: now.day, createdAt: now.at, updated: now.day };
     names.forEach(function (name, idx) {
       doc.nodes["n" + pad(idx + 1) + Math.floor(Math.random() * 1296).toString(36)] =
         { name: name, done: false, doneAt: "", doneBy: "", date: "", note: "", order: idx + 1, links: {}, images: {} };
@@ -1862,8 +1926,10 @@ var actions = {
   "settings": function (el) {
     var g = V[el.getAttribute("data-id")];
     if (!g) return;
-    var o = { title: g.title || "", term: g.term, clinics: (g.clinics || []).slice(), priority: g.priority || "一般", icon: iconName(g) };
-    state.setForm = { id: g.id, orig: clone(o), title: o.title, term: o.term, clinics: o.clinics.slice(), priority: o.priority, icon: o.icon, iconOpen: false, error: "" };
+    flushFields();      /* 目標頁上剛選的開始日、結束日先送出去,設定表單才不會拿到舊的 */
+    g = V[g.id] || g;
+    var o = { title: g.title || "", term: g.term, clinics: (g.clinics || []).slice(), priority: g.priority || "一般", icon: iconName(g), start: g.start || "", end: g.end || "" };
+    state.setForm = { id: g.id, orig: clone(o), title: o.title, term: o.term, clinics: o.clinics.slice(), priority: o.priority, icon: o.icon, start: o.start, end: o.end, iconOpen: false, error: "" };
     go({ v: "set", id: g.id });
   },
   "set-save": function () {
@@ -1872,6 +1938,8 @@ var actions = {
     var title = trimAll(f.title);
     if (isBlank(title)) { f.error = "標題不能空白。"; render(); return; }
     if (title.length > LIMIT.title) { f.error = "標題最多 " + LIMIT.title + " 個字，現在是 " + title.length + " 個字。"; render(); return; }
+    var rangeErr = rangeProblem(f.start, f.end);
+    if (rangeErr) { f.error = rangeErr; render(); return; }
     var patch = {}, before = {}, said = [];
     var clinics = CLINICS.filter(function (c) { return f.clinics.indexOf(c) >= 0; });
     /* 只送真的改過的欄位(跟打開這張表那一刻比),不會把另一個人剛改的蓋回去 */
@@ -1880,6 +1948,8 @@ var actions = {
     if (clinics.join() !== CLINICS.filter(function (c) { return f.orig.clinics.indexOf(c) >= 0; }).join()) { patch.clinics = clinics; said.push("哪一家改成" + (clinics.join("、") || "其他")); }
     if (f.priority !== f.orig.priority) { patch.priority = f.priority; said.push("先後改成" + f.priority); }
     if (f.icon !== f.orig.icon && TODO_ICONS[f.icon]) { patch.icon = f.icon; said.push("圖示換成" + quote(f.icon)); }
+    if ((f.start || "") !== f.orig.start) { patch.start = f.start || ""; said.push(f.start ? "開始日改成 " + fmtDate(f.start) : "開始日清掉了"); }
+    if ((f.end || "") !== f.orig.end) { patch.end = f.end || ""; said.push(f.end ? "結束日改成 " + fmtDate(f.end) : "結束日清掉了"); }
     var id = f.id;
     if (said.length) write(id, patch, said.join("；"));
     back(1);
@@ -1949,6 +2019,16 @@ var actions = {
     var all = isComplete(V[e.id]);
     toast(now ? (all ? "全部做完了，這個目標移到「完成」。" : quote(n.name) + "做完了。") : quote(n.name) + "改回還沒做完。",
       { id: e.id, patch: nodePatch(e.key, was), what: "復原：" + quote(n.name) + (was.done ? "做完了" : "改回還沒做完") });
+  },
+  "gdate-clear": function (el) {
+    var ge = findNav("goal");
+    var name = el.getAttribute("data-name");
+    if (!ge || (name !== "gstart" && name !== "gend")) return;
+    var fkg = fieldKey(ge.id, "", name);
+    var inp = document.getElementById(name === "gstart" ? "gStart" : "gEnd");
+    if (inp) inp.value = "";
+    fieldTyped(fkg, "");
+    commitField(fkg);
   },
   "date-clear": function () {
     var e = nodeEntry();
@@ -2047,9 +2127,15 @@ var actions = {
     if (u) { startUpload(u); render(); }
   }
 };
+/* 表單裡的開始日、結束日有沒有問題;沒問題回空字串 */
+function rangeProblem(a, b) {
+  if ((a && !dateOk(a)) || (b && !dateOk(b))) return "開始日、結束日要在今天前後 " + DATE_YEARS + " 年內。";
+  if (a && b && b < a) return "結束日不能比開始日早。";
+  return "";
+}
 function saveNewDraft() {
   var f = state.newForm;
-  if (f) memSet(NEW_DRAFT, JSON.stringify({ title: f.title, term: f.term, nodes: f.nodes, clinics: f.clinics, icon: f.icon }));
+  if (f) memSet(NEW_DRAFT, JSON.stringify({ title: f.title, term: f.term, nodes: f.nodes, clinics: f.clinics, icon: f.icon, start: f.start, end: f.end }));
 }
 
 /* ===== 手指和點按:防誤觸集中在這裡 =====
@@ -2211,7 +2297,11 @@ document.addEventListener("change", function (e) {
   var t = e.target;
   if (t === filePick) { addFiles(filePick.files); return; }
   var fk = t && t.getAttribute && t.getAttribute("data-field");
-  if (fk && fieldParts(fk).name === "date") fieldTyped(fk, t.value);
+  if (fk && isDateField(fieldParts(fk).name)) fieldTyped(fk, t.value);
+  /* 表單裡的日期(新增目標、目標設定):有些瀏覽器選完日期只通知「改好了」 */
+  var fm = t && t.getAttribute && t.getAttribute("data-form"), nm = fm && t.getAttribute("data-name");
+  if ((nm === "start" || nm === "end") && fm === "new" && state.newForm) { state.newForm[nm] = t.value; state.newForm.error = ""; saveNewDraft(); }
+  else if ((nm === "start" || nm === "end") && fm === "set" && state.setForm) { state.setForm[nm] = t.value; state.setForm.error = ""; }
 });
 document.addEventListener("focusout", function (e) {
   var fk = e.target && e.target.getAttribute && e.target.getAttribute("data-field");

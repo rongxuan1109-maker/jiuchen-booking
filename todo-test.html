@@ -763,9 +763,19 @@ function isComplete(goal) {
   return list.length > 0 && list.every(function (n) { return n.done; });
 }
 function isShelved(goal) { return goal.status === "收起來"; }
+/* 一個目標的起訖:目標自己的開始日、結束日,加上所有節點的日期,取最早和最晚。都沒有 → null */
+function spanOf(g) {
+  var all = nodesOf(g).map(function (n) { return n.date; }).concat([g.start, g.end]).filter(function (d) { return d && dateOk(d); }).sort();
+  return all.length ? { s: all[0], e: all[all.length - 1] } : null;
+}
+/* 排順序(榮軒 2026-11-27:「根據我設定的日期自動排列順序,最近到最遠」):
+   有日期的在前,照開始日從早到晚,一樣就看結束日;沒日期的排後面。再一樣才看先後(先做在前)、建立時間。 */
 function sortGoals(list) {
   return list.sort(function (a, b) {
-    return PRIOS.indexOf(a.priority || "一般") - PRIOS.indexOf(b.priority || "一般") ||
+    var x = spanOf(a), y = spanOf(b);
+    return (x ? 0 : 1) - (y ? 0 : 1) ||
+      (x && y ? x.s.localeCompare(y.s) || x.e.localeCompare(y.e) : 0) ||
+      PRIOS.indexOf(a.priority || "一般") - PRIOS.indexOf(b.priority || "一般") ||
       String(a.createdAt || a.created || "").localeCompare(String(b.createdAt || b.created || "")) ||
       String(a.id).localeCompare(String(b.id));
   });
@@ -1346,7 +1356,8 @@ function chartHtml(hide, under) {
     if (all.length) rows.push({ g: g, list: list, s: all[0], e: all[all.length - 1], gs: gs, ge: ge });
     else if (!isComplete(g)) undated.push(g);
   });
-  rows.sort(function (a, b) { return (isComplete(a.g) ? 1 : 0) - (isComplete(b.g) ? 1 : 0) || TERMS.indexOf(a.g.term) - TERMS.indexOf(b.g.term); });
+  /* 時間圖:還在做的在前、完成的在後;各自照開始日從早到晚(sortGoals 已經排好,這裡是穩定排序) */
+  rows.sort(function (a, b) { return (isComplete(a.g) ? 1 : 0) - (isComplete(b.g) ? 1 : 0); });
   var h = '<section class="view' + viewAttrs(hide, under) + ' data-key="v-chart">' + topBar("時間圖") +
     '<div class="scroll" data-key="s-chart">';
   if (!rows.length) {

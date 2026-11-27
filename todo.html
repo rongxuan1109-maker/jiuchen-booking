@@ -769,13 +769,13 @@ function spanOf(g) {
   return all.length ? { s: all[0], e: all[all.length - 1] } : null;
 }
 /* 排順序(榮軒 2026-11-27:「根據我設定的日期自動排列順序,最近到最遠」):
-   有日期的在前,照開始日從早到晚,一樣就看結束日;沒日期的排後面。再一樣才看先後(先做在前)、建立時間。 */
+   有日期的在前,照開始日從早到晚,一樣就看結束日;沒日期的排後面。再一樣就看建立時間。
+   榮軒同一天再說:「不用再分先做、後做、慢慢來,直接根據我設定的時間排序」→ 先後不參與排序,畫面上也不顯示、不給選(資料裡的 priority 欄位留著不動)。 */
 function sortGoals(list) {
   return list.sort(function (a, b) {
     var x = spanOf(a), y = spanOf(b);
     return (x ? 0 : 1) - (y ? 0 : 1) ||
       (x && y ? x.s.localeCompare(y.s) || x.e.localeCompare(y.e) : 0) ||
-      PRIOS.indexOf(a.priority || "一般") - PRIOS.indexOf(b.priority || "一般") ||
       String(a.createdAt || a.created || "").localeCompare(String(b.createdAt || b.created || "")) ||
       String(a.id).localeCompare(String(b.id));
   });
@@ -1302,7 +1302,7 @@ function nowLine(g) {
     '<span class="g-count">' + doneCount + "／" + list.length + "</span></span>";
 }
 function goalRow(g) {
-  var pr = g.priority === "先做" ? '<span class="pri">先做</span>' : "";
+  var pr = "";
   return '<button class="goal' + (state.flashId === g.id ? " flash" : "") + '" type="button" data-act="open-goal" data-id="' + esc(g.id) + '" data-key="g-' + esc(g.id) + '">' +
     '<span class="g-title">' + tileHtml(g.clinics, iconName(g)) + pr + '<span class="g-name">' + esc(titleOf(g)) + "</span></span>" +
     dotsHtml(g) + nowLine(g) + (rangeText(g) ? '<span class="g-range" data-key="rg">' + icon("chart") + "<span>" + esc(rangeText(g)) + "</span></span>" : "") + "</button>";
@@ -1449,7 +1449,7 @@ function goalHtml(entry, hide, under) {
     '<button class="ibtn text" type="button" data-act="settings" data-id="' + esc(g.id) + '">設定</button></header>' +
     '<div class="scroll" data-key="s-goal"><div class="wrap">' +
     '<div class="ghead">' + tileHtml(g.clinics, iconName(g), "lg") + '<h1 class="gtitle">' + esc(titleOf(g)) + "</h1></div>" +
-    '<p class="gmeta">' + (g.priority && g.priority !== "一般" ? '<span class="' + (g.priority === "先做" ? "pri" : "slow") + '">' + esc(g.priority) + "</span>" : "") + clinicTags(g) + "</p>";
+    '<p class="gmeta">' + clinicTags(g) + "</p>";
   if (isShelved(g)) h += '<p class="banner">這個目標收起來了。要拿回來，按右上角「設定」。</p>';
   else if (isComplete(g)) h += '<p class="banner ok">全部做完了，這個目標在「完成」裡。要拿回來，按右上角「設定」。</p>';
   h += '<p class="gprog">' + (list.length ? "做完 <b>" + doneCount + "</b> 個，一共 " + list.length + " 個節點" : "還沒有節點") + "</p>";
@@ -1573,7 +1573,6 @@ function setHtml(entry, off) {
     '<div class="row2 grange"><label class="glab" for="setStart">開始</label><input class="inp" id="setStart" data-key="setStart" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(f.start) + '" data-form="set" data-name="start"></div>' +
     '<div class="row2 grange"><label class="glab" for="setEnd">結束</label><input class="inp" id="setEnd" data-key="setEnd" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(f.end) + '" data-form="set" data-name="end"></div>' +
     '<span class="lab">哪一家</span>' + picks("set", "clinics", CLINICS, f.clinics, true) +
-    '<span class="lab">先後</span>' + picks("set", "priority", PRIOS, f.priority) +
     '<span class="lab">圖示</span>' + iconPickHtml("set", f) +
     (f.error ? '<p class="err" role="alert">' + esc(f.error) + "</p>" : "") +
     '<div class="row2 end"><button class="btn main" type="button" data-act="set-save">存起來</button><button class="btn" type="button" data-act="close">先不改</button></div>' +

@@ -268,6 +268,38 @@ input[type="date"].inp { min-width: 0; }
 .g-range { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; color: var(--ink3); font-variant-numeric: tabular-nums; }
 .g-range svg { flex: none; width: 14px; height: 14px; }
 .cedge { position: absolute; top: 9px; width: 3px; height: 14px; margin-left: -1.5px; border-radius: 2px; background: var(--sea); }
+
+/* ----- 開始日、結束日排成一行,點了展開月曆,像訂機票(2026-11-27) ----- */
+.rng { display: flex; align-items: stretch; margin-top: 10px; border: 1px solid var(--line2); border-radius: 14px; background: #ffffff; overflow: hidden; }
+.rng.open { border-color: var(--aqua); box-shadow: var(--ring); }
+.rng-half { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; min-height: 58px; padding: 6px 12px 6px 14px; border: 0; background: transparent; text-align: left; transition: background-color 0.12s ease; }
+.rng-half.on { background: #e3f2f9; box-shadow: inset 0 -3px 0 var(--aqua); }
+.rng-lab { font-size: 12px; line-height: 1.3; font-weight: 600; color: var(--ink3); }
+.rng-val { line-height: 1.35; max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 16px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rng-val.none { font-weight: 500; color: var(--ph); }
+.rng-arrow { flex: none; display: grid; place-items: center; width: 20px; color: var(--ink3); }
+.rng-arrow .ic { width: 18px; height: 18px; }
+.cal { margin-top: 10px; padding: 12px 8px; border: 1px solid var(--line); border-radius: 16px; background: #ffffff; }
+.cal-hint { min-height: 20px; padding: 0 8px; font-size: 13px; font-weight: 600; color: var(--aqua-t); }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
+.cal-title { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cal-head .ibtn:disabled { color: var(--line2); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 2px; }
+.cal-w { display: grid; place-items: center; height: 28px; font-size: 12px; color: var(--ink3); }
+.cday, .cday-none { height: 44px; }
+.cday { display: grid; place-items: center; padding: 0; border: 0; background: transparent; font-size: 16px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cday span { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; }
+.cday.tdy span { box-shadow: inset 0 0 0 1.5px var(--line2); }
+.cday.in { background: #e3f2f9; }
+.cday.s.band { background: linear-gradient(90deg, transparent 50%, #e3f2f9 50%); }
+.cday.e.band { background: linear-gradient(90deg, #e3f2f9 50%, transparent 50%); }
+.cday.s span, .cday.e span { background: var(--sea); color: #ffffff; font-weight: 700; box-shadow: none; }
+.cday:disabled { color: var(--line2); }
+.cday:active span { background: var(--soft); }
+.cday.s:active span, .cday.e:active span { background: var(--sea-d); }
+.cal-foot { margin-top: 8px; padding: 0 6px; }
+.cal-foot > .btn { flex: 1 1 0; }
+.cal-foot > .btn:disabled { color: var(--line2); border-color: var(--line); }
 </style>
 <div class="shell" id="shell">
   <div class="stage" id="stage">
@@ -641,6 +673,7 @@ var state = {
   setForm: null,
   linkForm: null,
   addText: {},             /* 目標頁「新節點的名稱」打到一半的字 */
+  cal: null,               /* 正在選開始日、結束日的月曆:{ where: goal/new/set, id, step: start/end, month, start, end, orig } */
   flashId: "",
   chartInit: false
 };
@@ -724,6 +757,8 @@ function newGoalId() {
 function icon(name) {
   var p = {
     back: '<path d="M15 5l-7 7 7 7"/>',
+    fwd: '<path d="M9 5l7 7-7 7"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     gear: '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
     note: '<path d="M6 4h12v16H6z"/><path d="M9 9h6M9 13h6"/>',
@@ -1019,6 +1054,7 @@ function commitField(fk) {
   if (undo) toast(undo.text, undo.undo);       /* 開始日、結束日改了可以復原(6 秒內) */
 }
 function flushFields() {
+  if (state.cal && state.cal.where === "goal") calClose(true);      /* 目標頁月曆上選好的日期:換畫面前先存 */
   Object.keys(state.fields).forEach(function (fk) { if (state.fields[fk].timer) commitField(fk); });
 }
 function restoreDrafts() {
@@ -1048,6 +1084,103 @@ function fieldStatusHtml(fk) {
     }
   } else if (state.saved[fk]) { t = "已存"; cls += " ok"; }
   return '<div class="' + cls + '" data-key="fs-' + esc(fk) + '" role="status">' + esc(t) + "</div>";
+}
+
+/* ===== 開始日、結束日:排成一行;點了展開月曆,像訂機票那樣先點開始日、再點結束日(榮軒 2026-11-27) =====
+   目標頁:月曆上選的先放在 state.cal(草稿),按「好了」或離開這一頁才一次存,存了可以復原。
+   新增目標、目標設定:直接寫進表單,跟其他欄位一起按「建立目標」「存起來」才存。 */
+var WEEK = ["日", "一", "二", "三", "四", "五", "六"];
+function weekdayOf(s) { return new Date(dayNum(s) * 86400000).getUTCDay(); }
+function fmtDateW(s) { return fmtDate(s) + "（" + WEEK[weekdayOf(s)] + "）"; }
+function calOn(where) {
+  var c = state.cal;
+  if (!c || c.where !== where) return null;
+  if (where === "goal") { var ge = findNav("goal"); if (!ge || ge.id !== c.id) return null; }
+  return c;
+}
+function calGet(where) {
+  if (where === "goal") {
+    var c = calOn("goal");
+    if (c) return { start: c.start, end: c.end };
+    var ge = findNav("goal"), g = ge && V[ge.id];
+    return { start: (g && g.start) || "", end: (g && g.end) || "" };
+  }
+  var f = where === "new" ? state.newForm : state.setForm;
+  return { start: (f && f.start) || "", end: (f && f.end) || "" };
+}
+function calSet(where, a, b) {
+  if (where === "goal") { if (state.cal) { state.cal.start = a; state.cal.end = b; } return; }
+  var f = where === "new" ? state.newForm : state.setForm;
+  if (!f) return;
+  f.start = a; f.end = b; f.error = "";
+  if (where === "new") saveNewDraft();
+}
+function monthShift(ym, n) {
+  var k = (+ym.slice(0, 4)) * 12 + (+ym.slice(5, 7)) - 1 + n;
+  return Math.floor(k / 12) + "-" + pad(k % 12 + 1);
+}
+function rangeHtml(where) {
+  var c = calOn(where), v = calGet(where);
+  var h = '<div class="rng' + (c ? " open" : "") + '" data-key="rng-' + where + '">';
+  ["start", "end"].forEach(function (k, i) {
+    var val = dateOk(v[k]) ? v[k] : "", word = k === "start" ? "開始" : "結束";
+    if (i) h += '<span class="rng-arrow" aria-hidden="true">' + icon("arrow") + "</span>";
+    h += '<button class="rng-half' + (c && c.step === k ? " on" : "") + '" type="button" data-act="cal-open" data-where="' + where + '" data-step="' + k + '" data-key="rng-' + where + "-" + k + '" aria-expanded="' + !!c + '" aria-label="' + word + "日：" + (val ? fmtDateW(val) : "還沒選") + '">' +
+      '<span class="rng-lab">' + word + '</span><span class="rng-val' + (val ? "" : " none") + '">' + (val ? esc(fmtDateW(val)) : "選日期") + "</span></button>";
+  });
+  h += "</div>";
+  if (c) h += calHtml(c, v);
+  return h;
+}
+function calHtml(c, v) {
+  var y = +c.month.slice(0, 4), m = +c.month.slice(5, 7);
+  var lead = weekdayOf(c.month + "-01");
+  var days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  var lo = dateEdge(-1), hi = dateEdge(1), today = twNow().day;
+  var a = dateOk(v.start) ? v.start : "", b = dateOk(v.end) ? v.end : "";
+  var hint = c.step === "start" ? "點一天當開始日" : !b ? (a ? "再點一天當結束日" : "點一天當結束日") : "要改開始日，先點上面的「開始」";
+  var h = '<div class="cal" data-key="cal-' + c.where + '">' +
+    '<p class="cal-hint" role="status">' + hint + "</p>" +
+    '<div class="cal-head"><button class="ibtn" type="button" data-act="cal-month" data-d="-1" aria-label="上個月"' + (c.month > lo.slice(0, 7) ? "" : " disabled") + ">" + icon("back") + "</button>" +
+    '<span class="cal-title">' + y + " 年 " + m + " 月</span>" +
+    '<button class="ibtn" type="button" data-act="cal-month" data-d="1" aria-label="下個月"' + (c.month < hi.slice(0, 7) ? "" : " disabled") + ">" + icon("fwd") + "</button></div>" +
+    '<div class="cal-grid">';
+  WEEK.forEach(function (w) { h += '<span class="cal-w" aria-hidden="true">' + w + "</span>"; });
+  for (var i = 0; i < 42; i++) {
+    var n = i - lead + 1;
+    if (n < 1 || n > days) { h += '<span class="cday-none" aria-hidden="true"></span>'; continue; }
+    var d = c.month + "-" + pad(n);
+    var cls = "cday", said = "";
+    if (d === a) { cls += " s" + (b && b !== a ? " band" : ""); said = "，開始日"; }
+    if (d === b) { cls += " e" + (a && b !== a ? " band" : ""); said += "，結束日"; }
+    if (a && b && d > a && d < b) cls += " in";
+    if (d === today) { cls += " tdy"; said += "，今天"; }
+    h += '<button class="' + cls + '" type="button" data-act="cal-day" data-day="' + d + '" aria-label="' + m + " 月 " + n + " 日 星期" + WEEK[i % 7] + said + '" aria-pressed="' + (d === a || d === b) + '"' +
+      (d < lo || d > hi ? " disabled" : "") + "><span>" + n + "</span></button>";
+  }
+  h += '</div><div class="row2 cal-foot"><button class="btn" type="button" data-act="cal-clear"' + (a || b ? "" : " disabled") + '>清掉日期</button>' +
+    '<button class="btn main" type="button" data-act="cal-done">好了</button></div></div>';
+  return h;
+}
+/* 收起月曆。目標頁:跟打開那一刻比,有改的才送,一次送、一則復原 */
+function calClose(quiet) {
+  var c = state.cal;
+  if (!c) return;
+  state.cal = null;
+  if (c.where === "goal" && V[c.id]) {
+    var patch = {}, backTo = {}, changed = false;
+    ["start", "end"].forEach(function (k) {
+      if (c[k] !== c.orig[k]) { patch[k] = c[k]; backTo[k] = c.orig[k]; changed = true; }
+    });
+    if (changed) {
+      var now = rangeText({ start: c.start, end: c.end }), was = rangeText(c.orig);
+      var what = now ? "日期改成 " + now : "日期清掉了";
+      write(c.id, patch, what);
+      toast(what + "。", { id: c.id, patch: backTo, what: "復原：日期" + (was ? "改回 " + was : "改回沒有填") });
+      return;
+    }
+  }
+  if (!quiet) render();
 }
 
 /* ===== 提示(放在畫面最下面自己的一格,不會蓋住任何按鈕) ===== */
@@ -1179,6 +1312,7 @@ function onLeave(entry) {
     });
   }
   if (entry.v === "set") state.setForm = null;
+  if ((entry.v === "set" || entry.v === "new") && state.cal && state.cal.where === entry.v) state.cal = null;
 }
 function fixNav() {
   /* 目標或節點已經不在了(例如示範版重新整理、另一個人拿掉):退到還在的那一層 */
@@ -1453,12 +1587,7 @@ function goalHtml(entry, hide, under) {
   if (isShelved(g)) h += '<p class="banner">這個目標收起來了。要拿回來，按右上角「設定」。</p>';
   else if (isComplete(g)) h += '<p class="banner ok">全部做完了，這個目標在「完成」裡。要拿回來，按右上角「設定」。</p>';
   h += '<p class="gprog">' + (list.length ? "做完 <b>" + doneCount + "</b> 個，一共 " + list.length + " 個節點" : "還沒有節點") + "</p>";
-  ["gstart", "gend"].forEach(function (name) {
-    var fd = fieldKey(g.id, "", name), val = fieldValue(fd), word = name === "gstart" ? "開始" : "結束";
-    var elId = name === "gstart" ? "gStart" : "gEnd";
-    h += '<div class="row2 grange" data-key="row-' + name + '"><label class="glab" for="' + elId + '">' + word + '</label><input class="inp" id="' + elId + '" data-key="' + elId + '" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(val) + '" aria-label="' + word + '日（可以不填）" data-field="' + esc(fd) + '">' +
-      (val ? '<button class="btn" type="button" data-act="gdate-clear" data-name="' + name + '" aria-label="清掉' + word + '日">清掉</button>' : "") + "</div>" + fieldStatusHtml(fd);
-  });
+  h += rangeHtml("goal");
   h += '<label class="lab" for="gnote">備註</label><textarea class="inp area" id="gnote" data-key="gnote" rows="2" placeholder="想記的事（可以不寫）" data-field="' + esc(fk) + '">' + esc(fieldValue(fk)) + "</textarea>" + fieldStatusHtml(fk);
   h += '<h2 class="sec">節點</h2>';
   if (!list.length) h += '<p class="none">還沒有節點。在下面打一個名稱，按「加」。</p>';
@@ -1556,8 +1685,7 @@ function newHtml(off) {
     '<span class="lab">這是短期還是長期的目標？</span>' + picks("new", "term", TERMS, f.term) +
     '<label class="lab" for="newNodes">節點（一行一個，可以之後再加）</label><textarea class="inp area" id="newNodes" data-key="newNodes" rows="4" data-form="new" data-name="nodes" placeholder="例如：\n拿到尺寸\n出設計稿\n安裝">' + esc(f.nodes) + "</textarea>" +
     '<span class="lab">開始日、結束日（可以不填）</span>' +
-    '<div class="row2 grange"><label class="glab" for="newStart">開始</label><input class="inp" id="newStart" data-key="newStart" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(f.start) + '" data-form="new" data-name="start"></div>' +
-    '<div class="row2 grange"><label class="glab" for="newEnd">結束</label><input class="inp" id="newEnd" data-key="newEnd" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(f.end) + '" data-form="new" data-name="end"></div>' +
+    rangeHtml("new") +
     '<span class="lab">哪一家（可以不選）</span>' + picks("new", "clinics", CLINICS, f.clinics, true) +
     '<span class="lab">圖示（可以不挑）</span>' + iconPickHtml("new", f) +
     (f.error ? '<p class="err" role="alert" data-key="newerr">' + esc(f.error) + "</p>" : "") +
@@ -1570,8 +1698,7 @@ function setHtml(entry, off) {
   var b = '<label class="lab" for="setTitle">標題</label><input class="inp" id="setTitle" data-key="setTitle" type="text" value="' + esc(f.title) + '" data-form="set" data-name="title">' +
     '<span class="lab">短期還是長期</span>' + picks("set", "term", TERMS, f.term) +
     '<span class="lab">開始日、結束日（可以不填）</span>' +
-    '<div class="row2 grange"><label class="glab" for="setStart">開始</label><input class="inp" id="setStart" data-key="setStart" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(f.start) + '" data-form="set" data-name="start"></div>' +
-    '<div class="row2 grange"><label class="glab" for="setEnd">結束</label><input class="inp" id="setEnd" data-key="setEnd" type="date" min="' + dateEdge(-1) + '" max="' + dateEdge(1) + '" value="' + esc(f.end) + '" data-form="set" data-name="end"></div>' +
+    rangeHtml("set") +
     '<span class="lab">哪一家</span>' + picks("set", "clinics", CLINICS, f.clinics, true) +
     '<span class="lab">圖示</span>' + iconPickHtml("set", f) +
     (f.error ? '<p class="err" role="alert">' + esc(f.error) + "</p>" : "") +
@@ -2030,6 +2157,50 @@ var actions = {
     toast(now ? (all ? "全部做完了，這個目標移到「完成」。" : quote(n.name) + "做完了。") : quote(n.name) + "改回還沒做完。",
       { id: e.id, patch: nodePatch(e.key, was), what: "復原：" + quote(n.name) + (was.done ? "做完了" : "改回還沒做完") });
   },
+  /* --- 開始日、結束日的月曆 --- */
+  "cal-open": function (el) {
+    var where = el.getAttribute("data-where"), step = el.getAttribute("data-step") === "end" ? "end" : "start";
+    var c = calOn(where);
+    var v = calGet(where);
+    if (!c) {
+      if (state.cal) calClose(true);
+      var ge = findNav("goal");
+      if (where === "goal" && !ge) return;
+      c = state.cal = { where: where, id: where === "goal" ? ge.id : "", step: step, month: "", start: v.start, end: v.end, orig: { start: v.start, end: v.end } };
+    }
+    c.step = step;
+    var at = (dateOk(v[step]) && v[step]) || (dateOk(v.start) && v.start) || (dateOk(v.end) && v.end) || twNow().day;
+    c.month = at.slice(0, 7);
+    render();
+    var box = stage.querySelector('[data-key="cal-' + where + '"]');
+    if (box) { try { box.scrollIntoView({ block: "nearest" }); } catch (e) { /* 不影響使用 */ } }
+  },
+  "cal-month": function (el) {
+    var c = state.cal;
+    if (!c) return;
+    var m = monthShift(c.month, +el.getAttribute("data-d") < 0 ? -1 : 1);
+    if (m < dateEdge(-1).slice(0, 7) || m > dateEdge(1).slice(0, 7)) return;
+    c.month = m;
+    render();
+  },
+  "cal-day": function (el) {
+    var c = state.cal, d = el.getAttribute("data-day");
+    if (!c || !dateOk(d)) return;
+    var v = calGet(c.where), a = dateOk(v.start) ? v.start : "", b = dateOk(v.end) ? v.end : "";
+    if (c.step === "start") { a = d; if (b && b < d) b = ""; c.step = "end"; }
+    else if (a && d < a) { a = d; b = ""; }       /* 點到比開始日還早的:當成重新選開始日 */
+    else b = d;
+    calSet(c.where, a, b);
+    render();
+  },
+  "cal-clear": function () {
+    var c = state.cal;
+    if (!c) return;
+    calSet(c.where, "", "");
+    c.step = "start";
+    render();
+  },
+  "cal-done": function () { calClose(); },
   "gdate-clear": function (el) {
     var ge = findNav("goal");
     var name = el.getAttribute("data-name");
